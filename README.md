@@ -203,24 +203,6 @@ Steward is guided by a few core principles:
 
 ---
 
-# Why Steward?
-
-This project exists to demonstrate modern full-stack engineering practices, including:
-
-* Scalable React architecture
-* Type-safe APIs
-* Clean domain modeling
-* Backend service design
-* Testing strategy
-* Performance optimization
-* Accessibility
-* Responsive UX
-* Production deployment
-
-Rather than being a tutorial project or a direct clone of an existing application, Steward is intended to evolve into a polished, real-world finance platform with room for future expansion.
-
----
-
 # License
 
 MIT
