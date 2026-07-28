@@ -1,208 +1,90 @@
 # Steward
 
-A modern personal finance platform that helps users understand, organize, and grow their finances.
+Steward is a full-stack personal finance application for managing accounts, transactions, budgets, and financial insights.
 
-Steward brings budgeting, spending analysis, investment tracking, and net worth management into a single, thoughtfully designed experience. Rather than focusing on a single aspect of personal finance, Steward provides a complete picture of financial health through intuitive dashboards, actionable insights, and powerful budgeting tools.
+The project is being built from the ground up to explore modern technologies, application architecture, and engineering practices while building a complete web application.
 
-This project is being built as a production-quality full-stack application with an emphasis on clean architecture, scalability, accessibility, and developer experience.
-
-> **Status:** 🚧 In Active Development
+> 🚧 **Status:** Active Development
 
 ---
 
-# Vision
+## Features
 
-Managing personal finances shouldn't require juggling multiple applications or spreadsheets.
+### Planned
 
-Steward is designed to become a central hub where users can:
-
-* Track every financial account
-* Build flexible monthly budgets
-* Categorize and search transactions
-* Monitor investment portfolios
-* Measure net worth over time
-* Understand spending habits
-* Set and track financial goals
-
-The long-term goal is to build a platform that feels as polished as modern SaaS products while remaining fast, intuitive, and privacy-conscious.
+- User authentication
+- Account management
+- Transaction management
+- Budgeting
+- Dashboard
+- Financial insights
+- Investment tracking
+- Responsive design
+- Light and dark themes
 
 ---
 
-# Core Features
+## Development Phases
 
-## Dashboard
+### Phase 1 — Discovery & Architecture
 
-A personalized financial overview featuring:
+- Define product requirements
+- Design the application architecture
+- Create wireframes and user flows
+- Plan the development roadmap
 
-* Net worth tracking
-* Cash flow
-* Monthly spending
-* Budget progress
-* Portfolio summary
-* Recent transactions
-* Financial insights
+### Phase 2 — Foundation
 
----
+- Configure the development environment
+- Establish the frontend and backend foundations
+- Configure the database
+- Set up testing and CI/CD
 
-## Accounts
+### Phase 3 — Application Shell
 
-Manage multiple account types including:
+- Authentication
+- Application layout
+- Navigation
+- Theme support
+- Settings
 
-* Checking
-* Savings
-* Credit Cards
-* Investment Accounts
-* Cash
-* Loans
+### Phase 4 — Financial Management
 
----
+- Account management
+- Transaction management
+- Categories
+- Search and filtering
 
-## Transactions
+### Phase 5 — Budgeting MVP
 
-* Manual transaction entry
-* CSV imports
-* Search & filtering
-* Bulk editing
-* Transaction categorization
-* Transfers between accounts
-* Recurring transaction detection
+- Monthly budgets
+- Budget categories
+- Budget progress
+- Dashboard overview
 
----
+### Phase 6 — Insights & Analytics
 
-## Budgets
+- Spending trends
+- Charts and visualizations
+- Net worth
+- Investment tracking
 
-Create flexible monthly budgets with:
+### Phase 7 — Polish & Launch
 
-* Category budgets
-* Budget groups
-* Progress tracking
-* Overspending alerts
-* Month-over-month comparisons
-* Budget insights
-
----
-
-## Investments
-
-Track investments through:
-
-* Holdings
-* Portfolio allocation
-* Performance history
-* Cost basis
-* Unrealized gains & losses
+- Accessibility improvements
+- Responsive design
+- Performance optimization
+- Documentation
+- Deployment
 
 ---
 
-## Goals
+## Getting Started
 
-Create financial goals such as:
-
-* Emergency fund
-* Vacation savings
-* Home down payment
-* Debt payoff
-* Retirement milestones
+Installation and setup instructions will be added as the project evolves.
 
 ---
 
-# Tech Stack
-
-## Frontend
-
-* React
-* TypeScript
-* Vite
-* TanStack Router
-* TanStack Query
-* React Hook Form
-* Tailwind CSS
-
-## Backend
-
-* Node.js
-* Fastify
-* Zod
-
-## Database
-
-* PostgreSQL
-* Drizzle ORM
-
-## Tooling
-
-* pnpm Workspaces
-* Docker
-* GitHub Actions
-* Vitest
-* Playwright
-* ESLint
-* Prettier
-
----
-
-# Architecture
-
-```text
-apps/
-  web/
-  api/
-
-packages/
-  contracts/
-  database/
-  ui/
-  config/
-```
-
-The project follows a modular monorepo architecture with shared contracts, reusable UI components, and clear boundaries between frontend and backend.
-
----
-
-# Design Principles
-
-Steward is guided by a few core principles:
-
-* **Financial clarity over visual clutter**
-* **Fast workflows with minimal clicks**
-* **Accessible by default**
-* **Responsive across all devices**
-* **Progressive disclosure of complex information**
-* **Data-driven design decisions**
-* **Production-quality engineering**
-
----
-
-# Roadmap
-
-## Phase 1
-
-* Authentication
-* Dashboard shell
-* Accounts
-* Manual transactions
-
-## Phase 2
-
-* Transaction management
-* Categories
-* CSV imports
-* Budgeting
-
-## Phase 3
-
-* Investments
-* Net worth
-* Financial goals
-
-## Phase 4
-
-* Insights
-* Notifications
-* Production polish
-
----
-
-# License
+## License
 
 MIT
