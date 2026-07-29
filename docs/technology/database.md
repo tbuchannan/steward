@@ -14,7 +14,9 @@ Railway PostgreSQL will host the production database.
 
 Testcontainers for Node.js will provide disposable PostgreSQL databases for automated integration testing.
 
-The PostgreSQL driver remains undecided.
+`pg`, also known as node-postgres, will provide PostgreSQL connectivity and connection pooling.
+
+A locally installed PostgreSQL instance will support normal local development.
 
 ## Selected Technologies
 
@@ -24,6 +26,10 @@ The confirmed database technologies are:
 - Drizzle ORM
 - Drizzle Kit
 - Better Auth Drizzle adapter
+- `pg`
+- `@types/pg`
+- `drizzle-orm/node-postgres`
+- Locally installed PostgreSQL
 - Railway PostgreSQL
 - Testcontainers for Node.js
 - PostgreSQL Testcontainer
@@ -31,8 +37,6 @@ The confirmed database technologies are:
 
 Still undecided:
 
-- PostgreSQL driver
-- Local PostgreSQL development tooling
 - Production backup schedule
 - Long-term archival strategy
 - Database administration client
@@ -84,7 +88,20 @@ Fastify application
         |
         | Drizzle ORM
         v
+pg connection pool
+        |
+        v
 PostgreSQL
+```
+
+Local development:
+
+```text
+Local Fastify service
+        |
+        | Drizzle ORM through pg
+        v
+Locally installed PostgreSQL
 ```
 
 Production:
@@ -92,6 +109,7 @@ Production:
 ```text
 Railway Fastify service
         |
+        | Drizzle ORM through pg
         | Private database connection
         v
 Railway PostgreSQL
@@ -102,7 +120,7 @@ Integration tests:
 ```text
 Vitest
         |
-        | Drizzle ORM
+        | Drizzle ORM through pg
         v
 Disposable PostgreSQL Testcontainer
 ```
@@ -787,17 +805,48 @@ Query functions should:
 
 ## Database Client
 
-The backend should initialize one shared connection pool and one shared Drizzle client.
+The backend should initialize one shared `pg.Pool` and one shared Drizzle client.
+
+Drizzle should use the node-postgres adapter:
+
+```ts
+import { Pool } from "pg";
+import { drizzle } from "drizzle-orm/node-postgres";
+
+import * as schema from "./schema";
+
+export const createDatabase = (databaseUrl: string) => {
+  const pool = new Pool({
+    connectionString: databaseUrl,
+  });
+
+  const db = drizzle(pool, {
+    schema,
+  });
+
+  return {
+    db,
+    pool,
+  };
+};
+```
 
 Conceptually:
 
 ```text
-PostgreSQL pool
+pg.Pool
+→ drizzle-orm/node-postgres
 → Drizzle client
 → Fastify database plugin
 ```
 
 The application must not create a new connection pool for every request.
+
+The pool should be closed during graceful shutdown:
+
+```ts
+await pool.end();
+```
 
 ## Connection Pooling
 
@@ -814,19 +863,36 @@ The final pool size should be configured through environment-aware defaults.
 
 ## PostgreSQL Driver
 
-The PostgreSQL driver remains open.
+Steward will use `pg`, also known as node-postgres.
 
-The evaluation should consider:
+Drizzle will use:
 
-- Drizzle compatibility
-- Railway compatibility
-- Connection pooling
-- Testcontainers compatibility
-- Transaction support
-- Type behavior
-- Serverless versus persistent-process behavior
+```ts
+import { drizzle } from "drizzle-orm/node-postgres";
+```
 
-Because the Fastify backend runs as a persistent Railway service, the driver should support ordinary pooled connections reliably.
+PostgreSQL connections will use:
+
+```ts
+import { Pool } from "pg";
+```
+
+`pg` was selected because it:
+
+- Is officially supported by Drizzle
+- Provides an explicit `Pool` API
+- Fits a persistent Fastify service
+- Works with Railway PostgreSQL connection URLs
+- Works with PostgreSQL Testcontainers
+- Supports transactions
+- Has a mature Node.js ecosystem
+- Provides clear connection lifecycle management
+
+The backend should create one shared pool during startup and reuse it across requests.
+
+The pool must be closed during graceful shutdown and after integration tests.
+
+The TypeScript project should include `@types/pg`.
 
 ## Migrations
 
@@ -1007,22 +1073,36 @@ A restore procedure should be tested before it is considered reliable.
 
 ## Local Development
 
-The local PostgreSQL approach remains undecided.
+Normal local development will use PostgreSQL installed directly on the developer's machine.
 
-Options include:
+A likely local database name is:
 
-- Docker Compose
-- Local PostgreSQL installation
-- A Railway development database
-- A reusable Testcontainer-based development command
+```text
+steward_development
+```
 
-The selected approach should:
+The Fastify backend will connect through:
+
+```text
+DATABASE_URL
+```
+
+The local database should:
 
 - Be free or low cost
-- Be reproducible
 - Match production PostgreSQL behavior
-- Support migrations
-- Avoid using production data
+- Support Drizzle migrations
+- Support development seed data
+- Remain separate from production data
+- Use a local-only username and password
+
+Docker Compose is not required for normal development.
+
+The frontend and Fastify backend do not need to be containerized.
+
+Testcontainers remains the selected approach for automated integration tests and can be introduced when PostgreSQL-backed integration tests are implemented.
+
+Kubernetes will not be used.
 
 ## Test Database Decision
 
@@ -1047,8 +1127,8 @@ A typical integration-test lifecycle is:
 ```text
 Start PostgreSQL container
 → Receive temporary connection URL
-→ Create connection pool
-→ Create Drizzle client
+→ Create pg Pool
+→ Create Drizzle client with drizzle-orm/node-postgres
 → Apply committed migrations
 → Seed required data
 → Run tests
@@ -1269,6 +1349,8 @@ The initial database architecture will not use:
 - Client-side database access
 - Production data in automated tests
 - Heavy Drizzle mocking
+- Docker Compose as a required local-development dependency
+- Kubernetes
 - Manual undocumented production schema changes
 - Automatic destructive schema synchronization
 - Read replicas
@@ -1281,11 +1363,9 @@ These choices should not change without revisiting the database decision.
 
 The following database decisions remain open:
 
-- PostgreSQL driver
 - Monetary column representation
 - Transaction sign convention
 - Account balance strategy
-- Local PostgreSQL tooling
 - Exact production PostgreSQL version
 - Connection-pool size
 - Test cleanup strategy
@@ -1301,12 +1381,16 @@ The database architecture is successful when:
 - PostgreSQL stores Steward's relational data reliably.
 - Drizzle provides typed schema definitions and queries.
 - Drizzle Kit provides reviewed version-controlled migrations.
+- `pg.Pool` provides reliable PostgreSQL connectivity.
+- Drizzle uses the `drizzle-orm/node-postgres` adapter.
 - Better Auth uses the same PostgreSQL and Drizzle setup.
 - User ownership is enforced in database-backed queries.
 - Financial values use a safe canonical representation.
 - Transfers and multi-record workflows are transactional.
 - Migrations apply cleanly to fresh databases.
 - Railway PostgreSQL works reliably with the Fastify backend.
+- Locally installed PostgreSQL supports normal development.
+- Docker Compose is not required for normal development.
 - Production credentials remain server-side.
 - Testcontainers provide isolated real PostgreSQL environments.
 - Integration tests verify constraints, ownership, and rollback.

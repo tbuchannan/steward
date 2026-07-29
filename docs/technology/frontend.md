@@ -8,11 +8,19 @@ Vite will provide the local development server and production build tooling.
 
 TanStack Router will provide client-side routing.
 
-Zod will provide runtime validation.
+TanStack Query will provide server-state management.
+
+React Hook Form will provide form-state management.
+
+Zod will provide runtime validation and form schemas.
+
+`@hookform/resolvers` will connect Zod validation to React Hook Form.
 
 Tailwind CSS will provide utility-based styling.
 
 shadcn/ui will provide customizable UI component implementations.
+
+Lucide React will provide the primary icon library.
 
 Vercel will host production and preview frontend deployments.
 
@@ -26,9 +34,13 @@ The confirmed frontend technologies are:
 - TypeScript
 - Vite
 - TanStack Router
+- TanStack Query
+- React Hook Form
 - Zod
+- `@hookform/resolvers`
 - Tailwind CSS
 - shadcn/ui
+- Lucide React
 - Vitest
 - React Testing Library
 - `@testing-library/user-event`
@@ -39,10 +51,7 @@ The confirmed frontend technologies are:
 
 Still undecided:
 
-- Server-state management
-- Form management
 - Charting library
-- Primary icon library
 - Error monitoring
 - Automated accessibility scanner
 - Visual regression testing
@@ -114,7 +123,7 @@ The frontend will be built with Vite and deployed to Vercel.
 
 ```text
 Git repository
-→ Required CI checks
+→ GitHub Actions checks
 → Vercel build
 → Vite production build
 → Static frontend deployment
@@ -139,10 +148,16 @@ The final Vercel rewrite configuration should preserve static assets and platfor
 
 ## Proposed Source Structure
 
-A likely frontend structure is:
+The frontend will live in:
 
 ```text
-src/
+apps/web
+```
+
+A likely frontend structure inside that workspace is:
+
+```text
+apps/web/src/
 ├── assets/
 ├── components/
 │   ├── ui/
@@ -160,6 +175,7 @@ src/
 │   ├── api/
 │   ├── auth/
 │   ├── environment/
+│   ├── query/
 │   ├── testing/
 │   ├── validation/
 │   └── utilities/
@@ -181,10 +197,11 @@ Feature implementation should remain grouped by business domain even when route 
 The application entry point should:
 
 1. Load validated public environment configuration.
-2. Create or import the router.
-3. Initialize application-level providers.
-4. Render the React application.
-5. Register global error handling where appropriate.
+2. Create the TanStack Query client.
+3. Create or import the router.
+4. Initialize application-level providers.
+5. Render the React application.
+6. Register global error handling where appropriate.
 
 Conceptually:
 
@@ -192,13 +209,16 @@ Conceptually:
 main.tsx
 → Validate environment
 → Create API client
-→ Initialize server-state provider
+→ Create TanStack Query client
+→ Initialize QueryClientProvider
 → Initialize authentication integration
 → Initialize theme behavior
 → Render TanStack Router provider
 ```
 
-The exact provider structure depends on remaining server-state and form decisions.
+The provider structure should include TanStack Query and TanStack Router.
+
+React Hook Form is generally initialized at the form level rather than as a global provider.
 
 ## UI Architecture
 
@@ -340,7 +360,7 @@ The setup should define:
 - Component style
 - Base color
 - CSS-variable usage
-- Icon library
+- Lucide React as the icon library
 - Import aliases
 - Component output directory
 - Repository structure
@@ -378,6 +398,42 @@ This means Steward may:
 Generated components should be reviewed like any other application code.
 
 Customized components should not be overwritten blindly when rerunning CLI commands.
+
+## Icon Library
+
+Lucide React is Steward's selected icon library.
+
+Lucide React provides:
+
+- React components
+- TypeScript support
+- Consistent stroke-based icons
+- Individual icon imports
+- Compatibility with Tailwind CSS
+- Compatibility with shadcn/ui
+
+Icons should be imported individually.
+
+```ts
+import {
+  CircleDollarSign,
+  LayoutDashboard,
+  Settings,
+  WalletCards,
+} from "lucide-react";
+```
+
+Icon-only controls must have accessible names.
+
+```tsx
+<Button variant="ghost" size="icon" aria-label="Open settings">
+  <Settings aria-hidden="true" />
+</Button>
+```
+
+Icons should not be the only indication of important financial state.
+
+Text, labels, or other non-color indicators should accompany icons where meaning would otherwise be unclear.
 
 ## Routing
 
@@ -568,18 +624,41 @@ It does not protect the backend.
 
 ## Form Architecture
 
-The form library remains undecided.
+React Hook Form will manage form state.
 
-Regardless of the selected library:
+Zod will define form validation.
 
-- Zod should define form validation.
-- Form values should remain type-safe.
-- Field and form-level errors should be supported.
-- Server validation errors should be mapped into the interface.
-- Duplicate submission should be prevented.
-- Valid input should be preserved after recoverable errors.
-- Accessible labels and error associations should be maintained.
-- Submission state should be visible.
+`@hookform/resolvers` will connect Zod schemas to React Hook Form.
+
+React Hook Form should manage:
+
+- Field registration
+- Field values
+- Touched state
+- Dirty state
+- Submission state
+- Field errors
+- Form reset
+- Controlled component integration
+
+Zod should manage:
+
+- Required values
+- Formats
+- Limits
+- Transformations
+- Cross-field validation
+- Submission parsing
+
+Forms should:
+
+- Keep values type-safe.
+- Support field-level and form-level errors.
+- Map server validation errors into the interface.
+- Prevent duplicate submission.
+- Preserve valid input after recoverable errors.
+- Maintain accessible labels and error associations.
+- Show submission state clearly.
 
 Likely forms include:
 
@@ -592,6 +671,40 @@ Likely forms include:
 - Budget creation
 - Budget allocation editing
 - Settings
+
+## React Hook Form Integration
+
+A form should connect React Hook Form to Zod through `zodResolver`.
+
+```ts
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+
+const form = useForm<TransactionFormValues>({
+  resolver: zodResolver(transactionFormSchema),
+  defaultValues: {
+    description: "",
+    amount: "",
+    date: "",
+  },
+});
+```
+
+shadcn/ui controls that do not expose a native input interface may use React Hook Form's `Controller`.
+
+```tsx
+<Controller
+  control={form.control}
+  name="accountId"
+  render={({ field }) => (
+    <Select value={field.value} onValueChange={field.onChange}>
+      {/* options */}
+    </Select>
+  )}
+/>
+```
+
+Reusable form-field components may reduce repeated accessible markup, but they should not hide validation, labels, or errors from tests and maintainers.
 
 ## Form Input and Output Types
 
@@ -760,7 +873,7 @@ The application should avoid briefly rendering protected content before the sess
 
 ## Server State
 
-The server-state library remains undecided.
+TanStack Query will manage server state.
 
 Server state includes:
 
@@ -773,12 +886,12 @@ Server state includes:
 - Backend-stored user settings
 - Authentication session data where appropriate
 
-The selected server-state approach should support:
+TanStack Query provides:
 
 - Loading state
 - Error state
 - Caching
-- Invalidation
+- Cache invalidation
 - Mutation state
 - Request deduplication
 - Background refresh where useful
@@ -787,6 +900,96 @@ The selected server-state approach should support:
 - Optimistic updates where safe
 
 Server data should not be copied into unrelated global client state without a specific need.
+
+## Query Client
+
+The application should create one shared `QueryClient`.
+
+```ts
+import { QueryClient } from "@tanstack/react-query";
+
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+    mutations: {
+      retry: 0,
+    },
+  },
+});
+```
+
+These values are initial defaults rather than permanent requirements.
+
+Financial data should not remain stale indefinitely.
+
+## Query Keys
+
+Query keys should be stable, serializable, and owned by the relevant feature.
+
+```ts
+export const accountKeys = {
+  all: ["accounts"] as const,
+  lists: () => [...accountKeys.all, "list"] as const,
+  list: (filters: AccountFilters) => [...accountKeys.lists(), filters] as const,
+  details: () => [...accountKeys.all, "detail"] as const,
+  detail: (accountId: string) => [...accountKeys.details(), accountId] as const,
+};
+```
+
+A query key must include every value that changes its result.
+
+## Query Functions
+
+Query functions should use Steward's shared API client.
+
+```ts
+export const getAccounts = async (): Promise<AccountListResponse> => {
+  return apiClient.get("/api/accounts");
+};
+```
+
+Components should not repeatedly implement raw `fetch` behavior.
+
+## Mutations
+
+TanStack Query mutations may support:
+
+- Creating accounts
+- Updating accounts
+- Archiving accounts
+- Creating transactions
+- Updating transactions
+- Deleting transactions
+- Creating budgets
+- Updating budgets
+- Resetting demo data
+
+After a successful mutation, the frontend should:
+
+- Update known cached data directly where safe
+- Invalidate affected queries
+- Avoid invalidating unrelated data
+- Navigate when required by the workflow
+
+Optimistic updates should be used only when rollback behavior is clear.
+
+## Authentication and Query State
+
+Authentication-sensitive queries should not run before session state is known.
+
+```ts
+useQuery({
+  queryKey: accountKeys.all,
+  queryFn: getAccounts,
+  enabled: Boolean(session),
+});
+```
+
+After logout, private cached data should be removed from the QueryClient.
 
 ## Client State
 
@@ -804,7 +1007,7 @@ Examples include:
 
 URL state should be used for shareable navigation and filter state.
 
-Server state should be managed by the selected server-state solution.
+Server state should be managed by TanStack Query.
 
 A global state library should not be added without a concrete cross-application requirement.
 
@@ -983,7 +1186,7 @@ Sensitive authentication changes should use Better Auth-supported workflows.
 
 Theme changes may apply immediately.
 
-Server-stored settings should use the selected server-state approach.
+Server-stored settings should use TanStack Query.
 
 ## Theme
 
@@ -1334,11 +1537,13 @@ Conceptually:
 ```text
 renderWithProviders
 ├── TanStack Router
-├── Server-state provider
+├── QueryClientProvider
 ├── Authentication context
 ├── Theme context
 └── Application environment
 ```
+
+Each test should receive a fresh QueryClient to prevent cache leakage between tests.
 
 The helper should allow tests to define:
 
@@ -1376,9 +1581,25 @@ Steward does not need to duplicate all internal tests of unchanged shadcn/ui pri
 
 It should test Steward's use and composition of those primitives.
 
-## Form Tests
+## TanStack Query Tests
 
-Important form tests should cover:
+TanStack Query tests should cover:
+
+- Loading state
+- Successful data
+- Error state
+- Mutation state
+- Cache invalidation
+- Disabled unauthenticated queries
+- Pagination behavior
+- Private cache removal after logout
+- Refetch behavior where important
+
+Tests should verify visible behavior rather than TanStack Query internals.
+
+## React Hook Form Tests
+
+React Hook Form tests should cover:
 
 - Initial state
 - Required fields
@@ -1630,7 +1851,9 @@ Automated scanning would supplement rather than replace manual accessibility-ori
 
 ## Continuous Integration
 
-Before production deployment, frontend CI should eventually verify:
+GitHub Actions will provide frontend continuous integration.
+
+Before production deployment, GitHub Actions should verify:
 
 - Formatting
 - Linting
@@ -1653,7 +1876,7 @@ Preview deployments should not receive production-only secrets or unrestricted p
 
 ## Suggested Frontend Scripts
 
-Exact commands depend on the package manager.
+The repository will use pnpm and pnpm workspaces.
 
 The frontend should provide scripts equivalent to:
 
@@ -1678,6 +1901,9 @@ The initial frontend will not use:
 - Next.js
 - TanStack Start
 - React Router
+- Redux for server state
+- Formik
+- Multiple icon libraries
 - CSS Modules
 - Styled Components
 - Emotion
@@ -1701,16 +1927,14 @@ These decisions should not change without revisiting the corresponding technolog
 
 The following frontend decisions remain open:
 
-- Server-state management
-- Form management
 - Charting library
-- Primary icon library
 - Error monitoring
 - Automated accessibility scanner
 - Visual regression testing
 - Mock Service Worker usage
 - Exact TanStack Router organization
 - Exact Vercel SPA rewrite configuration
+- Exact TanStack Query defaults
 - Exact component-test provider setup
 - Final frontend coverage thresholds
 
@@ -1722,9 +1946,12 @@ The frontend architecture is successful when:
 - TypeScript supports safe frontend development.
 - Vite provides a fast local workflow and reliable production build.
 - TanStack Router provides typed navigation and validated URL state.
-- Zod validates frontend trust boundaries.
+- TanStack Query manages server state predictably.
+- React Hook Form manages form state and submission behavior.
+- Zod validates frontend trust boundaries and form schemas.
 - Tailwind CSS provides a consistent styling model.
 - shadcn/ui provides customizable component foundations.
+- Lucide React provides a consistent icon system.
 - Vercel reliably serves production and preview builds.
 - Direct navigation to nested routes works.
 - The frontend communicates reliably with the Railway API.
@@ -1735,5 +1962,5 @@ The frontend architecture is successful when:
 - Vitest provides reliable unit and component tests.
 - React Testing Library verifies user-visible behavior.
 - Playwright verifies critical complete workflows.
-- Frontend test failures block invalid production deployments.
+- GitHub Actions blocks invalid production deployments.
 - New features can be added without introducing unrelated architectural patterns.

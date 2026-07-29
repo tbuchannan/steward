@@ -18,9 +18,12 @@ User browser
 Vercel
 React + TypeScript + Vite
 TanStack Router
+TanStack Query
+React Hook Form
 Zod
 Tailwind CSS
 shadcn/ui
+Lucide React
       |
       | Credentialed HTTPS requests
       v
@@ -29,11 +32,31 @@ Fastify + TypeScript
 Zod
 Better Auth
 Drizzle ORM
+pg
       |
       | PostgreSQL connection
       v
 Railway PostgreSQL
 ```
+
+## Repository Summary
+
+```text
+pnpm monorepo
+├── apps/web
+├── apps/api
+├── packages/contracts
+├── e2e
+└── docs
+```
+
+pnpm workspaces will manage internal packages.
+
+Turborepo will not be used initially.
+
+Docker Compose is not required for normal local development.
+
+Kubernetes will not be used.
 
 ## Testing Summary
 
@@ -71,9 +94,13 @@ Playwright
 | Language                        | TypeScript                    | Selected |
 | Build tool                      | Vite                          | Selected |
 | Routing                         | TanStack Router               | Selected |
+| Server-state management         | TanStack Query                | Selected |
+| Form management                 | React Hook Form               | Selected |
+| Form validation                 | Zod + `@hookform/resolvers`   | Selected |
 | Runtime validation              | Zod                           | Selected |
 | Styling                         | Tailwind CSS                  | Selected |
 | Component system                | shadcn/ui                     | Selected |
+| Primary icon library            | Lucide React                  | Selected |
 | Unit test runner                | Vitest                        | Selected |
 | Component testing               | React Testing Library         | Selected |
 | User interaction testing        | `@testing-library/user-event` | Selected |
@@ -82,10 +109,7 @@ Playwright
 | End-to-end testing              | Playwright                    | Selected |
 | Coverage                        | `@vitest/coverage-v8`         | Selected |
 | Frontend hosting                | Vercel                        | Selected |
-| Server-state management         | Undecided                     | Open     |
-| Form management                 | Undecided                     | Open     |
 | Charting                        | Undecided                     | Open     |
-| Primary icon library            | Undecided                     | Open     |
 | Error monitoring                | Undecided                     | Open     |
 | Automated accessibility scanner | Undecided                     | Open     |
 | Visual regression testing       | Undecided                     | Open     |
@@ -101,6 +125,9 @@ Playwright
 | Fastify Zod integration          | `fastify-type-provider-zod` | Selected |
 | Authentication                   | Better Auth                 | Selected |
 | API style                        | HTTP JSON API               | Selected |
+| PostgreSQL driver                | `pg` / node-postgres        | Selected |
+| Drizzle PostgreSQL adapter       | `drizzle-orm/node-postgres` | Selected |
+| Connection pooling               | `pg.Pool`                   | Selected |
 | Unit and integration runner      | Vitest                      | Selected |
 | HTTP route testing               | Fastify `inject()`          | Selected |
 | Database integration environment | Testcontainers for Node.js  | Selected |
@@ -111,19 +138,39 @@ Playwright
 
 ## Database
 
-| Area                         | Selection                   | Status   |
-| ---------------------------- | --------------------------- | -------- |
-| Database                     | PostgreSQL                  | Selected |
-| ORM and query layer          | Drizzle ORM                 | Selected |
-| Migration tooling            | Drizzle Kit                 | Selected |
-| Authentication adapter       | Better Auth Drizzle adapter | Selected |
-| Integration-test database    | PostgreSQL Testcontainer    | Selected |
-| Production database hosting  | Railway PostgreSQL          | Selected |
-| PostgreSQL driver            | Undecided                   | Open     |
-| Monetary representation      | Undecided                   | Open     |
-| Account balance strategy     | Undecided                   | Open     |
-| Local PostgreSQL environment | Undecided                   | Open     |
-| Backup schedule              | Undecided                   | Open     |
+| Area                         | Selection                    | Status   |
+| ---------------------------- | ---------------------------- | -------- |
+| Database                     | PostgreSQL                   | Selected |
+| ORM and query layer          | Drizzle ORM                  | Selected |
+| Migration tooling            | Drizzle Kit                  | Selected |
+| Authentication adapter       | Better Auth Drizzle adapter  | Selected |
+| PostgreSQL driver            | `pg` / node-postgres         | Selected |
+| Drizzle PostgreSQL adapter   | `drizzle-orm/node-postgres`  | Selected |
+| Connection pooling           | `pg.Pool`                    | Selected |
+| Integration-test database    | PostgreSQL Testcontainer     | Selected |
+| Production database hosting  | Railway PostgreSQL           | Selected |
+| Monetary representation      | Undecided                    | Open     |
+| Account balance strategy     | Undecided                    | Open     |
+| Local PostgreSQL environment | Locally installed PostgreSQL | Selected |
+| Backup schedule              | Undecided                    | Open     |
+
+## Repository and Tooling
+
+| Area                       | Selection            | Status   |
+| -------------------------- | -------------------- | -------- |
+| Package manager            | pnpm                 | Selected |
+| Repository structure       | Monorepo             | Selected |
+| Workspace tooling          | pnpm workspaces      | Selected |
+| Frontend workspace         | `apps/web`           | Selected |
+| Backend workspace          | `apps/api`           | Selected |
+| Shared contracts workspace | `packages/contracts` | Selected |
+| End-to-end workspace       | `e2e`                | Selected |
+| Additional task runner     | None initially       | Selected |
+| Turborepo                  | Not selected         | Selected |
+| Docker Compose             | Not required         | Selected |
+| Kubernetes                 | Not used             | Selected |
+| Node.js version            | Undecided            | Open     |
+| pnpm version               | Undecided            | Open     |
 
 ## Testing
 
@@ -148,21 +195,24 @@ Playwright
 
 ## Deployment
 
-| Area                           | Selection           | Status   |
-| ------------------------------ | ------------------- | -------- |
-| Frontend deployment            | Vercel              | Selected |
-| Backend deployment             | Railway             | Selected |
-| Database deployment            | Railway PostgreSQL  | Selected |
-| Preview frontend deployments   | Vercel              | Selected |
-| Backend health checks          | Railway + `/health` | Selected |
-| Production migration tooling   | Drizzle Kit         | Selected |
-| Required automated test layers | Defined             | Selected |
-| CI provider                    | Undecided           | Open     |
-| Package manager                | Undecided           | Open     |
-| Repository structure           | Undecided           | Open     |
-| Workspace tooling              | Undecided           | Open     |
-| Custom domains                 | Undecided           | Open     |
-| Production monitoring          | Undecided           | Open     |
+| Area                           | Selection            | Status   |
+| ------------------------------ | -------------------- | -------- |
+| Frontend deployment            | Vercel               | Selected |
+| Backend deployment             | Railway              | Selected |
+| Database deployment            | Railway PostgreSQL   | Selected |
+| Preview frontend deployments   | Vercel               | Selected |
+| Backend health checks          | Railway + `/health`  | Selected |
+| Production migration tooling   | Drizzle Kit          | Selected |
+| Required automated test layers | Defined              | Selected |
+| CI provider                    | GitHub Actions       | Selected |
+| Package manager                | pnpm                 | Selected |
+| Repository structure           | Monorepo             | Selected |
+| Workspace tooling              | pnpm workspaces      | Selected |
+| Custom domains                 | Undecided            | Open     |
+| Production monitoring          | Undecided            | Open     |
+| Local database                 | Installed PostgreSQL | Selected |
+| Docker Compose                 | Not required         | Selected |
+| Kubernetes                     | Not used             | Selected |
 
 ## Confirmed Production Architecture
 
@@ -172,9 +222,12 @@ Vercel
     ├── TypeScript
     ├── Vite
     ├── TanStack Router
+    ├── TanStack Query
+    ├── React Hook Form
     ├── Zod
     ├── Tailwind CSS
-    └── shadcn/ui
+    ├── shadcn/ui
+    └── Lucide React
 
 Railway
 ├── Fastify backend
@@ -182,7 +235,8 @@ Railway
 │   ├── TypeScript
 │   ├── Zod
 │   ├── Better Auth
-│   └── Drizzle ORM
+│   ├── Drizzle ORM
+│   └── pg
 └── PostgreSQL
     ├── Steward financial tables
     └── Better Auth tables
@@ -203,13 +257,16 @@ React component tests
 ├── React Testing Library
 ├── user-event
 ├── jest-dom
-└── jsdom
+├── jsdom
+├── TanStack Query
+└── React Hook Form
 
 Backend integration tests
 ├── Vitest
 ├── Fastify inject()
 ├── Better Auth
 ├── Drizzle ORM
+├── pg
 └── PostgreSQL Testcontainer
 
 End-to-end tests
@@ -278,6 +335,40 @@ TanStack Router provides:
 
 Frontend authentication checks do not replace backend authorization.
 
+### TanStack Query
+
+TanStack Query manages server state.
+
+It provides:
+
+- Request caching
+- Request deduplication
+- Loading and error states
+- Mutation state
+- Cache invalidation
+- Pagination support
+- Background refetching where useful
+- Request cancellation
+
+Server data should not be copied into unrelated global client state without a specific need.
+
+### React Hook Form
+
+React Hook Form manages:
+
+- Field registration
+- Form values
+- Dirty state
+- Touched state
+- Submission state
+- Field errors
+- Form reset
+- Controlled component integration
+
+### `@hookform/resolvers`
+
+`@hookform/resolvers` connects Zod schemas to React Hook Form through `zodResolver`.
+
 ### Zod
 
 Zod provides runtime validation for:
@@ -332,6 +423,20 @@ Likely components include:
 - Notification components
 
 Steward owns and may customize the added component code.
+
+### Lucide React
+
+Lucide React provides Steward's primary icon system.
+
+It offers:
+
+- React components
+- TypeScript support
+- Individual icon imports
+- Compatibility with Tailwind CSS
+- Compatibility with shadcn/ui
+
+Icon-only controls must include accessible names.
 
 ### Vercel
 
@@ -409,6 +514,25 @@ Better Auth manages:
 
 Steward will not build a competing authentication system.
 
+### `pg` / node-postgres
+
+`pg` provides:
+
+- PostgreSQL connectivity
+- Explicit connection pooling through `pg.Pool`
+- Drizzle compatibility
+- Testcontainers compatibility
+- Transaction support
+- Graceful pool shutdown
+
+Drizzle uses:
+
+```ts
+import { drizzle } from "drizzle-orm/node-postgres";
+```
+
+The backend should create one shared `pg.Pool` and close it with `pool.end()` during shutdown.
+
 ### Railway Backend
 
 Railway provides:
@@ -478,11 +602,70 @@ betterAuth({
 });
 ```
 
+### Local PostgreSQL
+
+Normal development will use PostgreSQL installed locally.
+
+The Fastify backend will connect through:
+
+```text
+DATABASE_URL
+```
+
+Docker Compose is not required for normal local development.
+
+### Testcontainers
+
+Integration tests will use disposable PostgreSQL Testcontainers.
+
+The container connection URI will be passed to `pg.Pool`.
+
 ### Railway PostgreSQL
 
 Railway hosts production PostgreSQL.
 
 The backend should use private connectivity where available.
+
+## Repository Decisions
+
+### pnpm
+
+pnpm provides dependency installation, one lockfile, and workspace support.
+
+### Monorepo
+
+Steward uses one repository for:
+
+- Frontend
+- Backend
+- Shared contracts
+- End-to-end tests
+- Documentation
+
+### pnpm workspaces
+
+pnpm workspaces manage:
+
+```text
+apps/web
+apps/api
+packages/contracts
+e2e
+```
+
+### No Turborepo initially
+
+Turborepo will not be added until there is a demonstrated need for remote caching or more advanced task orchestration.
+
+### No required Docker Compose
+
+Normal local development uses PostgreSQL installed directly.
+
+Testcontainers remain selected for automated integration tests.
+
+### No Kubernetes
+
+Kubernetes is not appropriate for Steward's initial scale or deployment model.
 
 ## Testing Decisions
 
@@ -596,20 +779,39 @@ Coverage should prioritize high-risk behavior rather than percentage alone.
 ```text
 User action
 → React component
+→ React Hook Form
 → Zod frontend validation
+→ TanStack Query mutation
 → Credentialed HTTPS request
 → Fastify route
 → Zod backend validation
 → Better Auth session validation
 → Application service
 → Drizzle query
+→ pg Pool
 → Railway PostgreSQL
+```
+
+## Data Loading Flow
+
+```text
+Route or component
+→ TanStack Query
+→ Shared API client
+→ Fastify
+→ Drizzle
+→ pg Pool
+→ PostgreSQL
+→ API response
+→ Query cache
+→ React render
 ```
 
 ## Authentication Flow
 
 ```text
 Vercel login form
+→ React Hook Form
 → Zod validation
 → Railway Better Auth endpoint
 → Better Auth
@@ -777,7 +979,7 @@ Edit Drizzle schema
 
 ```text
 Commit or pull request
-→ CI checks
+→ GitHub Actions checks
 → Tests
 → Builds
 → Preview or production deployment
@@ -786,7 +988,7 @@ Commit or pull request
 Production release:
 
 ```text
-Required checks pass
+Required GitHub Actions checks pass
 → Apply Drizzle migrations
 → Deploy Fastify
 → Pass Railway health check
@@ -817,12 +1019,16 @@ A failed required check should block production deployment.
 ## Local Development Architecture
 
 ```text
-Vite frontend
-→ Local Fastify API
-→ Local PostgreSQL
+apps/web
+React + Vite
+→ apps/api
+Fastify + Node.js
+→ Locally installed PostgreSQL
 ```
 
-The local PostgreSQL tooling remains undecided.
+Docker Compose is not required.
+
+The frontend and backend run directly during normal local development.
 
 ## Security Boundaries
 
@@ -875,18 +1081,25 @@ Automated tests must use:
 | Frontend language           | TypeScript                    |
 | Frontend build              | Vite                          |
 | Routing                     | TanStack Router               |
+| Server state                | TanStack Query                |
+| Form state                  | React Hook Form               |
 | Runtime validation          | Zod                           |
 | Styling                     | Tailwind CSS                  |
 | UI components               | shadcn/ui                     |
+| Icons                       | Lucide React                  |
 | Frontend hosting            | Vercel                        |
 | HTTP API                    | Fastify                       |
 | Backend runtime             | Node.js                       |
 | Authentication              | Better Auth                   |
 | Database schema and queries | Drizzle ORM                   |
+| PostgreSQL driver           | `pg` / node-postgres          |
 | Database migrations         | Drizzle Kit                   |
 | Relational persistence      | PostgreSQL                    |
 | Backend hosting             | Railway                       |
 | Production database hosting | Railway PostgreSQL            |
+| Package manager             | pnpm                          |
+| Workspace management        | pnpm workspaces               |
+| Continuous integration      | GitHub Actions                |
 | Primary test runner         | Vitest                        |
 | React component testing     | React Testing Library         |
 | User interaction tests      | `@testing-library/user-event` |
@@ -904,6 +1117,8 @@ The current architecture does not use:
 - Next.js
 - TanStack Start
 - React Router
+- Redux for server state
+- Formik
 - Express
 - Hono
 - NestJS
@@ -936,6 +1151,10 @@ The current architecture does not use:
 - Heavy Drizzle mocking
 - Production data in automated tests
 - Full-page snapshot testing
+- Turborepo initially
+- Docker Compose as a requirement
+- Kubernetes
+- Multiple icon libraries
 
 These choices should not be introduced without revisiting the relevant technology decision.
 
@@ -943,22 +1162,18 @@ These choices should not be introduced without revisiting the relevant technolog
 
 The remaining major technology decisions are:
 
-1. Server-state management
-2. Form management
-3. Charting
-4. PostgreSQL driver
-5. Monetary database representation
-6. Account balance strategy
-7. Package manager
-8. Repository and workspace structure
-9. Local PostgreSQL environment
-10. Continuous-integration provider
-11. Error monitoring
-12. Primary icon library
-13. Custom domains
-14. Backup schedule
-15. Automated accessibility scanner
-16. Visual regression testing
+1. Charting
+2. Monetary database representation
+3. Account balance strategy
+4. Transaction sign convention
+5. Exact Node.js version
+6. Exact pnpm version
+7. Error monitoring
+8. Custom domains
+9. Backup schedule
+10. Automated accessibility scanner
+11. Visual regression testing
+12. Production log aggregation
 
 ## Success Criteria
 
@@ -966,16 +1181,22 @@ The selected stack is successful when:
 
 - React and Vite provide a maintainable frontend workflow.
 - TanStack Router provides typed navigation and validated URL state.
+- TanStack Query manages server state predictably.
+- React Hook Form manages form state and submission behavior.
 - Zod validates frontend and backend trust boundaries.
 - Tailwind CSS provides consistent utility-based styling.
 - shadcn/ui provides accessible customizable component foundations.
+- Lucide React provides a consistent icon system.
 - Fastify provides a modular backend API.
 - Better Auth provides reliable session-based authentication.
-- Drizzle provides typed PostgreSQL access.
+- Drizzle and `pg` provide typed PostgreSQL access.
 - Drizzle Kit provides controlled schema migrations.
 - PostgreSQL protects relational and financial integrity.
 - Vercel reliably hosts the frontend.
 - Railway reliably hosts the backend and database.
+- pnpm workspaces keep the monorepo manageable.
+- GitHub Actions blocks invalid deployments.
+- Locally installed PostgreSQL supports normal development without requiring Docker Compose.
 - Authentication works across Vercel and Railway origins.
 - Database access remains isolated to the backend.
 - Vitest provides one primary automated test runner.

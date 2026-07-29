@@ -12,11 +12,15 @@ Better Auth will provide authentication.
 
 Drizzle ORM will provide typed PostgreSQL access.
 
+`pg`, also known as node-postgres, will provide the PostgreSQL driver and connection pool.
+
 Drizzle Kit will manage database migrations.
 
 Railway will host the production backend.
 
 Vitest, Fastify `inject()`, Testcontainers for Node.js, real PostgreSQL, and Playwright will provide backend and full-application testing.
+
+GitHub Actions will provide continuous integration.
 
 ## Selected Technologies
 
@@ -31,18 +35,19 @@ The confirmed backend technologies are:
 - Drizzle ORM
 - Drizzle Kit
 - PostgreSQL
+- `pg`
+- `@types/pg`
 - Vitest
 - Fastify `inject()`
 - Testcontainers for Node.js
 - PostgreSQL Testcontainer
 - Playwright
 - Railway
+- GitHub Actions
 
 Still undecided:
 
-- PostgreSQL driver
 - Error-monitoring provider
-- Continuous-integration provider
 - Production logging destination
 - Rate-limiting strategy
 - API-documentation tooling
@@ -876,23 +881,73 @@ The plugin should:
 
 ## PostgreSQL Driver
 
-The PostgreSQL driver remains undecided.
+Steward will use `pg`, also known as node-postgres.
 
-The selected driver must:
+Drizzle will use the node-postgres adapter:
 
-- Work with Drizzle ORM
-- Support connection pooling
-- Work reliably on Railway
-- Work with Testcontainers
-- Support transactions
-- Have active maintenance
-- Fit the deployment model
-
-The final choice should be documented in:
-
-```text
-docs/technology/database.md
+```ts
+import { drizzle } from "drizzle-orm/node-postgres";
 ```
+
+The PostgreSQL connection will use `Pool` from `pg`:
+
+```ts
+import { Pool } from "pg";
+```
+
+A likely database-client factory is:
+
+```ts
+import { Pool } from "pg";
+import { drizzle } from "drizzle-orm/node-postgres";
+
+import * as schema from "./schema";
+
+export const createDatabase = (databaseUrl: string) => {
+  const pool = new Pool({
+    connectionString: databaseUrl,
+  });
+
+  const db = drizzle(pool, {
+    schema,
+  });
+
+  return {
+    db,
+    pool,
+  };
+};
+```
+
+The final implementation may add environment-specific options such as:
+
+- Pool-size limits
+- Connection timeout
+- Idle timeout
+- SSL configuration
+- Safe database logging
+
+The backend must create one shared pool per running process.
+
+It must not create a new pool for every request.
+
+The pool should be closed during graceful shutdown:
+
+```ts
+app.addHook("onClose", async () => {
+  await pool.end();
+});
+```
+
+`pg` was selected because it:
+
+- Is officially supported by Drizzle ORM
+- Provides explicit connection pooling
+- Works with persistent Fastify services
+- Accepts Railway PostgreSQL connection URLs
+- Works directly with PostgreSQL Testcontainers
+- Supports transactions
+- Has a large and mature Node.js ecosystem
 
 ## Database Transactions
 
@@ -1516,7 +1571,9 @@ Coverage may exclude:
 
 ## Continuous Integration
 
-Before Railway production deployment, CI should eventually verify:
+GitHub Actions will provide continuous integration.
+
+Before Railway production deployment, GitHub Actions should eventually verify:
 
 - Formatting
 - Linting
@@ -1529,6 +1586,24 @@ Before Railway production deployment, CI should eventually verify:
 - Critical Playwright tests
 
 A failed required check should block deployment.
+
+## Local Development
+
+The backend will run directly on Node.js during normal local development.
+
+It will connect to a locally installed PostgreSQL instance through:
+
+```text
+DATABASE_URL
+```
+
+Docker Compose is not required for normal local development.
+
+The Fastify backend does not need to be containerized locally.
+
+Kubernetes will not be used.
+
+Testcontainers remain selected for automated PostgreSQL integration tests and may be introduced when those tests are implemented.
 
 ## Railway Deployment
 
@@ -1639,6 +1714,8 @@ The initial backend will not use:
 - Production databases during tests
 - Uncontrolled schema synchronization
 - Per-request database connections
+- Docker as a required local runtime
+- Kubernetes
 
 These choices should not change without revisiting the corresponding technology decision.
 
@@ -1646,12 +1723,10 @@ These choices should not change without revisiting the corresponding technology 
 
 The following backend decisions remain open:
 
-- PostgreSQL driver
 - Error-monitoring provider
 - API-documentation tooling
 - Rate limiting
 - Production log destination
-- CI provider
 - Exact resource-concealment policy
 - Exact validation HTTP status
 - Exact CORS preview-origin strategy
@@ -1668,6 +1743,7 @@ The backend architecture is successful when:
 - Route handlers remain thin.
 - Services own business workflows.
 - Drizzle provides typed PostgreSQL access.
+- `pg.Pool` provides reliable PostgreSQL connectivity.
 - Better Auth provides reliable session-based identity.
 - Queries enforce user ownership.
 - PostgreSQL transactions protect multi-record operations.
@@ -1680,4 +1756,5 @@ The backend architecture is successful when:
 - PostgreSQL behavior is tested against a real Testcontainer.
 - Drizzle migrations are verified on clean databases.
 - Playwright verifies critical full-stack workflows.
+- GitHub Actions runs required continuous-integration checks.
 - Required test failures block invalid deployments.

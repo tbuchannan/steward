@@ -16,6 +16,7 @@ The selected testing technologies are:
 - PostgreSQL Testcontainer
 - Playwright
 - `@vitest/coverage-v8`
+- GitHub Actions
 
 Vitest will be the primary test runner for:
 
@@ -39,6 +40,8 @@ The testing strategy should provide confidence that:
 - Date and budget logic behaves predictably.
 - Zod schemas accept and reject the correct values.
 - React interfaces behave as users expect.
+- TanStack Query states behave predictably.
+- React Hook Form workflows behave correctly.
 - shadcn/ui components are composed accessibly.
 - TanStack Router behavior is predictable.
 - Fastify routes validate requests and responses.
@@ -132,6 +135,8 @@ Examples include:
 - Responsive navigation behavior
 - shadcn/ui component composition
 - TanStack Router integrations
+- TanStack Query loading, error, and mutation states
+- React Hook Form validation and submission behavior
 
 Component tests should verify what a user can:
 
@@ -297,11 +302,13 @@ The repository may use:
 - Vitest workspace projects
 - File-level environment annotations
 
-The final configuration depends on the selected repository structure.
+The final configuration should align with the selected pnpm workspace structure.
 
 ## Suggested Repository Organization
 
-A likely monorepo structure is:
+Steward will use a pnpm monorepo with pnpm workspaces.
+
+The selected structure is:
 
 ```text
 steward/
@@ -324,6 +331,7 @@ steward/
 │   ├── pages/
 │   ├── tests/
 │   └── playwright.config.ts
+├── pnpm-workspace.yaml
 └── package.json
 ```
 
@@ -741,11 +749,13 @@ Conceptually:
 ```text
 renderWithProviders
 ├── TanStack Router
-├── Server-state provider
+├── QueryClientProvider
 ├── Authentication state
 ├── Theme state
 └── Application configuration
 ```
+
+Each test should receive a fresh QueryClient to prevent cache leakage.
 
 The helper should allow tests to customize:
 
@@ -757,6 +767,51 @@ The helper should allow tests to customize:
 - Feature flags if later introduced
 
 The helper should not silently include production services.
+
+## TanStack Query Testing
+
+TanStack Query tests should verify user-visible behavior rather than library internals.
+
+Important cases include:
+
+- Initial loading state
+- Successful query state
+- Query error state
+- Disabled queries before authentication resolves
+- Pagination state
+- Mutation pending state
+- Successful mutation behavior
+- Mutation error behavior
+- Cache invalidation
+- Direct cache updates where used
+- Private cache removal after logout
+- Retry behavior where intentionally configured
+- Request cancellation where important
+
+Tests should use a fresh QueryClient.
+
+A test QueryClient may disable retries:
+
+```ts
+const createTestQueryClient = () =>
+  new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+      mutations: {
+        retry: false,
+      },
+    },
+  });
+```
+
+Tests should not assert:
+
+- Internal observer counts
+- Internal cache implementation details
+- Undocumented TanStack Query state transitions
+- Exact background timing unless timing is the requirement
 
 ## shadcn/ui Testing
 
@@ -780,7 +835,9 @@ Examples include:
 
 Tests should not assert specific Tailwind class names unless those classes represent a requirement that cannot be verified through behavior.
 
-## Form Testing
+## React Hook Form Testing
+
+React Hook Form tests should verify behavior through the rendered interface.
 
 Important forms should test:
 
@@ -800,6 +857,12 @@ Important forms should test:
 - Accessible labels
 - Accessible error descriptions
 - Keyboard submission
+- Dirty state where it affects navigation or actions
+- Touched state where it affects error presentation
+- Controlled shadcn/ui inputs through `Controller`
+- Zod validation through `zodResolver`
+- Field reset and full-form reset
+- Server field errors mapped with `setError`
 
 Forms include:
 
@@ -968,7 +1031,7 @@ API behavior may be controlled through:
 
 - Test doubles at the API-client boundary
 - Mock Service Worker if selected during implementation
-- Server-state library test utilities
+- TanStack Query test utilities
 - Dependency injection where appropriate
 
 The project should avoid mocking low-level `fetch` separately in every component test.
@@ -1236,14 +1299,23 @@ PostgreSQL-specific behavior includes:
 
 Testcontainers for Node.js will provide disposable PostgreSQL instances for integration tests.
 
+Testcontainers does not need to be configured during the first repository setup task.
+
+It should be introduced when PostgreSQL-backed integration tests are implemented.
+
+Normal local development will use a locally installed PostgreSQL instance rather than a long-running development container.
+
 Conceptually:
 
 ```text
 Start PostgreSQL container
 → Obtain connection URL
+→ Create `pg.Pool`
+→ Create Drizzle client with `drizzle-orm/node-postgres`
 → Run Drizzle migrations
 → Seed minimum test data
 → Run tests
+→ Close `pg.Pool`
 → Stop container
 ```
 
@@ -1284,8 +1356,8 @@ A typical integration setup is:
 
 ```text
 Start Testcontainer
-→ Create PostgreSQL connection pool
-→ Create Drizzle client
+→ Create `pg.Pool`
+→ Create Drizzle client through `drizzle-orm/node-postgres`
 → Apply committed migrations
 → Initialize application
 → Run tests
@@ -1996,7 +2068,9 @@ Avoid copying real account numbers, personal emails, or financial histories into
 
 ## Continuous Integration
 
-Continuous integration should eventually run:
+GitHub Actions will provide continuous integration.
+
+GitHub Actions should run:
 
 ```text
 Formatting
@@ -2016,9 +2090,9 @@ Critical Playwright tests
 
 Independent jobs may run in parallel when safe.
 
-## CI Test Groups
+## GitHub Actions Test Groups
 
-A likely CI workflow includes:
+The GitHub Actions workflow should include:
 
 ### Static checks
 
@@ -2054,9 +2128,9 @@ A likely CI workflow includes:
 
 ## Local Test Commands
 
-Exact commands depend on the selected package manager.
+Steward will use pnpm and pnpm workspaces.
 
-Recommended script responsibilities include:
+Recommended root script responsibilities include:
 
 ```text
 test
@@ -2090,6 +2164,23 @@ test:all
 → Run the complete local test suite
 ```
 
+Example invocations:
+
+```bash
+pnpm test
+pnpm test:run
+pnpm test:integration
+pnpm test:e2e
+pnpm test:coverage
+```
+
+Workspace filters may be used when running a single application or package:
+
+```bash
+pnpm --filter @steward/web test:run
+pnpm --filter @steward/api test:integration
+```
+
 ## CI Commands
 
 CI should use non-interactive commands.
@@ -2107,7 +2198,7 @@ Watch mode must not be used in CI.
 
 ## Testcontainers in CI
 
-The CI provider must support:
+GitHub Actions must support:
 
 - Docker or a compatible container runtime
 - Pulling the pinned PostgreSQL image
@@ -2116,11 +2207,11 @@ The CI provider must support:
 - Cleaning up containers
 - Sufficient memory and disk space
 
-If the selected CI provider cannot reliably support Testcontainers, the database test environment decision must be revisited.
+If GitHub Actions cannot reliably support Testcontainers in the selected workflow, the workflow configuration must be corrected before revisiting the database testing decision.
 
 ## Playwright in CI
 
-CI should install:
+GitHub Actions should install:
 
 - The required Playwright browser
 - Required operating-system dependencies
@@ -2282,7 +2373,7 @@ Tests are production code and should meet the same maintainability standards.
 
 ## Deployment Gates
 
-Before a production deployment, CI should eventually verify:
+Before a production deployment, GitHub Actions should verify:
 
 - Formatting
 - Linting
@@ -2310,6 +2401,8 @@ The testing stack should be introduced incrementally.
 4. Add `user-event`.
 5. Add `jest-dom`.
 6. Add V8 coverage.
+7. Add a fresh QueryClient test helper.
+8. Add React Hook Form and Zod resolver test patterns.
 
 ### Backend integration
 
@@ -2396,6 +2489,8 @@ The initial testing stack will not use:
 - Production data in automated tests
 - Multiple competing primary test runners
 - Browser tests for every minor component state
+- SQLite as a local-development substitute for PostgreSQL
+- Production databases in GitHub Actions
 
 These tools should not be introduced without revisiting the testing decision.
 
@@ -2408,7 +2503,6 @@ The following testing details remain open until implementation:
 - Mock Service Worker usage
 - Database cleanup strategy
 - Testcontainer-per-worker strategy
-- CI provider
 - Visual regression testing
 - Automated accessibility scanner
 - Cross-browser Playwright cadence
@@ -2423,6 +2517,8 @@ The testing architecture is successful when:
 
 - Vitest provides one primary test runner.
 - React components are tested through user-visible behavior.
+- TanStack Query behavior is tested through loading, success, error, and mutation states.
+- React Hook Form behavior is tested through accessible user interactions.
 - `user-event` simulates realistic interactions.
 - shadcn/ui compositions remain accessible.
 - TanStack Router behavior is tested predictably.

@@ -7,10 +7,17 @@ Steward will use:
 - Vercel for the React and Vite frontend
 - Railway for the Fastify backend
 - Railway PostgreSQL for the production database
+- GitHub Actions for continuous integration
+- pnpm for dependency installation and workspace scripts
+- pnpm workspaces for monorepo management
 
 The frontend, backend, and database will remain separate deployment units.
 
 Production deployments should be gated by automated testing.
+
+Docker Compose is not required for normal local development.
+
+Kubernetes will not be used.
 
 ## Selected Technologies
 
@@ -19,9 +26,13 @@ The confirmed deployment technologies are:
 - Vercel
 - Railway
 - Railway PostgreSQL
+- GitHub Actions
+- pnpm
+- pnpm workspaces
 - Vite production builds
 - Node.js production builds
 - Drizzle Kit migrations
+- `pg` / node-postgres
 - Vitest
 - React Testing Library
 - Fastify `inject()`
@@ -30,9 +41,6 @@ The confirmed deployment technologies are:
 
 Still undecided:
 
-- Continuous-integration provider
-- Package manager
-- Workspace tooling
 - Custom domains
 - Error monitoring
 - Production log aggregation
@@ -118,11 +126,26 @@ Railway PostgreSQL is responsible for:
 - Providing database service logs and metrics
 - Supporting backup capabilities according to the selected plan
 
+### GitHub Actions
+
+GitHub Actions is responsible for:
+
+- Installing dependencies with the pinned pnpm version
+- Running formatting and linting checks
+- Running TypeScript checks
+- Running unit and component tests
+- Running Fastify and PostgreSQL integration tests
+- Verifying Drizzle migrations against a clean PostgreSQL Testcontainer
+- Building the frontend and backend
+- Running critical Playwright workflows
+- Publishing useful failure artifacts
+- Blocking invalid changes from production deployment
+
 ## Repository Layout
 
-The exact repository structure remains undecided.
+Steward will use a pnpm monorepo managed with pnpm workspaces.
 
-A likely monorepo layout is:
+The selected layout is:
 
 ```text
 steward/
@@ -131,9 +154,13 @@ steward/
 │   └── api/
 ├── packages/
 │   └── contracts/
+├── e2e/
 ├── docs/
+├── .github/
+│   └── workflows/
 ├── package.json
-└── workspace configuration
+├── pnpm-lock.yaml
+└── pnpm-workspace.yaml
 ```
 
 In this structure:
@@ -147,9 +174,17 @@ apps/api
 
 packages/contracts
 → Shared public Zod contracts
+
+e2e
+→ Playwright browser tests
+
+.github/workflows
+→ GitHub Actions continuous-integration workflows
 ```
 
 Vercel and Railway should each use the correct application root directory.
+
+Turborepo will not be introduced initially. pnpm workspaces provide enough functionality for the current project.
 
 ## Environments
 
@@ -164,7 +199,7 @@ A staging environment may be introduced later.
 
 ## Local Development
 
-A likely local setup is:
+The selected local setup is:
 
 ```text
 Frontend:
@@ -174,10 +209,12 @@ Backend:
 http://localhost:3000
 
 Database:
-Local PostgreSQL environment
+Locally installed PostgreSQL
 ```
 
 The exact ports may change.
+
+The frontend and backend will run directly on the local Node.js environment. Docker Compose is not required for normal development.
 
 Local development should preserve production boundaries where practical:
 
@@ -254,16 +291,16 @@ Expected behavior may be:
 
 ```text
 Pull request
-→ CI checks
+→ GitHub Actions checks
 → Vercel preview deployment
 
 Production branch update
-→ Required CI checks
+→ Required GitHub Actions checks
 → Vercel production deployment
 → Railway production deployment
 ```
 
-The exact production branch and approval policy should be documented once CI is selected.
+GitHub Actions is the selected CI provider. The exact production approval policy should be documented as the project approaches public launch.
 
 ## Deployment Branch
 
@@ -276,6 +313,31 @@ main
 Production deployment should not rely on arbitrary developer branches.
 
 Protected-branch rules should eventually require successful checks.
+
+## Package Manager and Workspaces
+
+All deployment environments will use pnpm.
+
+The repository should pin the pnpm version through the root `package.json`:
+
+```json
+{
+  "packageManager": "pnpm@<pinned-version>"
+}
+```
+
+Corepack may activate the pinned version in local development, GitHub Actions, Vercel, and Railway.
+
+The deployment model uses pnpm workspaces with these primary packages:
+
+```text
+apps/web
+apps/api
+packages/contracts
+e2e
+```
+
+Turborepo is not required initially.
 
 ## Frontend Build
 
@@ -294,22 +356,28 @@ A likely output directory is:
 dist
 ```
 
-The exact commands depend on package-manager and workspace decisions.
+The commands will use pnpm and pnpm workspace filters.
 
 ## Frontend Build Command
 
-A likely script is:
+A likely command from `apps/web` is:
 
 ```text
-build
+pnpm build
+```
+
+A likely command from the repository root is:
+
+```text
+pnpm --filter @steward/web build
 ```
 
 In a monorepo, the Vercel project may invoke a workspace-specific command.
 
-Example concept:
+Example root script:
 
 ```text
-build:web
+pnpm build:web
 ```
 
 The repository should provide clear scripts rather than relying on undocumented platform defaults.
@@ -405,12 +473,12 @@ Testing may run in CI before Railway receives the deployment.
 Railway may use:
 
 - Automatic Node.js build detection
-- Explicit build and start commands
-- A Dockerfile if necessary
+- Explicit pnpm build and start commands
+- A Dockerfile only if a concrete deployment need appears later
 
-The initial deployment should prefer the simplest reliable option.
+The initial deployment should prefer Railway's standard Node.js build behavior with explicit pnpm workspace scripts.
 
-A Dockerfile should be added only when it provides a concrete benefit.
+A Dockerfile is not required for the initial deployment.
 
 ## Backend Build Output
 
@@ -509,11 +577,13 @@ External access should be limited to approved administration or recovery workflo
 
 ## Connection Pool
 
-The backend should create one shared PostgreSQL pool.
+The backend should create one shared `pg.Pool`.
 
 The pool should:
 
 - Initialize during startup
+- Use the `pg` / node-postgres driver
+- Be passed to `drizzle-orm/node-postgres`
 - Be shared with Drizzle
 - Be reused across requests
 - Respect Railway and PostgreSQL connection limits
@@ -671,7 +741,7 @@ Shutdown should:
 1. Stop accepting new requests.
 2. Allow active requests to finish where practical.
 3. Close Fastify.
-4. Close PostgreSQL connections.
+4. Close the shared `pg.Pool` with `pool.end()`.
 5. Release resources.
 6. Exit cleanly.
 
@@ -735,11 +805,11 @@ db:migrate
 The migration script should:
 
 - Validate database configuration
-- Connect to PostgreSQL
+- Connect to PostgreSQL through `pg`
 - Apply pending migrations
 - Exit successfully when complete
 - Exit unsuccessfully on failure
-- Close its connection
+- Close its `pg` pool with `pool.end()`
 
 ## Backward-Compatible Releases
 
@@ -850,7 +920,7 @@ Destructive down migrations should not be assumed safe.
 
 ## Deployment Testing Decision
 
-Deployment should be gated by:
+GitHub Actions will gate deployment through:
 
 - Vitest unit tests
 - React Testing Library component tests
@@ -863,7 +933,7 @@ Deployment should be gated by:
 
 ## Required Pre-Deployment Checks
 
-Before production deployment, CI should eventually verify:
+Before production deployment, GitHub Actions should eventually verify:
 
 1. Dependency installation
 2. Formatting
@@ -880,7 +950,7 @@ Before production deployment, CI should eventually verify:
 
 A required failure should block production deployment.
 
-## Recommended CI Flow
+## Recommended GitHub Actions Flow
 
 ```text
 Install dependencies
@@ -904,9 +974,9 @@ Production deployment
 
 Independent jobs may run in parallel where safe.
 
-## Testcontainers in CI
+## Testcontainers in GitHub Actions
 
-The selected CI provider must support:
+GitHub Actions must support:
 
 - Docker or compatible container runtime
 - Pulling a pinned PostgreSQL image
@@ -919,9 +989,9 @@ Test jobs should use temporary database credentials.
 
 They should not receive production `DATABASE_URL`.
 
-## Migration Verification in CI
+## Migration Verification in GitHub Actions
 
-CI should start a clean PostgreSQL Testcontainer and apply all committed Drizzle migrations.
+GitHub Actions should start a clean PostgreSQL Testcontainer and apply all committed Drizzle migrations.
 
 The job should fail when:
 
@@ -932,9 +1002,9 @@ The job should fail when:
 - Seed setup fails
 - Migration tooling exits incorrectly
 
-## Playwright in CI
+## Playwright in GitHub Actions
 
-CI should install the required Playwright browser and operating-system dependencies.
+GitHub Actions should install the required Playwright browser and operating-system dependencies.
 
 The initial required suite should use Chromium.
 
@@ -960,7 +1030,7 @@ The test environment should use test-only:
 
 ## Playwright Failure Artifacts
 
-CI should retain useful artifacts when Playwright fails.
+GitHub Actions should retain useful artifacts when Playwright fails.
 
 Possible artifacts include:
 
@@ -1131,26 +1201,26 @@ Local development, CI, Vercel, and Railway should use compatible versions.
 
 ## Package Scripts
 
-Exact scripts depend on the selected package manager.
+The repository will use pnpm scripts.
 
-The repository should provide commands equivalent to:
+It should provide commands equivalent to:
 
 ```text
-dev
-build
-build:web
-build:api
-start
-typecheck
-lint
-test
-test:run
-test:integration
-test:e2e
-test:coverage
-db:generate
-db:migrate
-db:seed
+pnpm dev
+pnpm build
+pnpm build:web
+pnpm build:api
+pnpm start
+pnpm typecheck
+pnpm lint
+pnpm test
+pnpm test:run
+pnpm test:integration
+pnpm test:e2e
+pnpm test:coverage
+pnpm db:generate
+pnpm db:migrate
+pnpm db:seed
 ```
 
 ## Deployment Documentation
@@ -1217,6 +1287,9 @@ Secret values should be represented only by variable names.
 The initial deployment architecture will not require:
 
 - Kubernetes
+- Docker Compose as a required local-development dependency
+- Dockerized local frontend or backend development
+- Turborepo without a demonstrated need
 - AWS infrastructure management
 - Multiple active regions
 - Active-active PostgreSQL
@@ -1236,9 +1309,6 @@ These should only be introduced for concrete operational requirements.
 
 The following deployment decisions remain open:
 
-- Continuous-integration provider
-- Package manager
-- Workspace tooling
 - Custom domains
 - Error monitoring
 - Production log aggregation
@@ -1265,7 +1335,11 @@ The deployment architecture is successful when:
 - CORS permits only approved origins.
 - Secrets remain outside frontend bundles and source control.
 - Automated tests use disposable PostgreSQL instead of production.
+- GitHub Actions runs required tests and builds before deployment.
 - Required tests and builds block invalid deployments.
 - Playwright verifies critical full-stack workflows.
 - Frontend and backend releases can be diagnosed and rolled back.
 - Database compatibility is considered before rollback.
+- pnpm and pnpm workspaces provide reproducible installation and builds.
+- Local development works without Docker Compose.
+- Kubernetes remains unnecessary.
