@@ -1,10 +1,14 @@
 # Authentication
 
-## Purpose
+## Decision
 
-Steward uses Better Auth with a Fastify backend to manage registration, sign-in, sign-out, authenticated sessions, and access to protected financial data.
+Steward will use Better Auth with Fastify and PostgreSQL.
 
-Better Auth owns authentication behavior, while Fastify hosts the authentication endpoints and enforces authentication and authorization for the Steward API.
+Better Auth will manage authentication behavior and authentication-related database records.
+
+Fastify will host the authentication endpoints and protect the Steward API.
+
+PostgreSQL will persist users, credential accounts, sessions, and Steward financial data.
 
 ## Selected Technologies
 
@@ -12,11 +16,11 @@ Authentication uses:
 
 - Better Auth
 - Fastify
+- PostgreSQL
 - TypeScript
 - Cookie-based sessions
-- The application database
 
-Steward should not create a separate custom authentication system alongside Better Auth.
+The ORM or Better Auth database adapter beyond PostgreSQL support remains dependent on the final query-layer decision.
 
 ## Responsibility Boundaries
 
@@ -25,12 +29,13 @@ Steward should not create a separate custom authentication system alongside Bett
 Better Auth is responsible for:
 
 - Creating users
-- Authenticating credentials
-- Creating and validating sessions
+- Authenticating email and password credentials
+- Creating sessions
+- Validating sessions
 - Ending sessions
+- Managing authentication accounts
 - Managing authentication-related database records
 - Exposing authentication endpoints
-- Returning authenticated session information
 
 ### Fastify
 
@@ -38,39 +43,50 @@ Fastify is responsible for:
 
 - Hosting the Better Auth handler
 - Receiving authentication requests
-- Forwarding requests to Better Auth
-- Returning Better Auth responses and cookies
-- Retrieving sessions for protected API requests
-- Rejecting unauthenticated requests
-- Enforcing authorization for Steward resources
-- Configuring CORS and trusted origins
-- Logging authentication failures safely
+- Forwarding supported requests to Better Auth
+- Forwarding authentication response headers and cookies
+- Retrieving sessions for protected requests
+- Rejecting unauthenticated API requests
+- Enforcing authorization
+- Configuring CORS and approved origins
+- Logging failures safely
 
-### Steward Application Logic
+### PostgreSQL
 
-Steward is responsible for:
+PostgreSQL is responsible for persisting:
+
+- Better Auth users
+- Credential accounts
+- Sessions
+- Verification records where required
+- Steward financial records
+- Relationships between authenticated users and financial data
+
+### Steward
+
+Steward application logic is responsible for:
 
 - Associating financial records with Better Auth users
-- Enforcing resource ownership
-- Providing demo-account behavior
-- Resetting demo financial data
-- Presenting authentication forms and errors
-- Redirecting users based on authentication state
+- Enforcing ownership
+- Providing authentication forms
+- Redirecting based on authentication state
+- Creating and resetting demo data
+- Presenting client-safe authentication errors
 
 ## MVP Authentication Scope
 
-The initial version supports:
+The MVP supports:
 
 - Email and password registration
 - Email and password sign-in
-- Persistent authenticated sessions
-- Protected application routes
-- Protected Fastify API routes
+- Persistent sessions
+- Protected frontend routes
+- Protected Fastify routes
 - Sign out
-- A predefined demo account
-- User-specific financial data
+- Predefined demo account
+- User-specific PostgreSQL data
 
-The initial version does not require:
+The MVP does not require:
 
 - Email verification
 - Password recovery
@@ -79,9 +95,7 @@ The initial version does not require:
 - Passkeys
 - Magic links
 - Account linking
-- Multiple-session management
-
-These capabilities may be added later through Better Auth when supported by a clear product requirement.
+- Management of multiple active sessions
 
 ## Authentication Endpoints
 
@@ -91,63 +105,126 @@ Better Auth endpoints are mounted through Fastify under:
 /api/auth/*
 ```
 
-The Fastify application should register a catch-all authentication route that accepts the HTTP methods required by Better Auth.
+The Fastify integration must:
 
-The handler must:
+1. Receive the incoming request.
+2. Convert it into the request format expected by Better Auth.
+3. Forward the URL, method, headers, and body.
+4. Apply the Better Auth response status.
+5. Forward response headers.
+6. Forward session cookies.
+7. Return the response body.
+8. Handle unexpected failures safely.
 
-1. Construct a web-standard request from the Fastify request.
-2. Forward the request to the Better Auth handler.
-3. Preserve the HTTP method, headers, body, and URL.
-4. Apply the returned response status.
-5. Forward response headers and cookies.
-6. Return the Better Auth response body.
-7. Log unexpected failures without exposing sensitive details.
+Feature modules should not recreate authentication endpoint behavior.
 
-Feature routes should not recreate Better Auth endpoint behavior.
+## PostgreSQL Integration
 
-## Fastify Registration Order
+Better Auth will use PostgreSQL to store authentication data.
 
-The application should register authentication-related infrastructure in a predictable order.
+The initial Better Auth schema includes records representing:
+
+- Users
+- Authentication accounts
+- Sessions
+- Verification data
+
+The exact generated columns and constraints should come from the Better Auth schema and migration workflow rather than an independently invented schema.
+
+Authentication migrations should be coordinated with Steward's broader PostgreSQL migrations.
+
+## User Identity
+
+The Better Auth user identifier is the canonical identity used throughout Steward.
+
+Financial tables should reference that identity.
+
+Examples include:
 
 ```text
-Environment configuration
-→ CORS
-→ Database
-→ Better Auth
-→ Authentication handler
-→ Protected feature routes
-→ Error handling
+financial_account.user_id
+transaction.user_id
+category.user_id
+budget.user_id
+user_preference.user_id
 ```
 
-The final order may vary based on plugin encapsulation, but feature routes must not depend on plugins that have not been registered in their context.
+Some tables may resolve ownership through a parent relationship instead of storing `user_id` directly.
 
-## Better Auth Instance
+Regardless of the physical schema, every protected query must be able to prove ownership.
 
-The application should maintain one configured server-side Better Auth instance.
+## Authentication Account Naming
 
-That instance should define:
+Better Auth uses the term `account` for authentication-provider or credential records.
 
-- Database integration
+Steward also uses the term `account` for financial accounts.
+
+Code and database naming should distinguish these clearly.
+
+Recommended conceptual names include:
+
+```text
+auth account
+financial account
+```
+
+Possible table names include:
+
+```text
+auth_account
+financial_account
+```
+
+The final naming convention should be documented before schema creation.
+
+## Better Auth Configuration
+
+The server-side Better Auth instance should define:
+
+- PostgreSQL connection or database adapter
 - Email and password authentication
-- Secret configuration
+- Better Auth secret
 - Base URL
 - Trusted origins
-- Session behavior
-- Demo-user compatibility where required
+- Session configuration
+- Database schema behavior
+- Demo-user compatibility where necessary
 
-The Better Auth instance should be imported by the Fastify integration rather than recreated per request.
+The Better Auth instance should be created once and reused.
+
+It must not be recreated independently for every Fastify request.
+
+## Database Adapter Strategy
+
+Better Auth can connect directly to PostgreSQL.
+
+The final setup may use:
+
+- A PostgreSQL connection pool supported directly by Better Auth
+- An adapter associated with the selected ORM
+- A shared database package exposing the selected database client
+
+This choice should be finalized after the ORM or query layer is selected.
+
+The selected approach must support:
+
+- Better Auth schema generation or migrations
+- Fastify lifecycle management
+- Integration testing
+- Production connection pooling
+- Consistent PostgreSQL configuration
 
 ## Registration Flow
 
 ```text
 Registration page
 → Enter name, email, password, and password confirmation
-→ Frontend validates form
-→ Request is sent to /api/auth/*
-→ Fastify forwards request to Better Auth
-→ Better Auth creates the user and credential account
-→ Better Auth creates a session
-→ Fastify forwards the session cookie
+→ Validate input
+→ Send request to the Better Auth endpoint
+→ Fastify forwards the request
+→ Better Auth creates PostgreSQL user and credential records
+→ Better Auth creates a PostgreSQL session record
+→ Session cookie is returned
 → Redirect to dashboard
 ```
 
@@ -158,7 +235,7 @@ Registration page
 - Password
 - Password confirmation
 
-Password confirmation is a frontend validation field and should not be stored.
+Password confirmation is used for form validation and should not be stored.
 
 ### Registration Validation
 
@@ -170,71 +247,102 @@ The interface should identify:
 - Password confirmation mismatch
 - Registration failure
 
-Fastify and Better Auth remain responsible for server-side validation regardless of frontend validation.
+PostgreSQL uniqueness constraints and Better Auth behavior remain the server-side source of truth for duplicate identities.
 
 ## Sign-In Flow
 
 ```text
 Login page
 → Enter email and password
-→ Submit credentials to Better Auth endpoint
+→ Submit to Better Auth endpoint
 → Fastify forwards the request
-→ Better Auth validates credentials
+→ Better Auth validates PostgreSQL credential records
 → Better Auth creates or restores the session
-→ Fastify forwards the session cookie
-→ Redirect to dashboard or intended protected page
+→ Session cookie is returned
+→ Redirect to dashboard or intended page
 ```
 
-When practical, users redirected from protected routes should return to their original destination after signing in.
+Authentication errors should not expose:
+
+- Password hashes
+- PostgreSQL errors
+- Whether an internal record exists
+- Session internals
+- Database structure
 
 ## Demo Account Flow
 
 ```text
 Login page
 → Continue with Demo Account
-→ Submit the supported demo-authentication request
+→ Submit supported demo credentials
 → Fastify forwards request to Better Auth
-→ Better Auth authenticates the demo user
+→ Better Auth authenticates the PostgreSQL demo user
 → Better Auth creates or restores the session
 → Redirect to dashboard
 ```
 
-The demo user must be a valid Better Auth user.
+The demo account must:
 
-The demo experience must not bypass:
+- Exist as a valid Better Auth user in PostgreSQL
+- Have supported email and password credentials
+- Receive a normal session
+- Own its seeded financial data
+- Use normal authorization checks
+- Remain isolated from regular users
 
-- Better Auth
-- Session validation
-- Fastify authentication hooks
-- API authorization
-- Resource ownership checks
+The demo flow must not bypass Better Auth or Fastify authorization.
 
-Demo credentials should not be embedded directly into publicly shipped frontend source code when avoidable.
+## Session Storage
+
+Better Auth sessions will be persisted in PostgreSQL.
+
+The session cookie identifies the active session to Better Auth.
+
+The server validates the session before returning protected financial data.
+
+The application must not substitute this with:
+
+- A local-storage authentication flag
+- A manually created client token
+- A user ID sent by the browser
+- Frontend route visibility
+- Hidden interface controls
 
 ## Session Retrieval in Fastify
 
-Protected Fastify routes should retrieve the session through the Better Auth server API using the incoming request headers.
+Protected Fastify routes should retrieve the session through the Better Auth server API.
 
-The request headers must be converted into the format expected by Better Auth.
-
-The result should be treated as either:
+The conceptual flow is:
 
 ```text
-Valid session
-→ Attach authenticated identity
-→ Continue request
-
-No valid session
-→ Return 401 Unauthorized
+Fastify request
+→ Convert incoming headers
+→ Request session from Better Auth
+→ Better Auth checks PostgreSQL session data
+→ Valid session returned
+→ Attach user and session to Fastify request
 ```
 
-Session parsing should be implemented once through a reusable Fastify plugin or hook.
+When the session is missing or invalid:
+
+```text
+No valid session
+→ Return 401 Unauthorized
+→ Do not run protected handler
+```
 
 ## Authentication Plugin
 
-A Fastify authentication plugin should provide reusable protected-route behavior.
+A reusable Fastify authentication plugin should:
 
-It may decorate the request with authenticated information such as:
+- Retrieve the Better Auth session
+- Reject invalid sessions
+- Decorate the request with typed authentication data
+- Avoid duplicate session queries during one request
+- Keep authentication logic out of feature handlers
+
+A possible conceptual shape is:
 
 ```text
 request.auth
@@ -242,140 +350,105 @@ request.auth
 └── session
 ```
 
-The exact property name should be documented and strongly typed.
-
-The plugin should:
-
-- Read the request headers
-- Retrieve the Better Auth session
-- Reject missing or invalid sessions
-- Attach the validated session and user
-- Avoid querying the session repeatedly within the same request
-- Keep authentication logic out of feature handlers
-
-## Protected Route Flow
-
-```text
-Client requests protected endpoint
-→ Fastify authentication hook runs
-→ Hook asks Better Auth for the session
-→ Session is valid
-→ Authenticated user is attached to request
-→ Route handler runs
-```
-
-When no valid session exists:
-
-```text
-Client requests protected endpoint
-→ Session lookup fails
-→ Fastify returns 401 Unauthorized
-→ Route handler does not run
-```
+The final property name should be documented and included in Fastify's TypeScript declarations.
 
 ## Protected Data Flow
 
 ```text
 Authenticated request
-→ Fastify validates Better Auth session
-→ User ID is derived from session
-→ Service receives authenticated user ID
-→ Database query includes user ownership condition
-→ Authorized data is returned
+→ Validate Better Auth session
+→ Derive Better Auth user ID
+→ Pass user ID to application service
+→ Query PostgreSQL with ownership condition
+→ Return authorized data
 ```
 
-The authenticated user ID must never be accepted from client input as proof of identity.
+The authenticated user ID must not come from client input.
 
 ## Authorization
 
-Better Auth confirms who the user is.
+Authentication confirms identity.
 
-Fastify route hooks and Steward services enforce what that user may access.
+Authorization controls access to PostgreSQL records.
 
-Every operation involving user-owned data must verify ownership.
+Every user-owned operation must verify ownership.
 
 Examples include:
 
-- Viewing an account
-- Editing an account
+- Viewing a financial account
+- Editing a financial account
 - Archiving an account
 - Viewing transactions
 - Editing transactions
 - Deleting transactions
 - Viewing budgets
-- Updating budget allocations
+- Updating allocations
 - Resetting demo data
 
-A valid resource identifier does not grant access by itself.
+A valid record ID does not grant access by itself.
 
 ## Resource-Hiding Behavior
 
-When a user requests a resource they do not own, the API may return `404 Not Found` rather than confirming that another user’s resource exists.
+When an authenticated user requests a financial record owned by someone else, Steward may return:
 
-This behavior should remain consistent across user-owned financial resources.
+```text
+404 Not Found
+```
+
+This avoids confirming the existence of another user's financial data.
+
+The behavior should remain consistent across protected resources.
 
 ## Public Routes
 
-Public routes include:
+Public backend routes include:
 
 - Better Auth endpoints
-- Application health checks that expose no sensitive information
-- Other explicitly public endpoints approved later
+- Non-sensitive health checks
+- Other endpoints explicitly approved as public
 
-Financial API routes are protected by default.
+Financial endpoints should be protected by default.
 
-## Client and API Origins
+## Cookies and Origins
 
-During development, the frontend and Fastify API may run on different origins.
-
-When they do:
-
-- Fastify must allow the frontend origin explicitly.
-- Credentialed requests must be enabled.
-- The frontend must send authentication credentials.
-- Better Auth must trust the frontend origin.
-- Wildcard origins must not be used with credentialed requests.
-
-Production should prefer a simple same-origin or clearly controlled cross-origin deployment where practical.
-
-## Cookies
-
-Better Auth session cookies are the authentication mechanism.
+Authentication uses Better Auth session cookies.
 
 The implementation should:
 
-- Forward `Set-Cookie` headers from Better Auth
-- Allow cookies on approved credentialed requests
-- Use secure cookie settings appropriate to the environment
-- Avoid exposing session tokens to application JavaScript unnecessarily
-- Avoid replacing the session with a custom local-storage token
+- Forward Better Auth `Set-Cookie` headers
+- Use secure production cookie settings
+- Allow credentials from approved frontend origins
+- Configure Better Auth trusted origins
+- Avoid wildcard CORS origins with credentials
+- Avoid exposing session tokens to frontend JavaScript
+- Avoid storing custom authentication tokens in local storage
 
-Cookie configuration should account for:
+The final cookie configuration depends on the frontend and API deployment domains.
 
-- Development HTTP behavior
-- Production HTTPS
-- Same-site policy
-- Frontend and API domain structure
-- Session expiration
+## Authenticated Frontend Routes
 
-## Authenticated Route Behavior
-
-Authenticated users visiting authentication pages should be redirected:
+Authenticated users visiting:
 
 ```text
 /login
 /register
-→ /dashboard
 ```
 
-Unauthenticated users visiting protected frontend routes should be redirected:
+should be redirected to:
 
 ```text
-Protected page
-→ /login
+/dashboard
 ```
 
-The frontend redirect improves UX, but Fastify authorization remains required for every protected API request.
+Unauthenticated users visiting protected pages should be redirected to:
+
+```text
+/login
+```
+
+Frontend redirects improve the user experience.
+
+Fastify authorization remains required for all protected API requests.
 
 ## Sign-Out Flow
 
@@ -383,32 +456,48 @@ The frontend redirect improves UX, but Fastify authorization remains required fo
 Authenticated application
 → User selects Sign Out
 → Request reaches Better Auth through Fastify
-→ Better Auth terminates the session
-→ Fastify forwards the cookie update
-→ Client clears cached authenticated state
+→ Better Auth invalidates the PostgreSQL session
+→ Cookie update is returned
+→ Client clears cached authenticated data
 → Redirect to login
 ```
 
-Signing out should not delete financial data.
+Signing out should not delete PostgreSQL financial data.
 
-Signing out of the demo account should not reset demo data.
+Signing out of the demo user should not reset demo data.
 
 ## Session Expiration
 
 When a session expires:
 
-- Fastify protected routes should return `401 Unauthorized`.
-- The client should clear stale authenticated state.
-- Protected financial content should no longer be displayed.
-- The user should be redirected to login.
+- PostgreSQL session validation should fail.
+- Protected Fastify routes should return `401 Unauthorized`.
+- The frontend should clear stale authenticated state.
+- Protected data should no longer be displayed.
+- The user should return to login.
 - The interface should explain that the session expired.
-- The intended destination should be preserved when practical.
 
-The client should not repeatedly retry protected requests with an invalid session.
+The frontend should avoid repeatedly retrying requests with an invalid session.
+
+## Demo Data Reset
+
+Demo-data reset should be implemented as a protected Fastify endpoint.
+
+The endpoint must:
+
+1. Validate the Better Auth session.
+2. Derive the authenticated user from the session.
+3. Verify that the user is the designated demo user.
+4. Open a PostgreSQL transaction.
+5. Restore only the demo user's financial records.
+6. Preserve the Better Auth user and active identity.
+7. Roll back if any reset step fails.
+
+The reset must not affect regular users or authentication records unnecessarily.
 
 ## Authentication Errors
 
-Fastify should return consistent client-safe authentication errors.
+Authentication errors returned through Fastify should use client-safe messages.
 
 Example:
 
@@ -422,145 +511,108 @@ Example:
 }
 ```
 
-Unexpected Better Auth integration failures should:
+Raw Better Auth or PostgreSQL errors should not be exposed directly.
 
-- Be logged by Fastify
-- Return a generic server error
-- Avoid exposing credentials, cookies, stack traces, or internal configuration
+Unexpected failures should be logged without including:
 
-## Authentication Loading State
+- Passwords
+- Cookies
+- Session tokens
+- Better Auth secrets
+- Database credentials
+- Raw authentication request bodies
 
-While authentication status is being determined:
+## Database Migrations
 
-- Show a neutral loading state.
-- Avoid displaying protected financial information.
-- Avoid flashing the login page for authenticated users.
-- Avoid flashing protected pages for unauthenticated users.
-- Preserve the requested destination when practical.
+Better Auth schema migrations and Steward financial migrations should be version controlled.
+
+The final workflow depends on the selected database adapter.
+
+The migration process should support:
+
+- Local development
+- Integration tests
+- CI
+- Deployed environments
+- Better Auth schema changes
+- Steward schema changes
+
+Normal application requests should not silently modify the authentication schema.
 
 ## Security Expectations
 
 The implementation should:
 
-- Use Better Auth’s built-in credential handling
-- Validate sessions on the Fastify server
-- Use secure cookies
-- Keep authentication secrets outside source control
-- Derive identity from the Better Auth session
-- Restrict database queries by authenticated user
-- Use explicit trusted origins
-- Configure credential-aware CORS
-- Avoid logging passwords, cookies, or session tokens
-- Avoid storing raw passwords
-- Avoid building custom password hashing
-- Avoid treating local storage as authentication
-- Avoid trusting frontend route guards as authorization
-
-## Database Integration
-
-Better Auth requires authentication-related records such as:
-
-- Users
-- Accounts
-- Sessions
-
-Steward financial tables should reference the Better Auth user identity.
-
-The backend should not maintain a separate unrelated user identity for financial ownership.
-
-The database design should account for:
-
-- Better Auth schema requirements
-- Foreign-key relationships to financial records
-- Demo-user seeding
-- User deletion behavior
-- Session cleanup
-- Ownership indexes
-
-## Demo User Requirements
-
-The predefined demo user should:
-
-- Exist as a valid Better Auth user
-- Authenticate through the Fastify-hosted Better Auth endpoints
-- Receive a normal session cookie
-- Own its seeded financial records
-- Be isolated from regular-user records
-- Support resetting its dataset
-- Have no administrative privileges
-
-The Fastify reset endpoint must verify:
-
-1. A valid Better Auth session exists.
-2. The authenticated user is the designated demo user.
-3. The reset affects only that user’s financial data.
-
-## Logging
-
-Authentication logs may include:
-
-- Request identifier
-- Endpoint
-- Response status
-- General failure category
-- Unexpected error context
-
-Authentication logs must not include:
-
-- Passwords
-- Password hashes
-- Session tokens
-- Cookies
-- Better Auth secrets
-- Full authentication request bodies
+- Use Better Auth password handling
+- Store authentication data in PostgreSQL
+- Validate sessions on Fastify
+- Use secure session cookies
+- Keep secrets outside source control
+- Derive identity from the session
+- Restrict queries by authenticated user
+- Use parameterized database queries
+- Avoid logging sensitive authentication data
+- Avoid custom password hashing
+- Avoid raw password storage
+- Avoid trusting client-provided user identifiers
+- Avoid treating frontend route guards as authorization
 
 ## Testing Expectations
 
-### Better Auth integration tests
+### Better Auth and PostgreSQL integration
 
-- Registration reaches Better Auth through Fastify
-- Sign-in returns the expected session cookie
+Tests should verify:
+
+- Registration creates the required database records
+- Sign-in creates or restores a session
+- Session cookies are returned
 - Sign-out invalidates the session
-- Better Auth headers and cookies are forwarded correctly
-- Trusted origins and CORS behave correctly
+- Expired sessions are rejected
+- Authentication migrations apply successfully
 
-### Protected route tests
+### Protected Fastify routes
+
+Tests should verify:
 
 - Missing sessions return `401`
 - Valid sessions reach handlers
-- Authenticated user information is attached correctly
-- Expired sessions are rejected
-- Protected handlers do not run when authentication fails
+- Authenticated user data is attached correctly
+- Protected handlers do not run after authentication failure
 
-### Authorization tests
+### Authorization and ownership
 
-- Users can access their own resources
-- Users cannot access another user’s resources
-- Client-provided user IDs cannot change request ownership
-- Demo reset is restricted to the designated demo user
+Tests should verify:
 
-### End-to-end tests
+- Users can access their own PostgreSQL records
+- Users cannot access another user's records
+- Client-provided user IDs cannot change ownership
+- Financial-record identifiers do not bypass authorization
+- Demo reset is limited to the designated demo user
 
-- Regular-user registration
-- Regular-user sign-in
-- Demo-account sign-in
+### End-to-end authentication
+
+Tests should cover:
+
+- Registration
+- Sign-in
+- Demo sign-in
 - Session restoration after reload
-- Protected frontend-route redirection
-- Protected Fastify-route rejection
+- Protected-route redirection
+- Protected API rejection
 - Sign-out
-- Expired-session behavior
+- Session expiration
 
 ## Success Criteria
 
-The Better Auth and Fastify integration is successful when:
+The authentication architecture is successful when:
 
-- Better Auth endpoints operate through Fastify.
+- Better Auth persists authentication data in PostgreSQL.
+- Fastify hosts the Better Auth endpoints.
 - Registration and sign-in create valid sessions.
-- Cookies are forwarded correctly.
-- Fastify can retrieve the current Better Auth session.
+- Session cookies work across the intended frontend and API origins.
+- Fastify retrieves and validates sessions.
 - Protected routes reject unauthenticated requests.
-- Feature handlers receive a validated authenticated identity.
-- Financial records are scoped to their owners.
-- The demo user follows the same authentication path as regular users.
-- CORS and trusted-origin settings are explicit and safe.
+- Financial data is scoped to the Better Auth user.
+- The demo account uses the normal authentication model.
+- Demo reset runs safely within PostgreSQL.
 - Authentication behavior is covered by integration tests.

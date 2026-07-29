@@ -2,46 +2,51 @@
 
 ## Decision
 
-Steward will use Fastify as its backend web framework.
+Steward will use Fastify as its backend framework and PostgreSQL as its relational database.
 
-The backend will be implemented with TypeScript and will expose the application API, authentication endpoints, and server-side financial operations.
+The backend will be implemented in TypeScript and will expose the application API, authentication endpoints, and server-side financial operations.
+
+The ORM or query layer has not yet been selected.
+
+## Selected Backend Technologies
+
+The confirmed backend technologies are:
+
+- TypeScript
+- Fastify
+- PostgreSQL
+- Better Auth
+
+Still undecided:
+
+- ORM or query builder
+- Migration tooling
+- PostgreSQL client
+- API schema library
+- Deployment provider
 
 ## Responsibilities
 
 The Fastify application is responsible for:
 
 - Serving the Steward API
-- Integrating Better Auth
+- Hosting Better Auth endpoints
 - Validating requests
 - Serializing responses
-- Enforcing authentication and authorization
+- Enforcing authentication
+- Enforcing authorization
 - Running financial business logic
-- Accessing the database
-- Logging requests and application errors
-- Returning consistent API errors
-- Supporting automated integration testing
+- Reading and writing PostgreSQL data
+- Managing database transactions
+- Logging requests and unexpected errors
+- Returning consistent API responses
+- Supporting integration testing
 
-The frontend should not communicate directly with the database.
-
-## Why Fastify
-
-Fastify was selected because it provides:
-
-- Strong TypeScript support
-- A structured plugin system
-- Route encapsulation
-- Request lifecycle hooks
-- Schema-based validation
-- Response serialization
-- Built-in structured logging
-- A relatively small framework surface
-- A good fit for a modular API
-
-Fastify provides more structure than a minimal HTTP framework without requiring the application conventions of a larger framework.
+The frontend must not connect directly to PostgreSQL.
 
 ## Application Structure
 
-The backend should be organized around application modules rather than one large routes directory.
+The backend should be organized around application domains rather than one large routes directory.
 
 A possible structure is:
 
@@ -61,7 +66,8 @@ src/
 │   ├── categories/
 │   ├── budgets/
 │   ├── dashboard/
-│   └── users/
+│   ├── settings/
+│   └── demo/
 └── shared/
     ├── errors/
     ├── schemas/
@@ -72,46 +78,101 @@ This structure is provisional and may change during the Application Architecture
 
 ## Application Factory
 
-The backend should separate application construction from process startup.
+Application construction should remain separate from process startup.
 
 ```text
 app.ts
-→ Creates and configures the Fastify application
-→ Registers plugins and routes
+→ Creates the Fastify application
+→ Registers shared plugins
+→ Registers authentication
+→ Registers feature modules
 → Returns the configured application
 
 server.ts
 → Loads environment configuration
-→ Calls the application factory
-→ Starts listening
-→ Handles startup and shutdown
+→ Creates the application
+→ Starts the HTTP server
+→ Handles graceful shutdown
 ```
 
-This separation allows integration tests to create the application without opening a network port.
+This separation allows tests to create the application without listening on a real network port.
 
-## Plugin Architecture
+## Plugin Registration
 
-Shared infrastructure should be registered as Fastify plugins.
+Shared infrastructure should be registered through Fastify plugins.
 
 Initial plugins may include:
 
 - Environment configuration
-- Database connection
-- Better Auth integration
+- PostgreSQL database access
+- Better Auth
+- Authentication hooks
 - CORS
 - Error handling
-- Request logging
+- Logging
 - API documentation where useful
 
-Feature modules should register their routes through isolated plugins.
+Plugin dependencies and registration order should be explicit.
 
-Plugins should not become generic containers for unrelated application logic.
+## PostgreSQL Plugin
+
+PostgreSQL access should be initialized through a dedicated Fastify plugin.
+
+The plugin should:
+
+- Read validated database configuration
+- Create a shared connection pool or database client
+- Verify startup connectivity where practical
+- Expose database access to dependent modules
+- Close the pool during graceful shutdown
+- Avoid creating connections per request
+- Avoid logging credentials
+
+The exact decoration name and TypeScript declaration should be documented after the query layer is selected.
+
+A possible conceptual interface is:
+
+```text
+fastify.db
+```
+
+Feature modules should not create independent PostgreSQL pools.
+
+## Database Access Boundary
+
+Route handlers should not contain large inline SQL queries or direct persistence logic.
+
+The preferred flow is:
+
+```text
+Fastify route
+→ Validate request
+→ Retrieve authenticated user
+→ Call service or use case
+→ Query PostgreSQL through repository/query layer
+→ Return serialized response
+```
+
+The final repository or query pattern will be selected after the ORM evaluation.
+
+## Better Auth and PostgreSQL
+
+Better Auth will persist its required authentication data in PostgreSQL.
+
+Authentication records include:
+
+- Users
+- Credential accounts
+- Sessions
+- Verification records where required
+
+The Better Auth user identifier is the canonical user identity for Steward.
+
+Steward financial tables should reference that identity for ownership.
 
 ## Route Organization
 
 Routes should be grouped by domain.
-
-Examples:
 
 ```text
 /api/accounts
@@ -120,9 +181,10 @@ Examples:
 /api/budgets
 /api/dashboard
 /api/settings
+/api/demo
 ```
 
-Authentication endpoints are handled by Better Auth:
+Better Auth endpoints are mounted under:
 
 ```text
 /api/auth/*
@@ -131,99 +193,69 @@ Authentication endpoints are handled by Better Auth:
 Each domain module may contain:
 
 - Routes
-- Request and response schemas
+- Request schemas
+- Response schemas
 - Services or use cases
-- Repository or query functions
-- Domain-specific errors
+- Database query functions
+- Domain errors
 - Tests
-
-Route handlers should remain thin.
-
-They should primarily:
-
-1. Read validated request data.
-2. Obtain the authenticated user.
-3. Call the relevant application service.
-4. Translate the result into an HTTP response.
-
-## Authentication Integration
-
-Better Auth will be mounted inside the Fastify application.
-
-Authentication requests will be handled under:
-
-```text
-/api/auth/*
-```
-
-Fastify must forward compatible requests to the Better Auth handler and return the resulting status, headers, cookies, and response body.
-
-Protected routes should retrieve the Better Auth session from the incoming request headers.
-
-Authentication should be registered before feature routes that depend on it.
 
 ## Authentication Hook
 
-Protected route groups should use a reusable authentication hook or plugin.
+Protected route groups should use a reusable authentication hook.
 
 The hook should:
 
 1. Read the incoming request headers.
-2. Ask Better Auth for the current session.
+2. Retrieve the Better Auth session.
 3. Reject requests without a valid session.
-4. Make the authenticated user and session available to the route handler.
+4. Attach the authenticated user and session to the request.
+5. Allow the feature handler to continue.
 
-A protected handler should not repeatedly implement session parsing.
+Feature routes should not repeatedly parse sessions themselves.
 
-Public routes should not register the protected-route hook.
+## Authorization and PostgreSQL Queries
 
-## Authorization
+Protected handlers must derive the user identifier from the validated Better Auth session.
 
-Authentication confirms who the user is.
+PostgreSQL queries involving user-owned resources must include that identifier.
 
-Authorization determines which Steward records the user may access.
+For example, an account query should conceptually enforce:
 
-Protected handlers must derive the user ID from the validated Better Auth session.
+```text
+account.id = requested account
+AND account.user_id = authenticated user
+```
 
-They must not trust a user ID supplied through:
+The backend must not trust a user identifier supplied through:
 
 - Request bodies
 - Query parameters
 - Route parameters
-- Custom client headers
-
-Every query for user-owned data must be scoped to the authenticated user.
-
-Examples include:
-
-- Accounts
-- Transactions
-- Categories
-- Budgets
-- Budget allocations
-- Preferences
+- Client-controlled headers
 
 ## Request Validation
 
-Every route that accepts input should define schemas for the relevant request components:
+Routes accepting input should define schemas for:
 
 - Path parameters
 - Query parameters
-- Request body
-- Headers where necessary
+- Request bodies
+- Required headers where applicable
 
-Invalid requests should be rejected before business logic runs.
+Validation should cover structural concerns before a database query runs.
 
-Validation should cover structural concerns such as:
+Examples include:
 
-- Required fields
+- Required values
 - Data types
-- String formats
-- Enum values
-- Numeric boundaries
-- Pagination parameters
+- Date formats
+- Supported account types
+- Valid pagination values
+- Valid transaction amounts
+- Valid budget allocations
 
-Database queries and other asynchronous business checks should occur after structural validation.
+Database-backed checks should occur in the service or query layer.
 
 ## Response Serialization
 
@@ -231,16 +263,50 @@ Routes should define response schemas where practical.
 
 Response schemas should:
 
-- Document the expected API shape
-- Prevent accidental exposure of internal fields
-- Keep response formats consistent
-- Improve confidence when refactoring handlers
+- Keep API shapes stable
+- Prevent accidental field exposure
+- Support documentation
+- Improve runtime serialization
+- Make refactoring safer
 
-Authentication secrets, password data, internal database metadata, and unrelated user fields must never be returned by financial endpoints.
+Database rows should not automatically be returned directly to the client.
+
+## PostgreSQL Transactions
+
+Application services should use PostgreSQL transactions when an operation changes multiple related records atomically.
+
+Examples include:
+
+- Creating linked transfer transactions
+- Resetting demo data
+- Creating a budget and its allocations
+- Importing transaction batches
+- Updating dependent financial records
+
+A failed operation should roll back all related changes.
+
+Transaction boundaries should be owned by application services rather than spread across HTTP handlers.
+
+## Financial Calculations
+
+Financial business logic should not live directly inside Fastify routes.
+
+Examples include:
+
+- Account balances
+- Monthly spending
+- Budget progress
+- Overspending calculations
+- Transfers
+- Net-worth calculations
+- Dashboard summaries
+- Demo-data reset behavior
+
+These should be implemented in independently testable services or use cases.
 
 ## Error Handling
 
-The API should use a consistent error structure.
+The API should return a consistent error shape.
 
 ```json
 {
@@ -252,20 +318,34 @@ The API should use a consistent error structure.
 }
 ```
 
-Expected application errors may include:
+Expected errors include:
 
-- Validation errors
-- Authentication errors
-- Authorization errors
+- Invalid input
+- Missing authentication
+- Insufficient authorization
 - Missing resources
-- Conflicts
+- Conflicting state
+- Database constraints
 - Invalid financial operations
 
-Unexpected errors should:
+Unexpected PostgreSQL errors should:
 
 - Be logged with useful server context
-- Return a generic client-safe message
-- Avoid leaking stack traces or internal implementation details
+- Return a generic message to the client
+- Avoid leaking table names, SQL, connection details, or stack traces
+
+## Database Constraint Errors
+
+Known PostgreSQL constraint failures may be translated into application errors.
+
+Examples include:
+
+- Duplicate records
+- Invalid foreign keys
+- Required values
+- Conflicting budget allocations
+
+The API should not expose raw PostgreSQL errors directly to users.
 
 ## HTTP Status Conventions
 
@@ -273,185 +353,173 @@ The API should generally use:
 
 - `200 OK` for successful reads and updates
 - `201 Created` for successful creation
-- `204 No Content` for successful operations without a response body
+- `204 No Content` when no response body is required
 - `400 Bad Request` for invalid operations
-- `401 Unauthorized` when no valid session exists
-- `403 Forbidden` when the user is authenticated but not permitted
+- `401 Unauthorized` when a valid session is missing
+- `403 Forbidden` when an authenticated user lacks permission
 - `404 Not Found` when a resource does not exist or should not be revealed
 - `409 Conflict` for conflicting state
 - `500 Internal Server Error` for unexpected failures
 
-Exact behavior should remain consistent across modules.
-
 ## CORS and Cookies
 
-If the frontend and API run on different origins, Fastify must configure CORS explicitly.
+If the frontend and Fastify API run on different origins:
 
-The configuration should:
+- Approved frontend origins must be listed explicitly.
+- Credentialed requests must be enabled.
+- Better Auth trusted origins must match the intended frontend origins.
+- Wildcard origins must not be used with authentication cookies.
 
-- Allow only approved frontend origins
-- Allow credentials
-- Support Better Auth cookies
-- Avoid wildcard origins when credentials are enabled
-- Use environment-specific trusted origins
-
-Better Auth trusted origins and Fastify CORS origins must remain consistent.
-
-A same-origin deployment may reduce the amount of CORS configuration required.
+A same-origin production deployment is preferred where practical.
 
 ## Logging
 
-Fastify’s logger should be enabled for the server.
+Fastify logging should include:
 
-Logs should include useful operational context such as:
-
+- Request identifier
 - HTTP method
 - Route
 - Response status
 - Request duration
-- Request identifier
-- Unexpected error information
+- Unexpected error context
 
-Logs should not include:
+Logs must not include:
 
-- Passwords
-- Session tokens
+- Database passwords
+- Connection strings containing credentials
+- Raw SQL containing sensitive values
 - Authentication cookies
-- Full sensitive financial payloads
-- Secrets
-- Database connection strings
+- Session tokens
+- User passwords
+- Full financial payloads
 
 ## Configuration
 
-Runtime configuration should be provided through environment variables and validated during startup.
+Backend configuration should be loaded from environment variables and validated during startup.
 
-Configuration may include:
-
-- Application environment
-- API host and port
-- Database connection
-- Better Auth secret
-- Better Auth base URL
-- Frontend origin
-- Trusted origins
-- Logging level
-- Demo-user configuration
-
-The application should fail during startup when required configuration is missing or invalid.
-
-## API Versioning
-
-The initial API may use the following prefix:
+Likely values include:
 
 ```text
-/api
+NODE_ENV
+HOST
+PORT
+DATABASE_URL
+BETTER_AUTH_SECRET
+BETTER_AUTH_URL
+FRONTEND_ORIGIN
+LOG_LEVEL
+DEMO_USER_EMAIL
 ```
 
-Explicit versioning such as `/api/v1` is not required for the initial MVP unless there is a concrete compatibility need.
+Required configuration should fail clearly during startup when missing or invalid.
 
-Versioning should not be introduced solely for hypothetical future consumers.
+## Graceful Shutdown
 
-## Business Logic
+The server should handle shutdown signals.
 
-Financial business rules should not live directly inside route handlers.
+Shutdown behavior should:
 
-Examples include:
+1. Stop accepting new requests.
+2. Allow active requests to finish where practical.
+3. Close the Fastify server.
+4. Close the PostgreSQL connection pool.
+5. Exit cleanly.
 
-- Balance calculations
-- Transaction ownership
-- Transfer behavior
-- Budget progress
-- Overspending calculations
-- Demo-data resets
-- Dashboard summaries
+Tests should also close application and database resources.
 
-These rules should be implemented in services or use-case functions that can be tested independently from HTTP routing.
+## Migrations
 
-## Database Access
+Database migrations must run separately from normal HTTP request handling.
 
-Database access should be isolated from route handlers.
+The final migration command will depend on the selected ORM or migration tool.
 
-Routes should not build arbitrary database queries directly.
+Migrations should be:
 
-The exact repository or query-layer pattern will be decided after the database and ORM selections are complete.
+- Version controlled
+- Repeatable
+- Applied before incompatible application code
+- Tested in development and CI
+- Used for both Better Auth and Steward schema requirements
 
-All user-owned queries must include authenticated-user scoping.
+The Fastify server should not silently make uncontrolled schema changes during normal startup.
+
+## Seed Data
+
+Seed operations should be implemented separately from normal server startup.
+
+Seeds should support:
+
+- Creating the demo Better Auth user
+- Creating financial accounts
+- Creating categories
+- Creating transactions
+- Creating budgets and allocations
+- Restoring the canonical demo dataset
+
+Seed commands must be safe enough to avoid overwriting unrelated user data.
 
 ## Testing
 
-Backend tests should include:
-
 ### Unit tests
 
-For isolated financial rules and service behavior.
+Test financial services and business rules independently from Fastify and PostgreSQL where practical.
 
 ### Integration tests
 
-For Fastify routes, plugins, validation, authentication, authorization, and database behavior.
+Use Fastify request injection with an isolated PostgreSQL test database.
 
-The application factory should support Fastify’s request-injection testing without starting a real HTTP listener.
+Integration tests should cover:
+
+- Route validation
+- Better Auth integration
+- Authentication hooks
+- Authorization
+- PostgreSQL constraints
+- Database transactions
+- Error translation
+- User-data isolation
+- Demo reset behavior
 
 ### End-to-end tests
 
-For critical workflows that cross the frontend, Fastify API, Better Auth, and database.
+Test critical browser workflows across:
 
-Important backend scenarios include:
-
-- Registration and sign-in
-- Rejection of unauthenticated requests
-- User-data isolation
-- Account creation
-- Transaction creation and editing
-- Budget updates
-- Validation errors
-- Demo-data reset
-- Consistent error responses
-
-## Initial Dependencies
-
-The backend is expected to use:
-
-- Fastify
-- TypeScript
-- Better Auth
-- A supported database driver
-- The selected ORM or query layer
-- Official Fastify plugins where appropriate
-
-Likely Fastify plugins include:
-
-- `@fastify/cors`
-- `fastify-plugin`
-
-Additional plugins should be added only when required.
+```text
+Frontend
+→ Fastify
+→ Better Auth
+→ PostgreSQL
+```
 
 ## Non-Goals
 
-The initial backend will not use:
+The initial backend will not require:
 
 - Express
 - Hono
 - NestJS
+- Multiple database engines
 - Microservices
 - GraphQL
 - Event sourcing
-- A message broker
-- Serverless functions split across unrelated deployments
-- Multiple independently deployed backend services
+- Message brokers
+- Database sharding
+- Read replicas
+- Independently deployed domain services
 
-These decisions may be revisited only if the application develops a concrete requirement that Fastify cannot reasonably satisfy.
+These may be reconsidered only in response to concrete requirements.
 
 ## Success Criteria
 
-The Fastify backend decision is successful when:
+The backend architecture is successful when:
 
-- The API is organized around clear domain modules.
-- Better Auth operates through Fastify.
-- Requests and responses use defined schemas.
-- Protected routes validate sessions on the server.
-- Financial data is scoped to the authenticated user.
+- Fastify exposes a clear modular API.
+- PostgreSQL access is centralized.
+- Better Auth persists users and sessions in PostgreSQL.
+- Protected requests derive identity from validated sessions.
+- User-owned queries enforce ownership.
+- Financial operations use transactions where required.
 - Route handlers remain thin.
-- Business logic can be tested independently.
-- Integration tests can run without opening a network port.
-- Errors and logs are consistent and safe.
-- The architecture remains manageable for a solo developer.
+- Database resources close cleanly.
+- Integration tests use an isolated PostgreSQL database.
+- The architecture remains understandable for a solo developer.
