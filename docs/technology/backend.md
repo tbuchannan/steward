@@ -2,7 +2,7 @@
 
 ## Decision
 
-Steward will use Fastify as its backend framework, PostgreSQL as its relational database, and Drizzle ORM as its query layer.
+Steward will use Fastify as its backend framework, PostgreSQL as its relational database, Drizzle ORM as its query layer, and Zod for runtime validation.
 
 Better Auth will provide authentication through its Drizzle PostgreSQL adapter.
 
@@ -15,6 +15,8 @@ The confirmed backend technologies are:
 - Node.js
 - TypeScript
 - Fastify
+- Zod
+- `fastify-type-provider-zod`
 - PostgreSQL
 - Drizzle ORM
 - Drizzle Kit
@@ -22,7 +24,6 @@ The confirmed backend technologies are:
 
 Still undecided:
 
-- Runtime validation library
 - API documentation tooling
 - Backend test runner
 - Deployment provider
@@ -33,14 +34,14 @@ The Fastify backend is responsible for:
 
 - Serving the Steward HTTP API
 - Hosting Better Auth endpoints
-- Validating requests
-- Serializing responses
+- Validating requests with Zod
+- Serializing and validating responses
 - Enforcing authentication
 - Enforcing authorization
 - Running financial business logic
 - Querying PostgreSQL through Drizzle
 - Managing Drizzle transactions
-- Translating database errors
+- Translating validation and database errors
 - Logging requests and unexpected errors
 - Supporting integration tests
 
@@ -57,6 +58,7 @@ src/
 ├── app.ts
 ├── server.ts
 ├── config/
+│   └── environment.ts
 ├── database/
 │   ├── client.ts
 │   ├── schema/
@@ -65,6 +67,7 @@ src/
 ├── plugins/
 │   ├── auth.ts
 │   ├── database.ts
+│   ├── validation.ts
 │   ├── cors.ts
 │   └── errors.ts
 ├── modules/
@@ -91,10 +94,12 @@ Application creation should remain separate from process startup.
 app.ts
 → Create Fastify instance
 → Register configuration
+→ Register Zod validation compilers
 → Register Drizzle database plugin
 → Register Better Auth
 → Register authentication hooks
 → Register feature routes
+→ Register error handling
 → Return configured application
 
 server.ts
@@ -105,6 +110,150 @@ server.ts
 ```
 
 Tests should be able to create the Fastify application without opening a network port.
+
+## Validation Integration
+
+Fastify should use Zod through `fastify-type-provider-zod`.
+
+The application should register:
+
+- Zod validator compiler
+- Zod serializer compiler
+- Zod type provider
+
+Conceptually:
+
+```ts
+import Fastify from "fastify";
+import {
+  serializerCompiler,
+  validatorCompiler,
+  ZodTypeProvider,
+} from "fastify-type-provider-zod";
+
+const app = Fastify();
+
+app.setValidatorCompiler(validatorCompiler);
+app.setSerializerCompiler(serializerCompiler);
+
+const typedApp = app.withTypeProvider<ZodTypeProvider>();
+```
+
+The exact implementation should match the installed package versions.
+
+## Route Schemas
+
+Every route that accepts or returns structured data should define Zod schemas.
+
+Possible schema fields include:
+
+```ts
+schema: {
+  params: paramsSchema,
+  querystring: querySchema,
+  body: bodySchema,
+  response: {
+    200: responseSchema,
+  },
+}
+```
+
+Schemas should validate:
+
+- Path parameters
+- Query parameters
+- Request bodies
+- Required headers where applicable
+- Successful responses
+- Standard error responses where practical
+
+## Request Validation
+
+Zod request validation should occur before route business logic.
+
+Examples include:
+
+```text
+POST /api/accounts
+→ Validate account creation body
+
+GET /api/accounts/:accountId
+→ Validate account ID
+
+GET /api/transactions
+→ Validate filters, sort, page, and page size
+
+PATCH /api/transactions/:transactionId
+→ Validate ID and update body
+
+GET /api/budgets/:year/:month
+→ Validate year and month
+```
+
+Invalid request data should not reach application services or Drizzle.
+
+## Validation Responsibility
+
+Zod handles structural validation.
+
+Examples include:
+
+- Required fields
+- Types
+- Formats
+- String lengths
+- Enum values
+- Numeric boundaries
+- Date parsing
+- Pagination limits
+- Cross-field input relationships
+
+Application services handle business validation.
+
+Examples include:
+
+- Record ownership
+- Resource existence
+- Duplicate monthly budgets
+- Account archival rules
+- Category availability
+- Demo-user authorization
+
+Database queries should not run inside Zod validation.
+
+## Response Serialization
+
+Routes should define Zod response schemas where practical.
+
+Response schemas should:
+
+- Define the public API shape
+- Validate handler output
+- Prevent accidental database-field exposure
+- Exclude authentication internals
+- Keep route return types aligned with runtime behavior
+
+Drizzle records should be mapped into deliberate response objects before being returned.
+
+## Validation Errors
+
+Fastify validation failures should be translated into Steward’s standard error shape.
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "The submitted data is invalid.",
+    "details": {
+      "fields": {
+        "amount": ["Enter a valid amount."]
+      }
+    }
+  }
+}
+```
+
+The API should not expose Zod’s raw issue objects as its permanent public contract.
 
 ## Database Plugin
 
@@ -131,6 +280,28 @@ The plugin should:
 - Avoid logging credentials
 - Avoid creating connections per request
 
+## Environment Validation
+
+Backend environment variables should be validated with Zod before the server starts.
+
+Likely values include:
+
+```text
+NODE_ENV
+HOST
+PORT
+DATABASE_URL
+BETTER_AUTH_SECRET
+BETTER_AUTH_URL
+FRONTEND_ORIGIN
+LOG_LEVEL
+DEMO_USER_EMAIL
+```
+
+Invalid or missing required configuration should stop startup with a clear error.
+
+Secrets must not appear in validation error output or logs.
+
 ## Drizzle Access Boundary
 
 Fastify route handlers should not contain large inline Drizzle queries.
@@ -139,12 +310,13 @@ The expected flow is:
 
 ```text
 Fastify route
-→ Validate request
-→ Read authenticated user
-→ Call application service
+→ Zod validates request
+→ Authentication hook reads user
+→ Application service runs
 → Service calls Drizzle query function
-→ Query PostgreSQL
-→ Return serialized response
+→ PostgreSQL operation executes
+→ Result is mapped to response schema
+→ Fastify serializes response
 ```
 
 Drizzle query functions should live close to the domain module that owns them.
@@ -167,30 +339,44 @@ modules/transactions/
 Responsibilities should remain separated:
 
 - Routes handle HTTP concerns.
-- Schemas validate HTTP input and output.
-- Services coordinate application workflows.
-- Query files contain Drizzle database operations.
-- Errors represent expected domain failures.
-- Tests verify the module.
+- Zod schemas define HTTP contracts.
+- Services coordinate workflows.
+- Query files contain Drizzle operations.
+- Errors represent expected failures.
+- Tests verify behavior.
 
 ## Route Handlers
 
-Route handlers should remain thin.
+Route handlers should generally:
 
-A handler should generally:
-
-1. Read validated parameters, query, or body.
-2. Obtain the authenticated user from the request.
+1. Read validated parameters, query values, or body data.
+2. Obtain the authenticated user.
 3. Call the application service.
-4. Return the result.
+4. Return a value matching the response schema.
 
 Handlers should not:
 
+- Manually revalidate data already parsed by Zod
 - Construct unrelated Drizzle queries
 - Decide transaction boundaries
 - Reimplement authentication
 - Trust client-provided user IDs
 - Contain complex financial calculations
+
+## Schema Reuse
+
+Schemas may be reused when they represent the same public concept.
+
+Examples include:
+
+- Resource identifiers
+- Pagination
+- Account types
+- Transaction types
+- Currency values
+- Error responses
+
+Creation, update, persistence, and response shapes should remain separate when their allowed fields differ.
 
 ## Drizzle Query Functions
 
@@ -203,21 +389,9 @@ Query functions should:
 - Use deterministic ordering
 - Remain independently testable
 
-Example responsibilities include:
-
-- Find accounts for a user
-- Find one account owned by a user
-- Insert a transaction
-- Update a transaction owned by a user
-- Calculate monthly category totals
-- Load budget allocations
-- Build dashboard summaries
-
 ## Better Auth Integration
 
-Better Auth should use the same configured Drizzle client or a clearly shared database package.
-
-The official Drizzle adapter should be configured for PostgreSQL.
+Better Auth should use the configured Drizzle client or a shared database package.
 
 Conceptually:
 
@@ -230,28 +404,11 @@ betterAuth({
 });
 ```
 
-The authentication schema must be included in the Drizzle schema exports.
+Better Auth remains responsible for validating its own authentication endpoints.
 
-## Authentication Endpoints
+Steward should not attempt to replace Better Auth’s internal request handling with custom Zod route schemas.
 
-Better Auth endpoints are mounted under:
-
-```text
-/api/auth/*
-```
-
-Fastify should forward:
-
-- Request URL
-- HTTP method
-- Headers
-- Body
-- Response status
-- Response headers
-- Cookies
-- Response body
-
-Feature routes should not recreate Better Auth behavior.
+Application-owned authentication forms and endpoints may use Zod.
 
 ## Authentication Hook
 
@@ -262,14 +419,10 @@ The hook should:
 - Retrieve the Better Auth session
 - Reject invalid or missing sessions
 - Attach the authenticated user and session
-- Avoid repeated session lookups within the same request
+- Avoid repeated session lookups
 - Keep authentication logic out of feature handlers
 
 ## Authorization
-
-Authentication determines identity.
-
-Authorization controls access to PostgreSQL records.
 
 Protected Drizzle queries must derive the user ID from the validated Better Auth session.
 
@@ -280,67 +433,26 @@ They must not trust a user ID supplied through:
 - Route parameter
 - Client-controlled header
 
-## Ownership Queries
+Zod validation confirms that a user-supplied ID has a valid format.
 
-A protected resource query should include ownership in the database condition.
+It does not confirm ownership.
 
-Conceptually:
+## Request and Response Contracts
 
-```text
-financial_account.id = requested account
-AND financial_account.user_id = authenticated user
-```
+API contracts should be based on Zod schemas rather than Drizzle table types.
 
-A separate lookup followed by an unchecked ownership assumption should be avoided where ownership can be included directly in the query.
+Drizzle types describe database records.
 
-## Resource-Hiding Behavior
+Zod API schemas describe public HTTP data.
 
-Requests for missing resources and resources owned by another user may both return:
+These shapes may differ because API responses may:
 
-```text
-404 Not Found
-```
-
-This avoids revealing whether another user’s financial record exists.
-
-The behavior should remain consistent.
-
-## Request Validation
-
-Every input-bearing route should define validation for:
-
-- Path parameters
-- Query parameters
-- Request body
-- Headers where required
-
-Validation should occur before Drizzle queries run.
-
-Structural validation includes:
-
-- Required fields
-- Types
-- Formats
-- Enum values
-- Numeric limits
-- Pagination values
-
-Database-backed validation belongs in application services.
-
-## Response Serialization
-
-Routes should define response schemas where practical.
-
-Database rows should be mapped into deliberate API responses.
-
-This prevents accidentally returning:
-
-- Internal timestamps
-- Better Auth records
-- Authentication metadata
-- Database-only flags
-- Fields unrelated to the response
-- Sensitive user information
+- Rename fields
+- Exclude internal fields
+- Combine records
+- Format values
+- Add derived summaries
+- Represent timestamps differently
 
 ## Drizzle Transactions
 
@@ -353,34 +465,6 @@ Examples include:
 - Budget creation with allocations
 - Batch transaction imports
 - Multi-record updates
-
-Conceptually:
-
-```text
-Fastify handler
-→ Application service
-→ db.transaction(...)
-→ Multiple Drizzle operations
-→ Commit or rollback
-```
-
-The HTTP layer should not coordinate partial database writes.
-
-## Financial Business Logic
-
-Business rules should remain separate from route and query syntax.
-
-Examples include:
-
-- Transfer rules
-- Account archival
-- Transaction effects
-- Budget calculations
-- Overspending status
-- Dashboard summaries
-- Demo reset behavior
-
-Services may call multiple Drizzle query functions while keeping policy decisions in one place.
 
 ## Error Handling
 
@@ -398,7 +482,7 @@ The API should use a consistent error format.
 
 Expected errors include:
 
-- Validation errors
+- Zod validation failures
 - Authentication failures
 - Authorization failures
 - Missing resources
@@ -411,13 +495,6 @@ Expected errors include:
 Raw Drizzle or PostgreSQL errors must not be returned directly.
 
 Known database errors may be translated into application errors.
-
-Examples include:
-
-- Unique constraint violation
-- Foreign-key violation
-- Required-field violation
-- Conflicting budget allocation
 
 Unexpected errors should:
 
@@ -433,7 +510,7 @@ The API should generally use:
 - `200 OK` for successful reads and updates
 - `201 Created` for successful creation
 - `204 No Content` for successful operations without a body
-- `400 Bad Request` for invalid operations
+- `400 Bad Request` for invalid operations or validation failures
 - `401 Unauthorized` for missing or invalid sessions
 - `403 Forbidden` for authenticated but disallowed operations
 - `404 Not Found` for missing or concealed resources
@@ -442,7 +519,7 @@ The API should generally use:
 
 ## Search, Filtering, and Pagination
 
-The transaction API should translate validated HTTP query parameters into typed Drizzle query conditions.
+The transaction API should parse query parameters through Zod before building Drizzle conditions.
 
 Supported state may include:
 
@@ -456,62 +533,13 @@ Supported state may include:
 - Page
 - Page size
 
-Query construction should remain centralized rather than duplicated across handlers.
+Sort fields must use an allowlist.
 
-## Migrations
-
-Drizzle Kit will manage database migrations.
-
-The backend project should include:
-
-```text
-drizzle.config.ts
-drizzle/
-```
-
-The migration workflow is:
-
-```text
-Update Drizzle schema
-→ Generate migration
-→ Review SQL
-→ Commit migration
-→ Apply migration
-```
-
-The Fastify server should not perform uncontrolled schema changes during normal request handling.
-
-## Schema and Migration Deployment
-
-Database migrations should run as an explicit deployment step before application code that depends on them becomes active.
-
-The migration process must support:
-
-- Local development
-- Integration tests
-- CI
-- Production deployment
-
-Migration failure should stop deployment rather than leave the application partially upgraded.
-
-## Seed Commands
-
-Seed operations should be separate from normal Fastify startup.
-
-They should support:
-
-- Creating the demo Better Auth user
-- Creating categories
-- Creating financial accounts
-- Creating transactions
-- Creating budgets and allocations
-- Restoring demo data
-
-Seed operations should use Drizzle and PostgreSQL transactions where appropriate.
+Client input must not be inserted directly into SQL expressions.
 
 ## Configuration
 
-Backend configuration should be loaded from environment variables and validated at startup.
+Backend configuration should be loaded from environment variables and validated by Zod at startup.
 
 Likely variables include:
 
@@ -527,60 +555,19 @@ LOG_LEVEL
 DEMO_USER_EMAIL
 ```
 
-Drizzle Kit may also read:
-
-```text
-DATABASE_URL
-```
-
-Secrets must not be committed.
-
-## Graceful Shutdown
-
-The server should:
-
-1. Stop accepting new requests.
-2. Allow active requests to finish where practical.
-3. Close Fastify.
-4. Close the PostgreSQL pool.
-5. Release Drizzle database resources.
-6. Exit cleanly.
-
-Tests must also close Fastify and database resources.
-
-## Logging
-
-Logs may include:
-
-- Request ID
-- HTTP method
-- Route
-- Response status
-- Request duration
-- General database failure category
-- Unexpected error context
-
-Logs must not include:
-
-- Database credentials
-- Better Auth secrets
-- Session tokens
-- Cookies
-- Passwords
-- Raw sensitive financial payloads
-- Unredacted SQL parameters
-
 ## Testing
 
-### Unit tests
+### Schema tests
 
 Test:
 
-- Financial calculations
-- Validation helpers
-- Service-level policy
-- Transfer behavior
-- Budget calculations
+- Valid values
+- Invalid values
+- Boundary values
+- Transformations
+- Coercion
+- Cross-field validation
+- Error formatting
 
 ### Database integration tests
 
@@ -601,12 +588,13 @@ Use Fastify request injection against an isolated PostgreSQL database.
 
 Test:
 
-- Route validation
+- Zod request validation
+- Zod response serialization
 - Authentication
 - Authorization
-- Query behavior
+- Invalid requests not reaching handlers
 - Error mapping
-- Response serialization
+- Response contracts
 
 ### End-to-end tests
 
@@ -614,7 +602,9 @@ Test critical workflows across:
 
 ```text
 React
+→ Zod form validation
 → Fastify
+→ Zod request validation
 → Better Auth
 → Drizzle
 → PostgreSQL
@@ -624,32 +614,32 @@ React
 
 The initial backend will not use:
 
+- Joi
+- Yup
+- TypeBox
+- Multiple validation libraries
 - Prisma
 - Sequelize
 - TypeORM
-- Multiple ORMs
 - Express
 - Hono
 - NestJS
 - GraphQL
 - Microservices
-- Event sourcing
-- Message brokers
-- Multiple database engines
-
-These should only be reconsidered when a concrete requirement justifies the added complexity.
+- Database queries inside Zod refinements
 
 ## Success Criteria
 
 The backend architecture is successful when:
 
 - Fastify exposes a modular API.
+- Zod validates requests and responses.
+- Handlers receive typed parsed input.
 - Drizzle provides typed PostgreSQL access.
 - Better Auth uses the Drizzle adapter.
 - Route handlers remain thin.
 - Services own business workflows.
-- Query functions enforce ownership.
-- Drizzle transactions protect multi-record operations.
-- Migrations are generated, reviewed, and version controlled.
-- Integration tests run against isolated PostgreSQL data.
-- The architecture remains understandable for a solo developer.
+- Queries enforce ownership.
+- Validation errors follow one stable format.
+- Environment configuration is validated at startup.
+- Integration tests verify validation before database access.

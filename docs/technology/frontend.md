@@ -4,9 +4,11 @@
 
 Steward will use React with TypeScript for the frontend.
 
-Vite will provide the development server, build tooling, and frontend application setup.
+Vite will provide development and build tooling.
 
 TanStack Router will provide client-side routing.
+
+Zod will provide runtime validation for forms, URL state, frontend environment configuration, and selected API boundaries.
 
 ## Selected Technologies
 
@@ -16,6 +18,7 @@ The confirmed frontend technologies are:
 - TypeScript
 - Vite
 - TanStack Router
+- Zod
 
 Still undecided:
 
@@ -32,90 +35,43 @@ Still undecided:
 
 The frontend is responsible for:
 
-- Rendering the Steward user interface
+- Rendering the Steward interface
 - Managing client-side navigation
-- Displaying authenticated and unauthenticated application states
+- Displaying authentication states
 - Communicating with the Fastify API
-- Displaying financial data returned by the backend
 - Managing forms and user input
+- Validating user input with Zod
+- Parsing URL state
 - Presenting loading, empty, validation, and error states
-- Supporting responsive desktop and mobile layouts
-- Applying user appearance preferences
-- Preserving URL-driven application state where appropriate
+- Supporting desktop and mobile layouts
+- Applying appearance preferences
 
 The frontend must not:
 
 - Connect directly to PostgreSQL
-- Treat client-side route guards as authorization
+- Import the Drizzle database client
+- Treat route guards as authorization
 - Trust client-provided user identifiers
-- Reimplement financial business rules owned by the backend
+- Reimplement backend financial rules
 - Store raw authentication credentials
 - Use local storage as the authentication source of truth
-
-## Why React
-
-React was selected because:
-
-- It provides a component-based UI model.
-- It supports the interactive workflows Steward requires.
-- It has strong TypeScript support.
-- It works well with TanStack Router and the broader frontend ecosystem.
-- It allows the frontend to remain independent from the Fastify backend.
-- It aligns with the project’s learning and implementation goals.
-
-React components should remain focused on rendering and interaction.
-
-Backend-owned financial rules should not be duplicated inside components.
-
-## Why Vite
-
-Vite was selected as Steward’s frontend build tool.
-
-Vite provides:
-
-- A fast local development server
-- React and TypeScript support
-- Hot module replacement
-- Production builds
-- Environment-variable support
-- Plugin integration
-- A straightforward setup for a standalone frontend application
-
-The frontend will be built as a separate application from the Fastify API.
-
-Vite’s official React TypeScript template should be used as the starting point when the Foundation milestone begins.
+- Treat frontend Zod validation as a security boundary
 
 ## Rendering Model
 
-The initial Steward frontend will be a client-rendered single-page application.
+The initial frontend will be a client-rendered single-page application.
 
 ```text
 Browser
 → Load React application
 → TanStack Router resolves route
-→ Frontend checks authentication state
+→ Zod parses route search state
+→ Frontend resolves authentication
 → Frontend requests data from Fastify
 → React renders the page
 ```
 
 Server-side rendering is not required for the MVP.
-
-The application is primarily an authenticated dashboard rather than a public content site requiring search-engine indexing.
-
-## Application Boundary
-
-The frontend and backend should remain clearly separated.
-
-```text
-React and Vite frontend
-→ HTTP requests
-→ Fastify API
-→ PostgreSQL
-```
-
-The frontend should receive defined API responses rather than database-shaped records.
-
-Shared contracts may eventually be used to coordinate request and response types, but the browser should not import backend implementation modules.
 
 ## Proposed Source Structure
 
@@ -135,20 +91,14 @@ src/
 │   ├── settings/
 │   └── transactions/
 ├── components/
-│   ├── layout/
-│   ├── navigation/
-│   └── shared/
 ├── hooks/
 ├── lib/
+│   ├── api/
+│   ├── environment/
+│   └── validation/
 ├── styles/
 └── types/
 ```
-
-This structure is provisional and should be finalized during the Application Architecture epic.
-
-## Feature Organization
-
-Feature-specific code should live near the feature that owns it.
 
 A feature directory may contain:
 
@@ -162,417 +112,392 @@ features/transactions/
 └── utilities/
 ```
 
-Feature modules should avoid exposing unnecessary implementation details.
+## Zod Responsibilities
 
-Shared components should only move into global shared directories when they are genuinely reused.
+The frontend should use Zod for:
 
-## React Component Boundaries
+- Form schemas
+- Field-level validation
+- Cross-field validation
+- Search-parameter validation
+- Public environment configuration
+- Parsing values from storage
+- Selected API-response parsing
+- Imported data when implemented
 
-Components should generally fall into these categories:
+Zod should not be used to duplicate backend-only business rules.
 
-### Route components
+## Form Validation
 
-Responsible for:
+Forms should use Zod schemas as their validation source of truth.
 
-- Reading route parameters
-- Reading search parameters
-- Coordinating page-level data requirements
-- Rendering the page layout
-- Connecting route state to feature components
+Examples include:
 
-### Feature components
+- Registration
+- Login
+- Account creation
+- Account editing
+- Transaction creation
+- Transaction editing
+- Budget allocation
+- Settings
 
-Responsible for:
+A form schema may define:
 
-- Implementing a specific product workflow
-- Displaying domain-specific content
-- Handling feature interactions
-- Composing reusable UI elements
+- Required values
+- Length limits
+- Valid formats
+- Numeric ranges
+- Enum values
+- Cross-field relationships
+- Normalization
 
-### Shared UI components
+## Form Types
 
-Responsible for:
+Form value types should generally be inferred from their Zod schemas.
 
-- Buttons
-- Inputs
-- Dialogs
-- Drawers
-- Tables
-- Empty states
-- Loading states
-- General layout primitives
+Conceptually:
 
-Route components should not become large collections of business logic and markup.
+```ts
+const transactionFormSchema = z.object({
+  description: z.string().trim().min(1),
+  amount: z.string().min(1),
+  date: z.string().date(),
+});
 
-## State Ownership
+type TransactionFormValues = z.input<typeof transactionFormSchema>;
+type TransactionSubmission = z.output<typeof transactionFormSchema>;
+```
 
-State should remain as close as possible to the code that owns it.
+Input and output types should be distinguished when a schema transforms values.
 
-Possible state categories include:
+## Form Library Integration
 
-### URL state
+The final form-management library should integrate with Zod.
 
-Use TanStack Router search parameters for state that should be:
+The form library should provide:
+
+- Field registration
+- Submission state
+- Dirty state
+- Field errors
+- Form-level errors
+- Zod resolver or parsing integration
+
+The application should not adopt a second unrelated schema language for forms.
+
+## Server Validation Remains Required
+
+Frontend validation improves usability.
+
+It does not protect the API.
+
+Every submitted request must still be validated by Fastify and Zod on the backend.
+
+The UI should expect the server to return validation errors even when the frontend schema passes.
+
+## API Validation
+
+The frontend API layer should use typed public contracts.
+
+Zod may parse API responses when runtime verification provides clear value.
+
+Good candidates include:
+
+- Authentication session data
+- Dashboard summaries
+- Imported or external data
+- Values read from persistent browser storage
+- High-impact API responses
+
+Parsing every internal response may be unnecessary when server response schemas and static contracts already provide sufficient confidence.
+
+## API Errors
+
+The frontend should parse Steward’s standard API error shape.
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "The submitted data is invalid.",
+    "details": {
+      "fields": {
+        "amount": ["Enter a valid amount."]
+      }
+    }
+  }
+}
+```
+
+The interface should map field errors to the appropriate controls.
+
+Unknown errors should fall back to a generic user-facing message.
+
+## TanStack Router Search Validation
+
+TanStack Router search parameters should be parsed with Zod-backed schemas where practical.
+
+The transactions route may validate:
+
+- Search text
+- Account ID
+- Category ID
+- Transaction type
+- Start date
+- End date
+- Sort
+- Page
+- Page size
+
+Conceptually:
+
+```ts
+const transactionSearchSchema = z.object({
+  search: z.string().catch(""),
+  account: z.string().uuid().optional(),
+  category: z.string().uuid().optional(),
+  type: z.enum(["income", "expense", "transfer"]).optional(),
+  page: z.coerce.number().int().min(1).catch(1),
+  pageSize: z.coerce.number().int().min(1).max(100).catch(25),
+});
+```
+
+The exact integration should use the installed TanStack Router APIs.
+
+## URL State
+
+State should be stored in the URL when it should be:
 
 - Shareable
+- Bookmarkable
 - Restorable
-- Deep-linkable
 - Preserved during browser navigation
+- Meaningful outside the component
 
-Examples:
+Examples include:
 
-- Transaction search
+- Search
 - Filters
-- Sort order
+- Sorting
 - Pagination
 - Selected budget month
 
-### Server state
+Zod should convert raw URL values into safe typed values.
 
-Server data includes:
+## Environment Validation
 
-- Accounts
-- Transactions
-- Categories
-- Budgets
-- Dashboard summaries
-- Authenticated-user data
+Frontend environment configuration should be parsed through Zod.
 
-The final server-state library remains undecided.
-
-### Form state
-
-Form state includes:
-
-- Field values
-- Validation messages
-- Dirty state
-- Submission state
-
-The final form library remains undecided.
-
-### Local UI state
-
-Local component state may be used for:
-
-- Dialog visibility
-- Drawer visibility
-- Expanded sections
-- Temporary interface state
-
-Global client state should only be introduced for state that genuinely spans unrelated features.
-
-## API Communication
-
-The frontend should communicate with the Fastify API through a centralized API layer.
-
-The API layer should handle:
-
-- Base URL configuration
-- Credentialed requests
-- JSON parsing
-- Standard API errors
-- Authentication failure behavior
-- Request cancellation where appropriate
-
-Feature components should not repeat raw request configuration throughout the application.
-
-A conceptual structure is:
-
-```text
-src/lib/api-client.ts
-```
-
-or feature-owned API functions such as:
-
-```text
-src/features/accounts/api/
-src/features/transactions/api/
-```
-
-The final structure depends on the selected server-state solution.
-
-## Authentication
-
-The React frontend uses Better Auth’s client APIs for authentication interactions and session-aware UI.
-
-The frontend is responsible for:
-
-- Registration forms
-- Login forms
-- Demo-account entry
-- Sign-out actions
-- Reading client session state
-- Redirecting based on authentication state
-- Showing authentication loading and error states
-
-Fastify and Better Auth remain responsible for validating sessions and protecting financial data.
-
-## Authentication State
-
-The frontend should treat authentication as three states:
-
-```text
-Loading
-Authenticated
-Unauthenticated
-```
-
-While authentication is loading:
-
-- Do not render protected financial content.
-- Do not prematurely redirect.
-- Show a neutral loading state.
-
-When authenticated:
-
-- Public auth pages should redirect to the dashboard.
-- Protected routes may render.
-- API requests may proceed with credentials.
-
-When unauthenticated:
-
-- Protected pages should redirect to login.
-- Public authentication pages may render.
-
-## Credentialed Requests
-
-When the frontend and Fastify API use different origins, API requests must include credentials.
-
-The frontend configuration should use the approved Fastify API origin.
-
-Vite environment variables may include:
-
-```text
-VITE_API_URL
-```
-
-Only values intended to be public in browser code should use Vite’s public environment-variable mechanism.
-
-Secrets must never be placed in frontend environment variables.
-
-## Error Handling
-
-The frontend should convert API errors into useful user-facing states.
-
-The interface should distinguish between:
-
-- Validation errors
-- Authentication errors
-- Authorization failures
-- Missing records
-- Conflicts
-- Network failures
-- Unexpected server failures
-
-Raw Fastify, PostgreSQL, or Better Auth errors should not be displayed directly.
-
-## Loading States
-
-Loading behavior should preserve layout stability.
-
-The frontend may use:
-
-- Skeletons
-- Loading indicators
-- Disabled submission controls
-- Optimistic visual feedback where safe
-
-The interface should not display misleading zero values before data is available.
-
-## Empty States
-
-Empty states should explain:
-
-- What content is missing
-- Why the page is empty
-- What action the user can take
-
-Examples:
-
-- No accounts exist
-- No transactions exist
-- No transactions match the filters
-- No budget exists for the selected month
-
-## Forms
-
-Forms should support:
-
-- Accessible labels
-- Field-level validation
-- Submission state
-- Server-error feedback
-- Save and cancel behavior
-- Dirty-state handling
-- Keyboard navigation
-
-Frontend validation improves the experience.
-
-Fastify remains responsible for validating all submitted input.
-
-## Styling
-
-The styling solution remains undecided.
-
-The selected solution should support:
-
-- Responsive layouts
-- Light and dark themes
-- Accessible focus states
-- Reusable design tokens
-- Consistent spacing
-- Maintainable component styling
-
-The frontend should use a restrained visual system with purple as the primary accent and semantic colors for meaningful states.
-
-## Accessibility
-
-The frontend should:
-
-- Use semantic HTML
-- Support keyboard navigation
-- Provide visible focus states
-- Associate labels with controls
-- Avoid color-only meaning
-- Support accessible dialogs and drawers
-- Announce important validation and status changes
-- Maintain reasonable contrast in light and dark themes
-
-Accessibility should be considered during implementation rather than postponed entirely to the final milestone.
-
-## Responsive Design
-
-Steward should support desktop and mobile layouts.
-
-Desktop may use:
-
-- Persistent sidebar navigation
-- Multi-column dashboards
-- Tables
-- Side-by-side content
-
-Mobile may use:
-
-- Condensed navigation
-- Stacked cards
-- Simplified transaction rows
-- Full-screen or drawer-based forms
-- Touch-friendly controls
-
-Responsive behavior should preserve the same workflows rather than merely shrinking the desktop interface.
-
-## Environment Configuration
-
-The frontend may use Vite environment variables for public runtime configuration.
-
-Likely values include:
+Possible public values include:
 
 ```text
 VITE_API_URL
 VITE_APP_ENV
 ```
 
-Frontend environment variables must not contain:
+Conceptually:
 
-- Better Auth secrets
+```ts
+const environmentSchema = z.object({
+  VITE_API_URL: z.string().url(),
+  VITE_APP_ENV: z.enum(["development", "test", "production"]),
+});
+```
+
+Only browser-safe public configuration may appear in Vite environment variables.
+
+The frontend must never contain:
+
 - Database credentials
+- Better Auth secrets
 - Private API keys
 - Session tokens
 - Demo-user passwords
 
+## Authentication Forms
+
+Zod should validate frontend authentication forms.
+
+### Registration
+
+Possible fields:
+
+- Name
+- Email
+- Password
+- Password confirmation
+
+Cross-field validation should ensure that the password values match.
+
+### Login
+
+Possible fields:
+
+- Email
+- Password
+
+Better Auth remains responsible for server-side credential validation.
+
+The frontend should not attempt to determine whether an email address exists.
+
+## Financial Input
+
+Financial form values may begin as strings because they originate from text inputs.
+
+Zod may validate the string and transform it into a canonical submission value.
+
+The implementation should avoid unsafe floating-point conversions.
+
+Currency conversion and rounding behavior should be implemented through tested utilities.
+
+## Dates
+
+Frontend schemas should distinguish:
+
+- Date input strings
+- Parsed dates
+- API date strings
+- Display-formatted dates
+- Budget year and month
+
+Display formatting should not be parsed back into domain values.
+
+## Error Presentation
+
+Validation errors should:
+
+- Appear near affected fields
+- Use clear language
+- Preserve valid user input
+- Identify cross-field issues
+- Be accessible to assistive technology
+- Avoid exposing internal schema details
+
+The first invalid field may receive focus after submission when appropriate.
+
+## Shared Schemas
+
+The frontend may consume shared Zod contracts for:
+
+- API requests
+- API responses
+- Pagination
+- Filter values
+- Common enums
+- Standard errors
+
+Shared schemas must not import:
+
+- Drizzle
+- PostgreSQL code
+- Fastify plugins
+- Better Auth secrets
+- Server configuration
+
+## Local Storage
+
+Any structured values read from local storage should be considered untrusted.
+
+Zod should parse them before use.
+
+Possible examples include:
+
+- Theme preference
+- Display density
+- Dismissed interface notices
+
+Invalid stored values should fall back to safe defaults.
+
+Authentication state should not be stored as a custom local-storage flag.
+
+## Loading States
+
+While data or authentication is loading:
+
+- Preserve layout stability.
+- Avoid displaying misleading values.
+- Prevent duplicate form submission.
+- Keep actionable errors distinct from loading states.
+
+## Accessibility
+
+Validation UX should:
+
+- Associate messages with form controls
+- Set invalid field state appropriately
+- Provide visible error text
+- Avoid relying on color alone
+- Announce important form-level errors
+- Preserve keyboard navigation
+
 ## Testing
 
-The final testing tools remain undecided.
+### Schema tests
 
-Frontend testing should eventually include:
+Test:
 
-### Unit tests
+- Valid values
+- Invalid values
+- Boundary values
+- Coercion
+- Transformations
+- Cross-field validation
+- Defaults
+- Fallback behavior
 
-For:
+### Form tests
 
-- Formatters
-- Validation helpers
-- Pure utilities
-- Financial display calculations that are intentionally frontend-owned
+Test:
 
-### Component tests
-
-For:
-
-- Forms
-- Loading states
-- Empty states
-- Error states
-- Navigation components
-- Budget and transaction interactions
+- Required fields
+- Invalid field values
+- Server-side validation errors
+- Submission state
+- Error-message placement
+- Successful submission
 
 ### Router tests
 
-For:
+Test:
 
-- Route matching
-- Search parameters
-- Protected-route behavior
-- Redirects
-- Route loaders where used
+- Valid search parameters
+- Invalid search parameters
+- Default values
+- Filter persistence
+- Pagination parsing
 
-### End-to-end tests
+### Environment tests
 
-For:
+Test:
 
-- Registration
-- Login
-- Demo login
-- Navigation
-- Account management
-- Transaction management
-- Budget editing
-- Theme changes
-- Sign out
-
-## Performance
-
-The frontend should avoid premature optimization while following sensible practices.
-
-Potential considerations include:
-
-- Route-level code splitting
-- Avoiding unnecessary rerenders
-- Paginating large transaction lists
-- Deferring noncritical content
-- Loading dashboard sections independently
-- Avoiding excessively large shared bundles
-
-TanStack Router file-based routing may be configured to support route-level code splitting.
+- Valid configuration
+- Missing required variables
+- Invalid API URLs
+- Unsupported environment names
 
 ## Non-Goals
 
-The initial frontend will not require:
+The initial frontend will not use:
 
-- Next.js
-- TanStack Start
-- Server-side rendering
-- React Server Components
-- Static-site generation
-- Native mobile applications
-- Micro-frontends
-- Multiple frontend frameworks
-- Redux by default
-- A custom routing system
-
-These decisions may be reconsidered only if a concrete requirement appears.
+- Yup
+- Joi
+- Valibot
+- Multiple form-validation libraries
+- TypeScript types as runtime validators
+- Frontend validation as authorization
+- Drizzle table schemas as frontend contracts
+- Handwritten parsing throughout route components
 
 ## Success Criteria
 
-The frontend decision is successful when:
+The frontend validation decision is successful when:
 
-- React supports the required interactive workflows.
-- Vite provides a simple and reliable development and build setup.
-- TanStack Router provides predictable type-safe navigation.
-- Authentication states render correctly.
-- API communication remains centralized.
-- URL state supports search, filters, pagination, and selected months.
-- Desktop and mobile workflows remain consistent.
-- Feature boundaries remain understandable.
-- The frontend stays independent from Fastify implementation details.
+- Forms use Zod schemas.
+- Types are inferred from schemas.
+- TanStack Router receives typed search state.
+- Public environment configuration is validated.
+- Field errors are clear and accessible.
+- Server validation errors integrate with forms.
+- Shared contracts do not expose backend internals.
+- Frontend validation improves UX without being treated as security.

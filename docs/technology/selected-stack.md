@@ -14,6 +14,7 @@ Items marked as open have not yet been selected.
 | Language                | TypeScript      | Selected |
 | Build tool              | Vite            | Selected |
 | Routing                 | TanStack Router | Selected |
+| Runtime validation      | Zod             | Selected |
 | Server-state management | Undecided       | Open     |
 | Form management         | Undecided       | Open     |
 | Styling                 | Undecided       | Open     |
@@ -23,15 +24,16 @@ Items marked as open have not yet been selected.
 
 ## Backend
 
-| Area            | Selection     | Status   |
-| --------------- | ------------- | -------- |
-| Runtime         | Node.js       | Selected |
-| Language        | TypeScript    | Selected |
-| Web framework   | Fastify       | Selected |
-| Authentication  | Better Auth   | Selected |
-| API style       | HTTP JSON API | Selected |
-| Validation      | Undecided     | Open     |
-| Backend testing | Undecided     | Open     |
+| Area                    | Selection                   | Status   |
+| ----------------------- | --------------------------- | -------- |
+| Runtime                 | Node.js                     | Selected |
+| Language                | TypeScript                  | Selected |
+| Web framework           | Fastify                     | Selected |
+| Runtime validation      | Zod                         | Selected |
+| Fastify Zod integration | `fastify-type-provider-zod` | Selected |
+| Authentication          | Better Auth                 | Selected |
+| API style               | HTTP JSON API               | Selected |
+| Backend testing         | Undecided                   | Open     |
 
 ## Database
 
@@ -61,11 +63,13 @@ Items marked as open have not yet been selected.
 React + TypeScript + Vite
             |
             | TanStack Router
+            | Zod
             |
             | Credentialed HTTP requests
             v
 Fastify + TypeScript
             |
+            | Zod request and response schemas
             | Better Auth
             | Drizzle ORM
             v
@@ -86,11 +90,35 @@ Vite provides the frontend development server and production build process.
 
 TanStack Router provides type-safe client-side routes, nested layouts, route parameters, and validated search parameters.
 
+### Zod
+
+Zod provides runtime validation for:
+
+- Forms
+- Route search parameters
+- Frontend environment configuration
+- Stored browser values
+- Selected API boundaries
+
 ## Backend Decisions
 
 ### Fastify
 
 Fastify hosts Steward’s API and Better Auth endpoints.
+
+### Zod
+
+Zod defines and validates:
+
+- Request bodies
+- Route parameters
+- Query parameters
+- Response payloads
+- Backend environment configuration
+
+### `fastify-type-provider-zod`
+
+`fastify-type-provider-zod` connects Zod schemas to Fastify’s route validation, serialization, and inferred TypeScript types.
 
 ### Better Auth
 
@@ -114,30 +142,52 @@ Drizzle Kit generates and applies version-controlled SQL migrations.
 
 Better Auth uses the official Drizzle adapter configured with the PostgreSQL provider.
 
-## Data Flow
+## Validation Flow
 
 ```text
-React page
-→ Feature API function
-→ Fastify route
-→ Authentication hook
+User input
+→ React form
+→ Zod frontend validation
+→ Fastify request
+→ Zod server validation
 → Application service
 → Drizzle query
-→ PostgreSQL
+→ PostgreSQL constraints
 ```
 
-The response returns through the same layers in reverse.
+Each layer serves a different purpose:
+
+- Frontend validation improves usability.
+- Backend validation protects the API boundary.
+- Application services enforce business rules.
+- PostgreSQL constraints protect stored-data integrity.
+
+## API Response Flow
+
+```text
+PostgreSQL record
+→ Drizzle query result
+→ Application response mapping
+→ Zod response schema
+→ Fastify serialization
+→ React client
+```
+
+Drizzle table types are not treated as public API contracts.
 
 ## Authentication Flow
 
 ```text
 React authentication form
+→ Zod form validation
 → Fastify Better Auth endpoint
 → Better Auth
 → Drizzle adapter
 → PostgreSQL auth tables
 → Session cookie returned
 ```
+
+Better Auth remains responsible for its internal authentication validation.
 
 ## Database Workflow
 
@@ -148,6 +198,30 @@ Edit Drizzle TypeScript schema
 → Commit migration
 → Apply migration to PostgreSQL
 ```
+
+## Schema Ownership
+
+### Zod schemas
+
+Own runtime application boundaries:
+
+- API input
+- API output
+- Forms
+- Environment configuration
+- URL state
+
+### Drizzle schemas
+
+Own persistent PostgreSQL structure:
+
+- Tables
+- Columns
+- Foreign keys
+- Indexes
+- Database constraints
+
+Zod and Drizzle schemas may describe related data but serve different purposes.
 
 ## Explicitly Not Selected
 
@@ -164,6 +238,9 @@ The current architecture does not use:
 - TypeORM
 - SQLite
 - MongoDB
+- Joi
+- Yup
+- Valibot
 - A custom authentication system
 
 These tools should not be introduced without revisiting the corresponding technology decision.
@@ -174,10 +251,9 @@ The next technology evaluations should cover:
 
 1. Server-state management
 2. Form management
-3. Runtime validation
-4. Styling and component library
-5. Testing
-6. PostgreSQL driver
-7. Package management and repository structure
-8. Local development infrastructure
-9. Deployment
+3. Styling and component library
+4. Testing
+5. PostgreSQL driver
+6. Package management and repository structure
+7. Local development infrastructure
+8. Deployment
