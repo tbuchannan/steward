@@ -2,51 +2,53 @@
 
 ## Decision
 
-Steward will use Fastify as its backend framework and PostgreSQL as its relational database.
+Steward will use Fastify as its backend framework, PostgreSQL as its relational database, and Drizzle ORM as its query layer.
 
-The backend will be implemented in TypeScript and will expose the application API, authentication endpoints, and server-side financial operations.
+Better Auth will provide authentication through its Drizzle PostgreSQL adapter.
 
-The ORM or query layer has not yet been selected.
+The backend will be implemented in TypeScript.
 
 ## Selected Backend Technologies
 
 The confirmed backend technologies are:
 
+- Node.js
 - TypeScript
 - Fastify
 - PostgreSQL
+- Drizzle ORM
+- Drizzle Kit
 - Better Auth
 
 Still undecided:
 
-- ORM or query builder
-- Migration tooling
-- PostgreSQL client
-- API schema library
+- Runtime validation library
+- API documentation tooling
+- Backend test runner
 - Deployment provider
 
 ## Responsibilities
 
-The Fastify application is responsible for:
+The Fastify backend is responsible for:
 
-- Serving the Steward API
+- Serving the Steward HTTP API
 - Hosting Better Auth endpoints
 - Validating requests
 - Serializing responses
 - Enforcing authentication
 - Enforcing authorization
 - Running financial business logic
-- Reading and writing PostgreSQL data
-- Managing database transactions
+- Querying PostgreSQL through Drizzle
+- Managing Drizzle transactions
+- Translating database errors
 - Logging requests and unexpected errors
-- Returning consistent API responses
-- Supporting integration testing
+- Supporting integration tests
 
-The frontend must not connect directly to PostgreSQL.
+The React frontend must not connect directly to PostgreSQL or Drizzle.
 
-## Application Structure
+## Application Architecture
 
-The backend should be organized around application domains rather than one large routes directory.
+The backend should be organized around application domains.
 
 A possible structure is:
 
@@ -55,6 +57,11 @@ src/
 ├── app.ts
 ├── server.ts
 ├── config/
+├── database/
+│   ├── client.ts
+│   ├── schema/
+│   ├── relations.ts
+│   └── seed/
 ├── plugins/
 │   ├── auth.ts
 │   ├── database.ts
@@ -74,115 +81,158 @@ src/
     └── utilities/
 ```
 
-This structure is provisional and may change during the Application Architecture epic.
+The final repository structure will be confirmed during the Application Architecture epic.
 
 ## Application Factory
 
-Application construction should remain separate from process startup.
+Application creation should remain separate from process startup.
 
 ```text
 app.ts
-→ Creates the Fastify application
-→ Registers shared plugins
-→ Registers authentication
-→ Registers feature modules
-→ Returns the configured application
+→ Create Fastify instance
+→ Register configuration
+→ Register Drizzle database plugin
+→ Register Better Auth
+→ Register authentication hooks
+→ Register feature routes
+→ Return configured application
 
 server.ts
-→ Loads environment configuration
-→ Creates the application
-→ Starts the HTTP server
-→ Handles graceful shutdown
+→ Load environment
+→ Create application
+→ Start listening
+→ Handle graceful shutdown
 ```
 
-This separation allows tests to create the application without listening on a real network port.
+Tests should be able to create the Fastify application without opening a network port.
 
-## Plugin Registration
+## Database Plugin
 
-Shared infrastructure should be registered through Fastify plugins.
+The Fastify database plugin should initialize:
 
-Initial plugins may include:
+- The PostgreSQL connection pool
+- The Drizzle client
+- Database lifecycle hooks
 
-- Environment configuration
-- PostgreSQL database access
-- Better Auth
-- Authentication hooks
-- CORS
-- Error handling
-- Logging
-- API documentation where useful
+The plugin should expose the Drizzle client to dependent modules.
 
-Plugin dependencies and registration order should be explicit.
-
-## PostgreSQL Plugin
-
-PostgreSQL access should be initialized through a dedicated Fastify plugin.
-
-The plugin should:
-
-- Read validated database configuration
-- Create a shared connection pool or database client
-- Verify startup connectivity where practical
-- Expose database access to dependent modules
-- Close the pool during graceful shutdown
-- Avoid creating connections per request
-- Avoid logging credentials
-
-The exact decoration name and TypeScript declaration should be documented after the query layer is selected.
-
-A possible conceptual interface is:
+Conceptually:
 
 ```text
 fastify.db
 ```
 
-Feature modules should not create independent PostgreSQL pools.
+The plugin should:
 
-## Database Access Boundary
+- Create one shared client
+- Reuse the PostgreSQL pool
+- Validate configuration
+- Close resources during shutdown
+- Avoid logging credentials
+- Avoid creating connections per request
 
-Route handlers should not contain large inline SQL queries or direct persistence logic.
+## Drizzle Access Boundary
 
-The preferred flow is:
+Fastify route handlers should not contain large inline Drizzle queries.
+
+The expected flow is:
 
 ```text
 Fastify route
 → Validate request
-→ Retrieve authenticated user
-→ Call service or use case
-→ Query PostgreSQL through repository/query layer
+→ Read authenticated user
+→ Call application service
+→ Service calls Drizzle query function
+→ Query PostgreSQL
 → Return serialized response
 ```
 
-The final repository or query pattern will be selected after the ORM evaluation.
+Drizzle query functions should live close to the domain module that owns them.
 
-## Better Auth and PostgreSQL
+## Module Structure
 
-Better Auth will persist its required authentication data in PostgreSQL.
-
-Authentication records include:
-
-- Users
-- Credential accounts
-- Sessions
-- Verification records where required
-
-The Better Auth user identifier is the canonical user identity for Steward.
-
-Steward financial tables should reference that identity for ownership.
-
-## Route Organization
-
-Routes should be grouped by domain.
+A feature module may contain:
 
 ```text
-/api/accounts
-/api/transactions
-/api/categories
-/api/budgets
-/api/dashboard
-/api/settings
-/api/demo
+modules/transactions/
+├── transaction.routes.ts
+├── transaction.schemas.ts
+├── transaction.service.ts
+├── transaction.queries.ts
+├── transaction.errors.ts
+├── transaction.types.ts
+└── transaction.test.ts
 ```
+
+Responsibilities should remain separated:
+
+- Routes handle HTTP concerns.
+- Schemas validate HTTP input and output.
+- Services coordinate application workflows.
+- Query files contain Drizzle database operations.
+- Errors represent expected domain failures.
+- Tests verify the module.
+
+## Route Handlers
+
+Route handlers should remain thin.
+
+A handler should generally:
+
+1. Read validated parameters, query, or body.
+2. Obtain the authenticated user from the request.
+3. Call the application service.
+4. Return the result.
+
+Handlers should not:
+
+- Construct unrelated Drizzle queries
+- Decide transaction boundaries
+- Reimplement authentication
+- Trust client-provided user IDs
+- Contain complex financial calculations
+
+## Drizzle Query Functions
+
+Query functions should:
+
+- Accept the authenticated user ID
+- Use typed Drizzle queries
+- Scope user-owned data correctly
+- Return only required fields
+- Use deterministic ordering
+- Remain independently testable
+
+Example responsibilities include:
+
+- Find accounts for a user
+- Find one account owned by a user
+- Insert a transaction
+- Update a transaction owned by a user
+- Calculate monthly category totals
+- Load budget allocations
+- Build dashboard summaries
+
+## Better Auth Integration
+
+Better Auth should use the same configured Drizzle client or a clearly shared database package.
+
+The official Drizzle adapter should be configured for PostgreSQL.
+
+Conceptually:
+
+```ts
+betterAuth({
+  database: drizzleAdapter(db, {
+    provider: "pg",
+    schema,
+  }),
+});
+```
+
+The authentication schema must be included in the Drizzle schema exports.
+
+## Authentication Endpoints
 
 Better Auth endpoints are mounted under:
 
@@ -190,123 +240,151 @@ Better Auth endpoints are mounted under:
 /api/auth/*
 ```
 
-Each domain module may contain:
+Fastify should forward:
 
-- Routes
-- Request schemas
-- Response schemas
-- Services or use cases
-- Database query functions
-- Domain errors
-- Tests
+- Request URL
+- HTTP method
+- Headers
+- Body
+- Response status
+- Response headers
+- Cookies
+- Response body
+
+Feature routes should not recreate Better Auth behavior.
 
 ## Authentication Hook
 
-Protected route groups should use a reusable authentication hook.
+Protected route groups should use a reusable Fastify authentication hook.
 
 The hook should:
 
-1. Read the incoming request headers.
-2. Retrieve the Better Auth session.
-3. Reject requests without a valid session.
-4. Attach the authenticated user and session to the request.
-5. Allow the feature handler to continue.
+- Retrieve the Better Auth session
+- Reject invalid or missing sessions
+- Attach the authenticated user and session
+- Avoid repeated session lookups within the same request
+- Keep authentication logic out of feature handlers
 
-Feature routes should not repeatedly parse sessions themselves.
+## Authorization
 
-## Authorization and PostgreSQL Queries
+Authentication determines identity.
 
-Protected handlers must derive the user identifier from the validated Better Auth session.
+Authorization controls access to PostgreSQL records.
 
-PostgreSQL queries involving user-owned resources must include that identifier.
+Protected Drizzle queries must derive the user ID from the validated Better Auth session.
 
-For example, an account query should conceptually enforce:
+They must not trust a user ID supplied through:
+
+- Request body
+- Query parameter
+- Route parameter
+- Client-controlled header
+
+## Ownership Queries
+
+A protected resource query should include ownership in the database condition.
+
+Conceptually:
 
 ```text
-account.id = requested account
-AND account.user_id = authenticated user
+financial_account.id = requested account
+AND financial_account.user_id = authenticated user
 ```
 
-The backend must not trust a user identifier supplied through:
+A separate lookup followed by an unchecked ownership assumption should be avoided where ownership can be included directly in the query.
 
-- Request bodies
-- Query parameters
-- Route parameters
-- Client-controlled headers
+## Resource-Hiding Behavior
+
+Requests for missing resources and resources owned by another user may both return:
+
+```text
+404 Not Found
+```
+
+This avoids revealing whether another user’s financial record exists.
+
+The behavior should remain consistent.
 
 ## Request Validation
 
-Routes accepting input should define schemas for:
+Every input-bearing route should define validation for:
 
 - Path parameters
 - Query parameters
-- Request bodies
-- Required headers where applicable
+- Request body
+- Headers where required
 
-Validation should cover structural concerns before a database query runs.
+Validation should occur before Drizzle queries run.
 
-Examples include:
+Structural validation includes:
 
-- Required values
-- Data types
-- Date formats
-- Supported account types
-- Valid pagination values
-- Valid transaction amounts
-- Valid budget allocations
+- Required fields
+- Types
+- Formats
+- Enum values
+- Numeric limits
+- Pagination values
 
-Database-backed checks should occur in the service or query layer.
+Database-backed validation belongs in application services.
 
 ## Response Serialization
 
 Routes should define response schemas where practical.
 
-Response schemas should:
+Database rows should be mapped into deliberate API responses.
 
-- Keep API shapes stable
-- Prevent accidental field exposure
-- Support documentation
-- Improve runtime serialization
-- Make refactoring safer
+This prevents accidentally returning:
 
-Database rows should not automatically be returned directly to the client.
+- Internal timestamps
+- Better Auth records
+- Authentication metadata
+- Database-only flags
+- Fields unrelated to the response
+- Sensitive user information
 
-## PostgreSQL Transactions
+## Drizzle Transactions
 
-Application services should use PostgreSQL transactions when an operation changes multiple related records atomically.
-
-Examples include:
-
-- Creating linked transfer transactions
-- Resetting demo data
-- Creating a budget and its allocations
-- Importing transaction batches
-- Updating dependent financial records
-
-A failed operation should roll back all related changes.
-
-Transaction boundaries should be owned by application services rather than spread across HTTP handlers.
-
-## Financial Calculations
-
-Financial business logic should not live directly inside Fastify routes.
+Application services should own transaction boundaries.
 
 Examples include:
 
-- Account balances
-- Monthly spending
-- Budget progress
-- Overspending calculations
-- Transfers
-- Net-worth calculations
+- Linked account transfers
+- Demo-data reset
+- Budget creation with allocations
+- Batch transaction imports
+- Multi-record updates
+
+Conceptually:
+
+```text
+Fastify handler
+→ Application service
+→ db.transaction(...)
+→ Multiple Drizzle operations
+→ Commit or rollback
+```
+
+The HTTP layer should not coordinate partial database writes.
+
+## Financial Business Logic
+
+Business rules should remain separate from route and query syntax.
+
+Examples include:
+
+- Transfer rules
+- Account archival
+- Transaction effects
+- Budget calculations
+- Overspending status
 - Dashboard summaries
-- Demo-data reset behavior
+- Demo reset behavior
 
-These should be implemented in independently testable services or use cases.
+Services may call multiple Drizzle query functions while keeping policy decisions in one place.
 
 ## Error Handling
 
-The API should return a consistent error shape.
+The API should use a consistent error format.
 
 ```json
 {
@@ -320,32 +398,33 @@ The API should return a consistent error shape.
 
 Expected errors include:
 
-- Invalid input
-- Missing authentication
-- Insufficient authorization
+- Validation errors
+- Authentication failures
+- Authorization failures
 - Missing resources
-- Conflicting state
-- Database constraints
+- Conflicts
+- Database constraint violations
 - Invalid financial operations
 
-Unexpected PostgreSQL errors should:
+## Drizzle and PostgreSQL Errors
 
-- Be logged with useful server context
-- Return a generic message to the client
-- Avoid leaking table names, SQL, connection details, or stack traces
+Raw Drizzle or PostgreSQL errors must not be returned directly.
 
-## Database Constraint Errors
-
-Known PostgreSQL constraint failures may be translated into application errors.
+Known database errors may be translated into application errors.
 
 Examples include:
 
-- Duplicate records
-- Invalid foreign keys
-- Required values
-- Conflicting budget allocations
+- Unique constraint violation
+- Foreign-key violation
+- Required-field violation
+- Conflicting budget allocation
 
-The API should not expose raw PostgreSQL errors directly to users.
+Unexpected errors should:
+
+- Be logged
+- Include useful server context
+- Return a generic message
+- Avoid exposing SQL, schema names, connection details, or stack traces
 
 ## HTTP Status Conventions
 
@@ -353,51 +432,88 @@ The API should generally use:
 
 - `200 OK` for successful reads and updates
 - `201 Created` for successful creation
-- `204 No Content` when no response body is required
+- `204 No Content` for successful operations without a body
 - `400 Bad Request` for invalid operations
-- `401 Unauthorized` when a valid session is missing
-- `403 Forbidden` when an authenticated user lacks permission
-- `404 Not Found` when a resource does not exist or should not be revealed
+- `401 Unauthorized` for missing or invalid sessions
+- `403 Forbidden` for authenticated but disallowed operations
+- `404 Not Found` for missing or concealed resources
 - `409 Conflict` for conflicting state
 - `500 Internal Server Error` for unexpected failures
 
-## CORS and Cookies
+## Search, Filtering, and Pagination
 
-If the frontend and Fastify API run on different origins:
+The transaction API should translate validated HTTP query parameters into typed Drizzle query conditions.
 
-- Approved frontend origins must be listed explicitly.
-- Credentialed requests must be enabled.
-- Better Auth trusted origins must match the intended frontend origins.
-- Wildcard origins must not be used with authentication cookies.
+Supported state may include:
 
-A same-origin production deployment is preferred where practical.
+- Search
+- Account
+- Category
+- Transaction type
+- Date range
+- Amount range
+- Sort
+- Page
+- Page size
 
-## Logging
+Query construction should remain centralized rather than duplicated across handlers.
 
-Fastify logging should include:
+## Migrations
 
-- Request identifier
-- HTTP method
-- Route
-- Response status
-- Request duration
-- Unexpected error context
+Drizzle Kit will manage database migrations.
 
-Logs must not include:
+The backend project should include:
 
-- Database passwords
-- Connection strings containing credentials
-- Raw SQL containing sensitive values
-- Authentication cookies
-- Session tokens
-- User passwords
-- Full financial payloads
+```text
+drizzle.config.ts
+drizzle/
+```
+
+The migration workflow is:
+
+```text
+Update Drizzle schema
+→ Generate migration
+→ Review SQL
+→ Commit migration
+→ Apply migration
+```
+
+The Fastify server should not perform uncontrolled schema changes during normal request handling.
+
+## Schema and Migration Deployment
+
+Database migrations should run as an explicit deployment step before application code that depends on them becomes active.
+
+The migration process must support:
+
+- Local development
+- Integration tests
+- CI
+- Production deployment
+
+Migration failure should stop deployment rather than leave the application partially upgraded.
+
+## Seed Commands
+
+Seed operations should be separate from normal Fastify startup.
+
+They should support:
+
+- Creating the demo Better Auth user
+- Creating categories
+- Creating financial accounts
+- Creating transactions
+- Creating budgets and allocations
+- Restoring demo data
+
+Seed operations should use Drizzle and PostgreSQL transactions where appropriate.
 
 ## Configuration
 
-Backend configuration should be loaded from environment variables and validated during startup.
+Backend configuration should be loaded from environment variables and validated at startup.
 
-Likely values include:
+Likely variables include:
 
 ```text
 NODE_ENV
@@ -411,115 +527,129 @@ LOG_LEVEL
 DEMO_USER_EMAIL
 ```
 
-Required configuration should fail clearly during startup when missing or invalid.
+Drizzle Kit may also read:
+
+```text
+DATABASE_URL
+```
+
+Secrets must not be committed.
 
 ## Graceful Shutdown
 
-The server should handle shutdown signals.
-
-Shutdown behavior should:
+The server should:
 
 1. Stop accepting new requests.
 2. Allow active requests to finish where practical.
-3. Close the Fastify server.
-4. Close the PostgreSQL connection pool.
-5. Exit cleanly.
+3. Close Fastify.
+4. Close the PostgreSQL pool.
+5. Release Drizzle database resources.
+6. Exit cleanly.
 
-Tests should also close application and database resources.
+Tests must also close Fastify and database resources.
 
-## Migrations
+## Logging
 
-Database migrations must run separately from normal HTTP request handling.
+Logs may include:
 
-The final migration command will depend on the selected ORM or migration tool.
+- Request ID
+- HTTP method
+- Route
+- Response status
+- Request duration
+- General database failure category
+- Unexpected error context
 
-Migrations should be:
+Logs must not include:
 
-- Version controlled
-- Repeatable
-- Applied before incompatible application code
-- Tested in development and CI
-- Used for both Better Auth and Steward schema requirements
-
-The Fastify server should not silently make uncontrolled schema changes during normal startup.
-
-## Seed Data
-
-Seed operations should be implemented separately from normal server startup.
-
-Seeds should support:
-
-- Creating the demo Better Auth user
-- Creating financial accounts
-- Creating categories
-- Creating transactions
-- Creating budgets and allocations
-- Restoring the canonical demo dataset
-
-Seed commands must be safe enough to avoid overwriting unrelated user data.
+- Database credentials
+- Better Auth secrets
+- Session tokens
+- Cookies
+- Passwords
+- Raw sensitive financial payloads
+- Unredacted SQL parameters
 
 ## Testing
 
 ### Unit tests
 
-Test financial services and business rules independently from Fastify and PostgreSQL where practical.
+Test:
 
-### Integration tests
+- Financial calculations
+- Validation helpers
+- Service-level policy
+- Transfer behavior
+- Budget calculations
 
-Use Fastify request injection with an isolated PostgreSQL test database.
+### Database integration tests
 
-Integration tests should cover:
+Test:
+
+- Drizzle schema
+- Migrations
+- Constraints
+- Queries
+- Transactions
+- Ownership conditions
+- Better Auth schema integration
+- Demo reset
+
+### Fastify integration tests
+
+Use Fastify request injection against an isolated PostgreSQL database.
+
+Test:
 
 - Route validation
-- Better Auth integration
-- Authentication hooks
+- Authentication
 - Authorization
-- PostgreSQL constraints
-- Database transactions
-- Error translation
-- User-data isolation
-- Demo reset behavior
+- Query behavior
+- Error mapping
+- Response serialization
 
 ### End-to-end tests
 
-Test critical browser workflows across:
+Test critical workflows across:
 
 ```text
-Frontend
+React
 → Fastify
 → Better Auth
+→ Drizzle
 → PostgreSQL
 ```
 
 ## Non-Goals
 
-The initial backend will not require:
+The initial backend will not use:
 
+- Prisma
+- Sequelize
+- TypeORM
+- Multiple ORMs
 - Express
 - Hono
 - NestJS
-- Multiple database engines
-- Microservices
 - GraphQL
+- Microservices
 - Event sourcing
 - Message brokers
-- Database sharding
-- Read replicas
-- Independently deployed domain services
+- Multiple database engines
 
-These may be reconsidered only in response to concrete requirements.
+These should only be reconsidered when a concrete requirement justifies the added complexity.
 
 ## Success Criteria
 
 The backend architecture is successful when:
 
-- Fastify exposes a clear modular API.
-- PostgreSQL access is centralized.
-- Better Auth persists users and sessions in PostgreSQL.
-- Protected requests derive identity from validated sessions.
-- User-owned queries enforce ownership.
-- Financial operations use transactions where required.
+- Fastify exposes a modular API.
+- Drizzle provides typed PostgreSQL access.
+- Better Auth uses the Drizzle adapter.
 - Route handlers remain thin.
-- Database resources close cleanly.
-- Integration tests use an isolated PostgreSQL database.
+- Services own business workflows.
+- Query functions enforce ownership.
+- Drizzle transactions protect multi-record operations.
+- Migrations are generated, reviewed, and version controlled.
+- Integration tests run against isolated PostgreSQL data.
 - The architecture remains understandable for a solo developer.

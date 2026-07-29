@@ -2,108 +2,350 @@
 
 ## Decision
 
-Steward will use PostgreSQL as its relational database.
+Steward will use PostgreSQL as its relational database and Drizzle ORM as its query layer and schema-management tool.
 
-PostgreSQL will store:
+Drizzle Kit will manage schema migrations.
 
-- Authentication data
-- User-owned financial data
-- Application preferences
-- Demo-account data
-- Data required for dashboard summaries and reporting
+The confirmed database technologies are:
 
-The ORM or query layer has not yet been selected.
+- PostgreSQL
+- Drizzle ORM
+- Drizzle Kit
+- A PostgreSQL driver supported by Drizzle
+- Better Auth’s Drizzle adapter
 
 ## Responsibilities
 
-PostgreSQL is responsible for persisting:
+PostgreSQL is responsible for storing:
 
 - Better Auth users
-- Better Auth credential accounts
+- Better Auth authentication accounts
 - Better Auth sessions
-- Verification records required by Better Auth
-- Steward accounts
+- Better Auth verification records where required
+- Steward financial accounts
 - Transactions
 - Categories
 - Budgets
 - Budget allocations
 - User preferences
-- Demo-user financial data
+- Demo-account financial data
 
-The database should enforce important integrity rules rather than relying entirely on application code.
+Drizzle is responsible for:
+
+- Defining the database schema in TypeScript
+- Providing typed queries
+- Defining table relationships
+- Expressing indexes and constraints
+- Managing database transactions
+- Generating SQL migrations through Drizzle Kit
+- Applying version-controlled migrations
+- Providing database access to Fastify services
+
+## Source of Truth
+
+Steward will use a code-first database workflow.
+
+The Drizzle schema files are the source of truth for the database structure.
+
+```text
+TypeScript Drizzle schema
+→ Drizzle Kit generates SQL migrations
+→ Migrations are reviewed and committed
+→ Migrations are applied to PostgreSQL
+```
+
+Database changes should not be made manually without updating the Drizzle schema and migration history.
 
 ## Why PostgreSQL
 
-PostgreSQL was selected because Steward has strongly relational data.
+PostgreSQL was selected because Steward contains strongly relational financial data.
 
 Examples include:
 
-- Users own accounts.
+- Users own financial accounts.
 - Accounts contain transactions.
 - Transactions belong to categories.
 - Budgets contain category allocations.
-- Dashboard summaries depend on aggregating related financial records.
+- Dashboard summaries aggregate related financial records.
+- Authentication sessions belong to users.
 
-PostgreSQL provides the relational modeling, constraints, transactions, indexing, and aggregation capabilities required for these workflows.
+PostgreSQL provides:
+
+- Relational integrity
+- Foreign keys
+- Transactions
+- Constraints
+- Indexes
+- Aggregation
+- Date and time support
+- Fixed-precision numeric types
+
+## Why Drizzle ORM
+
+Drizzle was selected because it provides:
+
+- TypeScript-defined schemas
+- Typed SQL-like queries
+- PostgreSQL support
+- Explicit control over generated SQL
+- Transactions
+- Relations
+- Index and constraint definitions
+- Version-controlled migration generation
+- Better Auth integration
+- A relatively small abstraction over SQL
+
+Drizzle should support the application without hiding the relational model or requiring repository-wide generated client code.
 
 ## Database Ownership
 
 The Fastify backend owns database access.
 
-The frontend must not:
+The React frontend must not:
 
 - Connect directly to PostgreSQL
+- Import the server database client
 - Receive database credentials
 - Construct database queries
-- Determine resource ownership without server validation
+- Treat Drizzle types as a replacement for API contracts
+- Determine financial-record ownership without server validation
 
-All database operations should pass through authenticated Fastify routes or server-side application services.
+All database operations should pass through authenticated Fastify routes and application services.
 
-## Initial Domain Entities
+## Proposed Database Structure
 
-The initial Steward domain is expected to include:
-
-```text
-User
-├── Account
-│   └── Transaction
-├── Category
-├── Budget
-│   └── Budget Allocation
-└── User Preference
-```
-
-Better Auth will also require authentication-related entities such as:
+A possible structure is:
 
 ```text
-User
-Account
-Session
-Verification
+src/
+└── database/
+    ├── client.ts
+    ├── schema/
+    │   ├── index.ts
+    │   ├── auth.ts
+    │   ├── users.ts
+    │   ├── financial-accounts.ts
+    │   ├── transactions.ts
+    │   ├── categories.ts
+    │   ├── budgets.ts
+    │   ├── budget-allocations.ts
+    │   └── user-preferences.ts
+    ├── relations.ts
+    ├── migrations.ts
+    └── seed/
+        ├── index.ts
+        └── demo.ts
+
+drizzle/
+└── generated migration files
+
+drizzle.config.ts
 ```
 
-The Better Auth `Account` entity represents an authentication method or credential account.
+The final location depends on the repository architecture.
 
-The Steward `Account` entity represents a financial account.
+If the database code is placed in a shared workspace package, the same responsibilities should remain intact.
 
-These concepts must use distinct names in application code and database documentation to avoid ambiguity.
+## Database Client
 
-Possible names include:
+The application should expose one configured Drizzle database client.
+
+Conceptually:
+
+```text
+PostgreSQL connection pool
+→ Drizzle client
+→ Fastify database plugin
+→ Application services
+```
+
+The database client should:
+
+- Use the configured PostgreSQL connection
+- Be initialized during application startup
+- Be reused across requests
+- Be closed during graceful shutdown
+- Be available to Better Auth
+- Be available to Steward application services
+- Avoid creating a new connection per request
+
+## PostgreSQL Driver
+
+The exact PostgreSQL driver should be confirmed during setup.
+
+A likely option is:
+
+```text
+pg
+```
+
+with:
+
+```text
+drizzle-orm/node-postgres
+```
+
+The selected driver must support:
+
+- Connection pooling
+- Transactions
+- Local development
+- Integration tests
+- The selected deployment provider
+- Better Auth’s Drizzle adapter
+
+## Fastify Database Plugin
+
+Fastify should expose Drizzle through a dedicated plugin.
+
+The plugin should:
+
+- Read validated database configuration
+- Create the PostgreSQL pool
+- Create the Drizzle client
+- Decorate Fastify with the database client
+- Verify database connectivity where practical
+- Close the pool during application shutdown
+- Avoid logging database credentials
+
+Conceptually:
+
+```text
+fastify.db
+```
+
+The final property name should be included in Fastify’s TypeScript declarations.
+
+Feature modules should not create separate Drizzle clients or PostgreSQL pools.
+
+## Drizzle Schema
+
+Database tables should be defined using Drizzle’s PostgreSQL schema APIs.
+
+The schema should define:
+
+- Columns
+- Primary keys
+- Foreign keys
+- Unique constraints
+- Check constraints
+- Indexes
+- Defaults
+- Timestamps
+- Relationships
+
+Drizzle table definitions should remain focused on persistent structure.
+
+Application workflow logic should remain in services rather than being embedded into schema declarations.
+
+## Schema Organization
+
+Schema files should be organized by domain rather than stored in one very large file.
+
+A possible organization is:
+
+```text
+schema/
+├── auth.ts
+├── financial-accounts.ts
+├── transactions.ts
+├── categories.ts
+├── budgets.ts
+├── budget-allocations.ts
+└── user-preferences.ts
+```
+
+A central file should export the schema expected by:
+
+- The Drizzle client
+- Drizzle Kit
+- Better Auth’s Drizzle adapter
+- Integration tests
+- Seed scripts
+
+## Better Auth Schema
+
+Better Auth will use the official Drizzle adapter with PostgreSQL.
+
+The Better Auth schema should be generated using the Better Auth CLI and incorporated into Steward’s Drizzle schema.
+
+The expected authentication tables include records for:
+
+- Users
+- Authentication accounts
+- Sessions
+- Verification records
+
+The generated schema should be reviewed before being committed.
+
+Steward should not independently invent alternate authentication tables that duplicate Better Auth’s schema.
+
+## Better Auth Drizzle Adapter
+
+Better Auth should use:
+
+```text
+@better-auth/drizzle-adapter
+```
+
+with:
+
+```text
+provider: "pg"
+```
+
+Conceptually:
+
+```ts
+betterAuth({
+  database: drizzleAdapter(db, {
+    provider: "pg",
+    schema,
+  }),
+});
+```
+
+The actual schema mapping should match the exported Drizzle tables.
+
+If table names are customized, the adapter schema mapping must explicitly connect Better Auth’s expected entities to the corresponding Drizzle tables.
+
+## Authentication and Financial Account Naming
+
+Better Auth uses the word `account` for authentication-provider or credential records.
+
+Steward also uses `account` for financial accounts.
+
+Application code and database naming must distinguish these concepts.
+
+Recommended terminology:
+
+```text
+Authentication account
+Financial account
+```
+
+Possible table names:
 
 ```text
 auth_account
 financial_account
 ```
 
-The final table naming convention will be decided during domain and schema design.
+The final naming convention should be consistent across:
+
+- Drizzle schema files
+- API contracts
+- Services
+- Documentation
+- Tests
 
 ## User Identity
 
-The Better Auth user record is the canonical user identity for Steward.
+The Better Auth user record is Steward’s canonical user identity.
 
-Steward should not create a second unrelated user table for financial ownership.
+Steward should not create a second unrelated user table.
 
-Financial records should reference the Better Auth user identifier directly or through a clearly documented one-to-one application profile when additional profile data is required.
+Financial records should reference the Better Auth user ID directly or through a clearly documented one-to-one profile record if additional application-specific profile information becomes necessary.
 
 ## User-Owned Data
 
@@ -118,61 +360,63 @@ User-owned entities include:
 
 Every user-owned record must resolve to a Better Auth user.
 
-Queries for user-owned data must always include ownership constraints derived from the authenticated session.
+Queries involving user-owned data must include ownership conditions derived from the authenticated session.
 
-## Authentication Data
+## Initial Domain Relationships
 
-Better Auth will store its required authentication records in PostgreSQL.
-
-This includes data used for:
-
-- Users
-- Email and password credentials
-- Sessions
-- Authentication accounts
-- Verification behavior if enabled later
-
-Authentication schema changes should be generated or migrated using the supported Better Auth workflow for the selected database adapter.
-
-Steward should not manually recreate Better Auth tables unless there is a documented reason to manage the schema independently.
-
-## Database Schemas
-
-The initial implementation may use the default PostgreSQL `public` schema.
-
-A possible later structure is:
+The initial domain relationship model is:
 
 ```text
-public
-├── Steward financial tables
-└── Better Auth tables
+Better Auth User
+├── Financial Accounts
+│   └── Transactions
+├── Categories
+├── Budgets
+│   └── Budget Allocations
+└── User Preferences
 ```
 
-Alternatively, authentication tables may be isolated in a dedicated PostgreSQL schema:
+Transactions may reference:
 
-```text
-auth
-└── Better Auth tables
+- One financial account
+- One optional category
+- One authenticated owner
+- One optional linked transfer
 
-public
-└── Steward financial tables
-```
+Budget allocations reference:
 
-Using a separate schema is optional and should only be adopted if it improves clarity without complicating migrations or local development.
+- One budget
+- One category
 
-The final schema arrangement should be documented before migrations are committed.
+## Drizzle Relations
+
+Drizzle relations may be defined to support typed relational queries and Better Auth requirements.
+
+Relations should reflect actual foreign-key relationships.
+
+They should not replace database foreign keys.
+
+The schema should avoid:
+
+- Duplicate relation aliases
+- Ambiguous reverse relations
+- Multiple inconsistent names for the same relationship
+- Relations without corresponding ownership rules
+
+When multiple foreign keys reference the same table, relation names should be explicit and consistent.
 
 ## Identifiers
 
-Primary keys should use one consistent strategy across Steward-owned tables.
+Steward-owned tables should use one consistent primary-key strategy.
 
-UUIDs are a strong candidate because they:
+UUIDs are the preferred initial choice.
 
-- Can be generated without relying on sequential public identifiers
-- Work well across local, test, and deployed environments
-- Align with Better Auth's PostgreSQL-compatible identity strategy
+The final UUID implementation may use:
 
-The final identifier type should be confirmed during domain-model design.
+- PostgreSQL-generated UUIDs
+- Application-generated UUIDs
+
+The choice should remain consistent across Steward-owned tables.
 
 Client-provided identifiers must never be treated as proof of ownership.
 
@@ -180,104 +424,100 @@ Client-provided identifiers must never be treated as proof of ownership.
 
 Financial values must not use floating-point database types.
 
-Monetary amounts should use one of these approaches:
-
-### Integer Minor Units
-
-Store values in the smallest supported unit.
+Steward should store monetary values using integer minor units.
 
 Example:
 
 ```text
 $25.49
-→ 2549 cents
+→ 2549
 ```
 
-Potential PostgreSQL type:
+Recommended PostgreSQL representation:
 
 ```text
 bigint
 ```
 
-### Fixed-Precision Decimal
+This applies to:
 
-Store values using a fixed-precision PostgreSQL numeric type.
-
-Example:
-
-```text
-numeric(19, 4)
-```
-
-The final choice should be made during domain modeling and used consistently across:
-
-- Account balances
 - Transaction amounts
+- Account starting balances where stored
 - Budget allocations
-- Calculated totals
+- Cached or snapshot financial totals if introduced later
 
-The application must define clear rounding behavior.
+The application must define:
+
+- Currency
+- Minor-unit conversion
+- Rounding behavior
+- Serialization between PostgreSQL and JSON
+- Handling of JavaScript bigint values
+
+If bigint serialization becomes too cumbersome, a fixed-precision PostgreSQL numeric strategy may be reconsidered before implementation.
 
 ## Currency
 
-The MVP supports one base currency per user or application environment.
+The MVP supports one base currency.
 
-Multi-currency conversion is outside the initial scope.
-
-Currency codes should use stable identifiers such as:
+Currency values should use stable codes such as:
 
 ```text
 USD
 ```
 
-Currency formatting belongs to the application layer, while stored values should remain independent of presentation formatting.
+Currency formatting belongs to the frontend.
+
+Stored monetary values must remain independent of visual formatting.
+
+Multi-currency conversion is outside the MVP.
 
 ## Dates and Times
 
-PostgreSQL timestamps should be used consistently.
-
 The database should distinguish between:
 
-- A transaction's financial date
-- Record creation time
-- Record update time
-- Session expiration time
+- Transaction business date
+- Record creation timestamp
+- Record update timestamp
+- Session expiration timestamp
 - Budget month
 
-Recommended general behavior:
+System timestamps should be stored consistently in UTC.
 
-- Store system timestamps in UTC.
-- Preserve transaction dates as business dates.
-- Format dates in the user's locale at the application boundary.
+Transaction dates may use a date-only PostgreSQL type when time-of-day is not relevant.
 
-A monthly budget should be represented with an unambiguous month identifier rather than an arbitrary display string.
+Monthly budgets should use an unambiguous year-and-month representation.
 
 ## Constraints
 
-The schema should use database constraints for rules that must always remain true.
+Drizzle schema definitions should express database constraints for invariants that must always remain true.
 
 Examples include:
 
-- Required foreign keys
-- Non-null required fields
-- Valid enum or status values
+- Required user ownership
+- Required account ownership
+- Required transaction account
 - Unique user email requirements managed by Better Auth
-- One budget per user and month where applicable
+- One budget per user per month
 - One allocation per budget and category
-- Valid account ownership
-- Valid category ownership
 - Non-negative budget allocations
+- Valid transaction types
+- Valid account types
+- Valid category ownership
 
-Application validation should complement database constraints rather than replace them.
+Frontend and Fastify validation should complement database constraints rather than replace them.
 
 ## Foreign Keys
 
-Foreign keys should enforce relationships between related entities.
+Foreign keys should enforce relationships between entities.
 
-Examples:
+Conceptually:
 
 ```text
 financial_account.user_id
+→ Better Auth user
+
+transaction.user_id
 → Better Auth user
 
 transaction.account_id
@@ -285,6 +525,9 @@ transaction.account_id
 
 transaction.category_id
 → category
+
+category.user_id
+→ Better Auth user
 
 budget.user_id
 → Better Auth user
@@ -294,67 +537,110 @@ budget_allocation.budget_id
 
 budget_allocation.category_id
 → category
+
+user_preference.user_id
+→ Better Auth user
 ```
 
-Deletion behavior should be selected intentionally.
-
-Possible behaviors include:
-
-- Restrict deletion
-- Cascade deletion
-- Set the relationship to null
-- Archive the parent record instead of deleting it
-
-Financial history should not be destroyed accidentally through broad cascade rules.
+Deletion behavior should be selected intentionally for every relationship.
 
 ## Archival and Deletion
 
-Financial accounts should generally support archival.
+Financial accounts should generally be archived rather than permanently deleted.
 
-Archiving preserves:
+Archival preserves:
 
 - Transaction history
-- Historical balances
+- Historical reporting
 - Budget calculations
-- Reporting consistency
+- Dashboard consistency
 
-Permanent deletion may be allowed for newly created records without dependent data, but it should not be the default behavior for accounts with transaction history.
+A financial account may include fields such as:
 
-The deletion strategy for users and authentication records must be defined before implementation.
+```text
+archived_at
+is_archived
+```
+
+The final approach should use one consistent archival strategy.
+
+Permanent deletion should be limited to scenarios where dependent financial history does not exist or where deletion has been explicitly designed.
+
+## Query Organization
+
+Drizzle queries should be organized by application domain.
+
+A possible pattern is:
+
+```text
+modules/accounts/
+├── account.service.ts
+├── account.queries.ts
+└── account.types.ts
+```
+
+Query functions should:
+
+- Accept the authenticated user ID
+- Apply ownership conditions
+- Return defined domain or API-ready results
+- Avoid returning unrelated database fields
+- Remain testable independently from Fastify route handlers
+
+Route handlers should not contain large inline Drizzle queries.
+
+## Query Style
+
+Queries should prefer Drizzle’s typed query APIs.
+
+Raw SQL may be used when:
+
+- Drizzle cannot express a required query clearly
+- A complex aggregation is easier to understand in SQL
+- A PostgreSQL-specific feature provides meaningful value
+
+Raw SQL must remain:
+
+- Parameterized
+- Scoped to the authenticated user
+- Covered by tests
+- Documented when non-obvious
+
+Drizzle should not be treated as a reason to avoid SQL knowledge.
 
 ## Transactions
 
-PostgreSQL transactions should be used when an operation changes multiple related records that must succeed or fail together.
+Drizzle transactions should be used when multiple database changes must succeed or fail together.
 
 Examples include:
 
-- Creating a transfer between two accounts
-- Resetting demo-user data
-- Creating a budget with allocations
-- Updating a transaction and affected derived data
-- Importing a batch of transactions
+- Creating linked transfer transactions
+- Resetting demo data
+- Creating a budget and its allocations
+- Importing a transaction batch
+- Moving a transaction between accounts where dependent values change
 
-Application services should define transaction boundaries.
+Transaction boundaries should live in application services.
 
-HTTP route handlers should not contain scattered transaction-management logic.
+Fastify route handlers should not manually coordinate unrelated database writes.
 
 ## Transfers
 
-A transfer between two financial accounts should not be represented as an unrelated expense and income without a shared relationship.
+A transfer between financial accounts should be represented through linked records rather than an unrelated expense and income.
 
-Possible models include:
+Possible approaches include:
 
-- Two linked transaction records
-- A transfer record with two transaction entries
-- A double-entry-inspired journal structure
+- Two transactions sharing a transfer ID
+- A transfer table with two associated transaction records
+- A journal-entry model
 
-The final approach will be selected during financial-domain modeling.
+The final design will be selected during the Financial Domain Model epic.
 
-Transfer creation should be atomic.
+Transfer creation and deletion must be atomic.
 
 ## Derived Values
 
-Values that can be calculated from source records should not automatically be duplicated in the database without a clear reason.
+Values that can be calculated from source records should not be duplicated without a clear reason.
 
 Potential derived values include:
 
@@ -364,23 +650,24 @@ Potential derived values include:
 - Category totals
 - Net worth
 
-The initial implementation should prefer calculating these from source data unless performance or historical requirements justify storing snapshots or cached totals.
+The initial implementation should calculate these through Drizzle queries and PostgreSQL aggregations.
 
-If derived values are stored, the application must define how they remain consistent.
+If cached summaries or snapshots are later introduced, their consistency strategy must be documented.
 
 ## Dashboard Queries
 
-Dashboard summaries may require aggregations across:
+Dashboard queries may aggregate:
 
-- Accounts
+- Financial accounts
 - Transactions
 - Categories
 - Budgets
 - Budget allocations
 
-The database design should support efficient queries for:
+Expected summaries include:
 
-- Current balances
+- Available cash
+- Credit debt
 - Monthly income
 - Monthly spending
 - Spending by category
@@ -388,13 +675,13 @@ The database design should support efficient queries for:
 - Recent transactions
 - Items requiring attention
 
-Dashboard requirements should influence indexes only after the expected query patterns are documented.
+Dashboard-specific query functions may be grouped in a dedicated dashboard module.
 
 ## Indexes
 
-Indexes should be based on actual access patterns.
+Indexes should reflect actual query patterns.
 
-Likely index candidates include:
+Likely indexes include:
 
 ```text
 financial_account.user_id
@@ -404,6 +691,8 @@ transaction.account_id
 transaction.category_id
 transaction.transaction_date
 
+category.user_id
+
 budget.user_id
 budget.month
 
@@ -411,40 +700,46 @@ budget_allocation.budget_id
 budget_allocation.category_id
 ```
 
-Composite indexes may be useful for common filtered queries such as:
+Likely composite indexes include:
 
 ```text
 transaction(user_id, transaction_date)
 
 transaction(user_id, account_id, transaction_date)
 
+transaction(user_id, category_id, transaction_date)
+
 budget(user_id, month)
 ```
 
-Indexes should not be added speculatively to every column.
+Indexes should be defined in the Drizzle schema and included in generated migrations.
 
 ## Search and Filtering
 
-Transaction search and filtering should initially support predictable relational queries.
+Transaction search and filtering should begin with normal PostgreSQL queries expressed through Drizzle.
 
-Likely filters include:
+Filters include:
 
-- User
+- Authenticated user
 - Account
 - Category
 - Date range
 - Transaction type
 - Amount range
 
-Text search may begin with case-insensitive matching over merchant or description fields.
+Text search may initially use case-insensitive matching over:
 
-PostgreSQL full-text search or trigram indexing may be considered later if simple search becomes insufficient.
+- Merchant
+- Description
+- Notes where supported
+
+PostgreSQL full-text search or trigram indexes may be considered later if necessary.
 
 ## Pagination
 
-Transaction lists should use deterministic ordering.
+Transaction queries should use deterministic ordering.
 
-A stable default order may be:
+A default order may be:
 
 ```text
 transaction_date DESC
@@ -452,222 +747,209 @@ created_at DESC
 id DESC
 ```
 
-Offset pagination is acceptable for the initial MVP.
+Offset pagination is acceptable for the MVP.
 
-Cursor pagination may be considered later if transaction volume or performance creates a clear need.
+The query should apply:
 
-## Connection Management
+- User ownership
+- Search
+- Filters
+- Sorting
+- Pagination
 
-The Fastify backend should use a shared PostgreSQL connection pool.
-
-The pool should:
-
-- Be initialized during application startup
-- Be made available through a Fastify plugin or application service
-- Be reused across requests
-- Be closed during graceful shutdown
-- Use environment-specific limits
-- Avoid creating a new database connection per request
-
-Better Auth and Steward application queries may share the same underlying PostgreSQL environment.
-
-Whether they share the exact pool instance depends on the selected adapter and query-layer design.
-
-## Database Plugin
-
-The Fastify application should register database access through a dedicated plugin.
-
-The plugin should:
-
-- Read validated database configuration
-- Create the PostgreSQL connection or pool
-- Verify connectivity during startup where practical
-- Expose database access to dependent modules
-- Close connections during application shutdown
-- Avoid leaking database credentials into logs
-
-Feature modules should depend on the registered database abstraction rather than creating their own pools.
-
-## Query Layer
-
-The PostgreSQL query layer remains undecided.
-
-Candidates may include:
-
-- Drizzle ORM
-- Prisma
-- Kysely
-- Direct parameterized SQL
-- A PostgreSQL client combined with a lightweight query layer
-
-The selection should consider:
-
-- TypeScript support
-- Migration workflow
-- SQL visibility
-- Better Auth compatibility
-- Transaction support
-- Query flexibility
-- Testing
-- Maintenance cost
-- Learning goals
-
-Selecting PostgreSQL does not require immediately selecting an ORM.
+in one predictable query flow.
 
 ## Migrations
 
-All schema changes should be managed through version-controlled migrations.
+Drizzle Kit will manage Steward’s migrations.
 
-Migrations should:
+The expected workflow is:
 
-- Be committed to the repository
-- Run consistently across local, test, and deployed environments
-- Avoid destructive changes without an explicit migration plan
-- Include Better Auth schema requirements
-- Include Steward financial schema requirements
-- Remain compatible with the selected query layer
+```text
+Update Drizzle schema
+→ Generate SQL migration
+→ Review generated SQL
+→ Commit migration
+→ Apply migration
+```
 
-Direct production schema changes outside the migration workflow should be avoided.
+Expected commands will be based on:
+
+```text
+drizzle-kit generate
+drizzle-kit migrate
+```
+
+Direct schema pushing may be used for temporary local experimentation, but committed environments should use reviewable migrations.
+
+Generated SQL migrations must be checked before being applied.
+
+## Drizzle Configuration
+
+The repository should include:
+
+```text
+drizzle.config.ts
+```
+
+The configuration should define:
+
+- PostgreSQL dialect
+- Schema entry path
+- Migration output directory
+- Database credentials loaded from environment variables
+
+The configuration must not contain committed secrets.
+
+## Better Auth Schema Generation
+
+Better Auth’s CLI should generate the Drizzle schema required for authentication.
+
+The generated authentication schema should then participate in the normal Drizzle migration workflow.
+
+Conceptually:
+
+```text
+Generate Better Auth Drizzle schema
+→ Review schema
+→ Export it through the database schema
+→ Generate Drizzle migration
+→ Review SQL
+→ Apply migration
+```
+
+Better Auth schema generation and Drizzle migrations should not operate as two unrelated migration histories.
 
 ## Seed Data
 
-The project should include deterministic seed data for:
+The database package should include deterministic seed logic for:
 
-- Demo user
+- Demo Better Auth user
+- Authentication credentials where required
 - Financial accounts
-- Transactions
 - Categories
+- Transactions
 - Budgets
 - Budget allocations
-- User preferences where required
+- Preferences
 
 Seed data should:
 
 - Be realistic
 - Be internally consistent
 - Produce meaningful dashboard summaries
+- Avoid real financial information
 - Be reproducible
-- Avoid including real personal financial information
-
-The demo reset workflow should restore the canonical seeded state.
 
 ## Demo Reset
 
-Resetting the demo account should run as a PostgreSQL transaction.
+Demo reset should use a Drizzle transaction.
 
-The reset should:
+The reset operation should:
 
-1. Confirm the authenticated user is the designated demo user.
-2. Remove or restore only that user's Steward data.
-3. Recreate the canonical financial dataset.
-4. Leave the Better Auth user identity intact.
-5. Leave other users untouched.
-6. Roll back completely if any step fails.
+1. Validate the Better Auth session.
+2. Confirm the authenticated user is the designated demo user.
+3. Delete or restore only that user’s financial records.
+4. Recreate the canonical demo dataset.
+5. Preserve the Better Auth user identity.
+6. Preserve unrelated users.
+7. Roll back if any step fails.
 
-## Local Development
+Authentication records should not be recreated unless the demo user itself is missing during initial seeding.
 
-Local development should use a PostgreSQL instance that is easy to start and reset.
+## Testing
 
-Docker is a likely option but has not yet been finalized as a requirement.
+Integration tests should use PostgreSQL and Drizzle rather than replacing the database layer with broad mocks.
 
-Local configuration should include:
+Tests should cover:
 
-- Database host
-- Database port
-- Database name
-- Database user
-- Database password
-- Connection string where applicable
+- Migrations
+- Schema constraints
+- Foreign keys
+- Drizzle queries
+- Transactions
+- Better Auth schema integration
+- User-data isolation
+- Demo seeding
+- Demo reset
+- Financial aggregations
 
-Development credentials must not be committed to source control.
+Unit tests may mock query boundaries when testing isolated application logic.
 
 ## Test Database
 
-Automated integration tests should use an isolated PostgreSQL database.
-
-Tests should not run against:
-
-- A developer's normal local database
-- The production database
-- A shared environment with persistent user data
+Tests must use an isolated PostgreSQL database.
 
 The test workflow should support:
 
-- Applying migrations
-- Seeding required records
-- Resetting state between tests
-- Testing transactions
-- Testing constraints
-- Testing user-data isolation
+- Applying Drizzle migrations
+- Seeding required users
+- Resetting state
+- Running tests independently
+- Closing database resources
 
-## Configuration
+Tests must not run against:
 
-Database configuration should be provided through environment variables.
+- Production
+- A shared persistent environment
+- A developer’s normal local database
 
-Likely configuration includes:
+## Local Development
+
+Local development should provide a PostgreSQL database that can be started and reset consistently.
+
+Docker is a likely implementation choice but remains a separate infrastructure decision.
+
+Expected environment configuration includes:
 
 ```text
 DATABASE_URL
 ```
 
-Separate environments should use separate databases or credentials.
-
-The application should validate the database configuration during startup and fail clearly when it is missing or invalid.
+Local credentials must not be committed.
 
 ## Security
 
-Database security should include:
+Database access should follow these rules:
 
-- Credentials stored outside source control
-- Parameterized queries
-- Limited database-user privileges
-- Encrypted production connections where supported
-- No database access from the browser
-- No sensitive connection details in logs
-- User ownership enforced in every protected query
-- Separate credentials or databases for local, test, and production environments
-
-## Backups and Recovery
-
-Formal enterprise backup infrastructure is outside the MVP.
-
-The selected deployment provider should still support a reasonable database backup or recovery mechanism.
-
-The project documentation should eventually record:
-
-- How migrations are applied
-- How the database is backed up
-- How demo data is restored
-- How local data can be reset
-- How production recovery would be approached
+- Use parameterized Drizzle queries
+- Keep credentials outside source control
+- Use limited PostgreSQL privileges
+- Scope protected queries by authenticated user
+- Avoid returning raw database records blindly
+- Avoid logging SQL parameters containing sensitive financial data
+- Avoid exposing the Drizzle client to the browser
+- Use encrypted production connections where supported
 
 ## Non-Goals
 
-The initial database design will not require:
+The initial database architecture will not require:
 
+- Prisma
+- Sequelize
+- TypeORM
+- Multiple ORMs
 - Multiple database engines
-- Multi-region replication
-- Read replicas
 - Database sharding
+- Read replicas
 - Event sourcing
 - A separate analytics database
 - A data warehouse
-- Multi-currency accounting
-- Enterprise disaster-recovery guarantees
+- Multi-region replication
 
 These should only be introduced in response to concrete requirements.
 
 ## Success Criteria
 
-The PostgreSQL decision is successful when:
+The database architecture is successful when:
 
-- Better Auth persists users and sessions correctly.
-- Steward financial data is relational and user-owned.
-- Financial values use a safe money-storage strategy.
-- Constraints protect important invariants.
-- Multi-record operations use transactions.
-- Database access is centralized through the Fastify backend.
-- Migrations are version controlled.
+- PostgreSQL stores authentication and financial data.
+- Drizzle defines the schema in TypeScript.
+- Better Auth uses the Drizzle PostgreSQL adapter.
+- Drizzle Kit generates reviewable migrations.
+- User-owned queries enforce ownership.
+- Financial values use a safe storage strategy.
+- Database transactions protect multi-record operations.
 - Demo data can be seeded and reset safely.
-- Integration tests use isolated PostgreSQL data.
-- The schema remains understandable and maintainable for a solo developer.
+- Integration tests run against isolated PostgreSQL data.
+- The schema and queries remain understandable for a solo developer.

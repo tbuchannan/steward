@@ -2,9 +2,9 @@
 
 ## Status
 
-This document records technology decisions that have been confirmed for Steward.
+This document records confirmed technology decisions for Steward.
 
-Items marked as undecided should not be treated as finalized.
+Items marked as open have not yet been selected.
 
 ## Frontend
 
@@ -35,88 +35,138 @@ Items marked as undecided should not be treated as finalized.
 
 ## Database
 
-| Area               | Selection  | Status   |
-| ------------------ | ---------- | -------- |
-| Database           | PostgreSQL | Selected |
-| ORM or query layer | Undecided  | Open     |
-| Migration tooling  | Undecided  | Open     |
-| PostgreSQL client  | Undecided  | Open     |
+| Area                   | Selection                   | Status   |
+| ---------------------- | --------------------------- | -------- |
+| Database               | PostgreSQL                  | Selected |
+| ORM and query layer    | Drizzle ORM                 | Selected |
+| Migration tooling      | Drizzle Kit                 | Selected |
+| Authentication adapter | Better Auth Drizzle adapter | Selected |
+| PostgreSQL driver      | Undecided                   | Open     |
 
 ## Infrastructure
 
-| Area                       | Selection | Status |
-| -------------------------- | --------- | ------ |
-| Package manager            | Undecided | Open   |
-| Repository structure       | Undecided | Open   |
-| Local database environment | Undecided | Open   |
-| Frontend deployment        | Undecided | Open   |
-| Backend deployment         | Undecided | Open   |
-| Database hosting           | Undecided | Open   |
-| CI/CD                      | Undecided | Open   |
+| Area                         | Selection | Status |
+| ---------------------------- | --------- | ------ |
+| Package manager              | Undecided | Open   |
+| Repository structure         | Undecided | Open   |
+| Local PostgreSQL environment | Undecided | Open   |
+| Frontend deployment          | Undecided | Open   |
+| Backend deployment           | Undecided | Open   |
+| Database hosting             | Undecided | Open   |
+| CI/CD                        | Undecided | Open   |
 
 ## Confirmed Architecture
 
-The currently selected high-level architecture is:
-
 ```text
-React + TypeScript
-        |
-        | TanStack Router
-        |
-        | HTTP requests
-        v
+React + TypeScript + Vite
+            |
+            | TanStack Router
+            |
+            | Credentialed HTTP requests
+            v
 Fastify + TypeScript
-        |
-        | Better Auth
-        |
-        | PostgreSQL
-        v
-User authentication and financial data
+            |
+            | Better Auth
+            | Drizzle ORM
+            v
+PostgreSQL
 ```
 
 ## Frontend Decisions
 
 ### React
 
-React provides the component model for Steward’s interactive user interface.
+React provides Steward’s component and rendering model.
 
 ### Vite
 
-Vite provides the development server and production build tooling.
+Vite provides the frontend development server and production build process.
 
 ### TanStack Router
 
-TanStack Router provides type-safe client-side routing, nested layouts, route parameters, and validated search parameters.
-
-The initial implementation will use file-based routing with the TanStack Router Vite plugin.
+TanStack Router provides type-safe client-side routes, nested layouts, route parameters, and validated search parameters.
 
 ## Backend Decisions
 
 ### Fastify
 
-Fastify hosts the Steward API and Better Auth endpoints.
+Fastify hosts Steward’s API and Better Auth endpoints.
 
 ### Better Auth
 
 Better Auth manages registration, credentials, cookie-based sessions, and authenticated identity.
 
+## Database Decisions
+
 ### PostgreSQL
 
-PostgreSQL stores Better Auth records and Steward’s relational financial data.
+PostgreSQL stores authentication records and relational financial data.
+
+### Drizzle ORM
+
+Drizzle defines the PostgreSQL schema in TypeScript and provides typed database queries.
+
+### Drizzle Kit
+
+Drizzle Kit generates and applies version-controlled SQL migrations.
+
+### Better Auth Drizzle Adapter
+
+Better Auth uses the official Drizzle adapter configured with the PostgreSQL provider.
+
+## Data Flow
+
+```text
+React page
+→ Feature API function
+→ Fastify route
+→ Authentication hook
+→ Application service
+→ Drizzle query
+→ PostgreSQL
+```
+
+The response returns through the same layers in reverse.
+
+## Authentication Flow
+
+```text
+React authentication form
+→ Fastify Better Auth endpoint
+→ Better Auth
+→ Drizzle adapter
+→ PostgreSQL auth tables
+→ Session cookie returned
+```
+
+## Database Workflow
+
+```text
+Edit Drizzle TypeScript schema
+→ Generate SQL migration with Drizzle Kit
+→ Review migration
+→ Commit migration
+→ Apply migration to PostgreSQL
+```
 
 ## Explicitly Not Selected
 
-The current plan does not use:
+The current architecture does not use:
 
 - Next.js
 - TanStack Start
 - React Router
 - Express
 - Hono
+- NestJS
+- Prisma
+- Sequelize
+- TypeORM
 - SQLite
+- MongoDB
 - A custom authentication system
 
-These tools should not be introduced without revisiting the relevant decision documentation.
+These tools should not be introduced without revisiting the corresponding technology decision.
 
 ## Next Decisions
 
@@ -124,9 +174,10 @@ The next technology evaluations should cover:
 
 1. Server-state management
 2. Form management
-3. Styling and component library
-4. ORM or query layer
-5. Runtime validation
-6. Testing
+3. Runtime validation
+4. Styling and component library
+5. Testing
+6. PostgreSQL driver
 7. Package management and repository structure
-8. Deployment
+8. Local development infrastructure
+9. Deployment
