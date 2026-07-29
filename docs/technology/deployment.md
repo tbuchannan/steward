@@ -6,29 +6,75 @@ Steward will use:
 
 - Vercel for the React and Vite frontend
 - Railway for the Fastify backend
-- Railway for PostgreSQL hosting
+- Railway PostgreSQL for the production database
 
-The frontend, backend, and database will be deployed as separate services.
+The frontend, backend, and database will remain separate deployment units.
+
+Production deployments should be gated by automated testing.
+
+## Selected Technologies
+
+The confirmed deployment technologies are:
+
+- Vercel
+- Railway
+- Railway PostgreSQL
+- Vite production builds
+- Node.js production builds
+- Drizzle Kit migrations
+- Vitest
+- React Testing Library
+- Fastify `inject()`
+- Testcontainers for Node.js
+- Playwright
+
+Still undecided:
+
+- Continuous-integration provider
+- Package manager
+- Workspace tooling
+- Custom domains
+- Error monitoring
+- Production log aggregation
+- Status-page provider
+- Backup schedule
 
 ## Deployment Architecture
 
 ```text
-Browser
-   |
-   | HTTPS
-   v
+User browser
+      |
+      | HTTPS
+      v
 Vercel
-React + Vite frontend
-   |
-   | Credentialed HTTPS requests
-   v
+React + TypeScript + Vite
+      |
+      | Credentialed HTTPS requests
+      v
 Railway
-Fastify API
-   |
-   | Private database connection
-   v
+Fastify + TypeScript
+      |
+      | Private PostgreSQL connection
+      v
 Railway PostgreSQL
 ```
+
+## Deployment Units
+
+Steward will use three production units:
+
+```text
+Frontend application
+→ Vercel
+
+Backend API
+→ Railway
+
+PostgreSQL database
+→ Railway
+```
+
+These units should not be combined solely to reduce service count.
 
 ## Platform Responsibilities
 
@@ -36,51 +82,47 @@ Railway PostgreSQL
 
 Vercel is responsible for:
 
-- Building the React application
-- Hosting the generated Vite static assets
+- Installing frontend dependencies
+- Building the React and Vite application
+- Hosting static assets
 - Serving the frontend over HTTPS
-- Providing production deployments
-- Providing preview deployments
+- Creating production deployments
+- Creating preview deployments
 - Managing frontend environment variables
-- Connecting deployments to the Git repository
-- Serving client-side application routes correctly
+- Connecting to the Git repository
+- Supporting frontend rollback
+- Serving client-side routes correctly
 
-### Railway
+### Railway backend
 
 Railway is responsible for:
 
-- Building and running the Fastify backend
+- Installing backend dependencies
+- Building TypeScript
+- Running the Fastify process
 - Exposing the API over HTTPS
-- Managing backend environment variables and secrets
-- Hosting PostgreSQL
-- Providing the backend database connection
+- Managing backend variables and secrets
 - Running health checks
-- Providing backend deployment logs
-- Supporting backend deployment rollbacks
-- Providing database backup capabilities
+- Providing deployment logs
+- Supporting deployment rollback
+- Connecting to Railway PostgreSQL
+- Restarting failed services according to platform behavior
 
-## Deployment Units
+### Railway PostgreSQL
 
-Steward will use three deployment units:
+Railway PostgreSQL is responsible for:
 
-```text
-Frontend service
-→ Vercel
-
-Backend service
-→ Railway
-
-PostgreSQL service
-→ Railway
-```
-
-The frontend and backend should not be combined into one deployment solely to reduce the number of services.
+- Hosting production relational data
+- Providing connection variables
+- Supporting private service connectivity
+- Providing database service logs and metrics
+- Supporting backup capabilities according to the selected plan
 
 ## Repository Layout
 
-The exact repository structure has not yet been finalized.
+The exact repository structure remains undecided.
 
-A likely monorepo structure is:
+A likely monorepo layout is:
 
 ```text
 steward/
@@ -98,38 +140,31 @@ In this structure:
 
 ```text
 apps/web
-→ React, Vite, and TanStack Router
+→ React, Vite, TanStack Router, Tailwind CSS, shadcn/ui
 
 apps/api
-→ Fastify, Better Auth, Drizzle, and Zod
+→ Fastify, Better Auth, Drizzle, Zod
 
 packages/contracts
-→ Shared public Zod contracts where appropriate
+→ Shared public Zod contracts
 ```
 
-Vercel and Railway should each be configured with the appropriate application directory as their root directory.
+Vercel and Railway should each use the correct application root directory.
 
-The final repository structure will be documented during the Application Architecture epic.
+## Environments
 
-## Deployment Environments
-
-Steward should distinguish between:
+Steward should distinguish:
 
 - Local development
+- Automated test
 - Preview
 - Production
-- Test
+
+A staging environment may be introduced later.
 
 ## Local Development
 
-Local development uses:
-
-- Vite development server
-- Local Fastify server
-- Local PostgreSQL instance
-- Local environment files
-
-Example local origins:
+A likely local setup is:
 
 ```text
 Frontend:
@@ -137,25 +172,62 @@ http://localhost:5173
 
 Backend:
 http://localhost:3000
+
+Database:
+Local PostgreSQL environment
 ```
 
 The exact ports may change.
 
-Local configuration should mirror production boundaries where practical.
+Local development should preserve production boundaries where practical:
+
+```text
+React frontend
+→ HTTP request
+→ Fastify backend
+→ PostgreSQL
+```
+
+## Automated Test Environment
+
+Automated integration tests should use:
+
+```text
+Vitest
+→ Fastify inject()
+→ PostgreSQL Testcontainer
+```
+
+Automated end-to-end tests should use:
+
+```text
+Playwright
+→ Local or CI frontend
+→ Local or CI backend
+→ Disposable PostgreSQL database
+```
+
+Test jobs must not access production data.
 
 ## Preview Environment
 
-Vercel should create frontend preview deployments for eligible Git branches and pull requests.
+Vercel may create preview frontend deployments for pull requests and branches.
 
-A preview deployment may communicate with:
+Preview deployments may communicate with:
 
 - A shared non-production Railway API
-- A dedicated staging Railway API
-- A branch-specific API environment if introduced later
+- A staging API
+- A temporary test API if introduced later
 
-The initial project does not require an isolated backend and database for every pull request.
+The initial project does not require one isolated Railway backend and PostgreSQL database for every pull request.
 
-Preview deployments must not use production secrets or unrestricted production data.
+Preview deployments must not receive:
+
+- Production database credentials
+- Better Auth production secrets
+- Private Railway database addresses
+- Demo-user passwords
+- Unrestricted production API access
 
 ## Production Environment
 
@@ -172,168 +244,227 @@ Database
 → Railway PostgreSQL production service
 ```
 
-Production environment variables must be configured separately from local and preview values.
+Production variables must be configured separately from local, test, and preview values.
 
-## Frontend Deployment
+## Git Deployment
 
-The React frontend will be built by Vite and deployed to Vercel.
+The platforms should connect to the Steward Git repository.
 
-The expected build process is:
-
-```text
-Install dependencies
-→ Type-check frontend
-→ Build Vite application
-→ Deploy generated static assets
-```
-
-A likely production build command is:
+Expected behavior may be:
 
 ```text
-build
+Pull request
+→ CI checks
+→ Vercel preview deployment
+
+Production branch update
+→ Required CI checks
+→ Vercel production deployment
+→ Railway production deployment
 ```
 
-The expected Vite output directory is:
+The exact production branch and approval policy should be documented once CI is selected.
+
+## Deployment Branch
+
+A likely production branch is:
+
+```text
+main
+```
+
+Production deployment should not rely on arbitrary developer branches.
+
+Protected-branch rules should eventually require successful checks.
+
+## Frontend Build
+
+The Vercel frontend build should:
+
+1. Install dependencies.
+2. Validate required public environment variables.
+3. Type-check the frontend.
+4. Run required tests according to deployment workflow.
+5. Build the Vite application.
+6. Publish generated assets.
+
+A likely output directory is:
 
 ```text
 dist
 ```
 
-The exact commands depend on the selected package manager and repository structure.
+The exact commands depend on package-manager and workspace decisions.
 
-## Vercel Project Configuration
+## Frontend Build Command
 
-The Vercel project should specify:
+A likely script is:
 
-- Frontend root directory
-- Install command where customization is necessary
-- Build command
-- Output directory
-- Production branch
-- Frontend environment variables
-- Client-side routing behavior
+```text
+build
+```
 
-Vercel framework detection may configure common Vite defaults automatically.
+In a monorepo, the Vercel project may invoke a workspace-specific command.
 
-Repository configuration should remain explicit enough that another developer can understand how the application is built.
+Example concept:
+
+```text
+build:web
+```
+
+The repository should provide clear scripts rather than relying on undocumented platform defaults.
+
+## Vercel Root Directory
+
+If Steward uses a monorepo, the Vercel project should set the frontend root directory to:
+
+```text
+apps/web
+```
+
+or use a repository-root workspace command.
+
+The final choice should avoid duplicated dependency installation where possible.
 
 ## Single-Page Application Routing
 
-Steward is a client-rendered application using TanStack Router.
+Steward uses TanStack Router in a client-rendered Vite application.
 
-Requests for application routes such as:
+Direct navigation to application routes must return the frontend entry document.
+
+Examples include:
 
 ```text
 /dashboard
 /accounts
+/accounts/:accountId
 /transactions
 /budgets/2026/07
 /settings
 ```
 
-must return the frontend application entry point rather than a static 404 response.
+Without an appropriate rewrite, direct route refreshes may return a static 404.
 
-The Vercel project should use an appropriate rewrite or Vite-compatible SPA routing configuration.
+The Vercel configuration should rewrite application routes to:
 
-Static assets and other platform-managed paths must continue to resolve normally.
+```text
+/index.html
+```
+
+while preserving:
+
+- Static assets
+- Public files
+- Platform-managed paths
+
+This behavior must be covered by Playwright or deployed smoke tests.
 
 ## Frontend Environment Variables
 
-The Vercel frontend may use browser-safe environment variables such as:
+Browser-safe Vercel variables may include:
 
 ```text
 VITE_API_URL
 VITE_APP_ENV
 ```
 
-Example production value:
+Example:
 
 ```text
 VITE_API_URL=https://api.example.com
 ```
 
-The final API domain has not yet been selected.
+Vite-prefixed values are exposed to the browser.
 
-Vite environment variables are included in browser-delivered code when referenced by the application.
-
-They must not contain secrets.
-
-The frontend must never contain:
+They must not include:
 
 - `DATABASE_URL`
 - `BETTER_AUTH_SECRET`
 - Database passwords
-- Private service credentials
-- Demo-user passwords
 - Session tokens
+- Private API keys
 - Railway private-network addresses
+- Demo-user passwords
 
-## Backend Deployment
+## Backend Build
 
-The Fastify API will run as a persistent Railway service.
+The Railway backend build should:
 
-The backend deployment process should:
+1. Install dependencies.
+2. Validate build configuration.
+3. Type-check the backend.
+4. Build TypeScript.
+5. Prepare the production start command.
+6. Run deployment migrations through the approved release mechanism.
+7. Start Fastify.
+
+Testing may run in CI before Railway receives the deployment.
+
+## Railway Build Strategy
+
+Railway may use:
+
+- Automatic Node.js build detection
+- Explicit build and start commands
+- A Dockerfile if necessary
+
+The initial deployment should prefer the simplest reliable option.
+
+A Dockerfile should be added only when it provides a concrete benefit.
+
+## Backend Build Output
+
+A likely build output is:
 
 ```text
-Install dependencies
-→ Type-check backend
-→ Build TypeScript
-→ Apply required database migrations
-→ Start Fastify
+apps/api/dist/
 ```
 
-The exact migration strategy is defined separately in this document.
+The exact structure depends on repository organization.
 
-## Railway Build
-
-Railway may build the backend using:
-
-- Automatic Node.js detection
-- Explicit build and start commands
-- A Dockerfile if custom build behavior becomes necessary
-
-The initial implementation should prefer the simplest reliable deployment method.
-
-A Dockerfile should not be added unless it provides a concrete benefit.
+Production should run compiled JavaScript.
 
 ## Backend Start Command
 
-The production start command must run compiled backend code.
-
-Conceptually:
+A likely command is:
 
 ```text
 node dist/server.js
 ```
 
-The exact path depends on the final backend build configuration.
+In a monorepo, it may be:
 
-Production should not depend on a development-only TypeScript runner unless that choice is explicitly reviewed.
+```text
+node apps/api/dist/server.js
+```
+
+The final script should be represented through a package command rather than duplicated manually across systems.
 
 ## Railway Port
 
-The Fastify server must listen on Railway’s provided port.
-
-Conceptually:
+Railway provides the backend port through:
 
 ```text
 PORT
 ```
 
-The server should also bind to an externally reachable host:
+Fastify must listen on that port.
+
+The server should bind to:
 
 ```text
 0.0.0.0
 ```
 
-The application must not assume that the production port is always `3000`.
+The application must not assume production uses port `3000`.
 
-## Railway Backend Variables
+## Railway Variables
 
-The Railway backend should receive server-only values such as:
+The backend may require:
 
 ```text
 NODE_ENV
+HOST
 PORT
 DATABASE_URL
 BETTER_AUTH_SECRET
@@ -344,57 +475,56 @@ LOG_LEVEL
 DEMO_USER_EMAIL
 ```
 
-Additional values may be added as requirements become known.
+Additional values may be introduced as features are added.
 
-Secrets must be managed through Railway variables and must not be committed to the repository.
+Secrets should be configured through Railway variables.
 
-## PostgreSQL Deployment
+They must not be committed to the repository.
 
-PostgreSQL will run as a Railway database service.
+## Database Connection
 
-The Fastify service should connect using Railway-provided PostgreSQL variables.
+The Fastify backend should connect through Railway-provided database variables.
 
-The primary application connection should use:
+The primary connection should use:
 
 ```text
 DATABASE_URL
 ```
 
-The backend should not construct a production connection string from hard-coded credentials.
+The application should not hard-code:
 
-## Private Database Connectivity
+- Host
+- Port
+- Username
+- Password
+- Database name
 
-The backend should use Railway’s internal or private service connectivity when available.
+## Private Database Networking
 
-The production database should not be exposed publicly unless an explicit operational need requires it.
+The backend should use Railway private networking where available.
 
-External database access may still be needed temporarily for:
+The production PostgreSQL service should not be publicly exposed without a concrete operational requirement.
 
-- Administrative tools
-- Local migration commands
-- Approved database inspection
-- Data recovery
+External access should be limited to approved administration or recovery workflows.
 
-External access should remain restricted.
+## Connection Pool
 
-## Database Connection Pool
-
-The Fastify backend should maintain a shared PostgreSQL connection pool.
+The backend should create one shared PostgreSQL pool.
 
 The pool should:
 
-- Be created during startup
-- Be reused across requests
-- Use environment-appropriate limits
+- Initialize during startup
 - Be shared with Drizzle
-- Be closed during graceful shutdown
-- Avoid creating a new connection for every request
+- Be reused across requests
+- Respect Railway and PostgreSQL connection limits
+- Close during graceful shutdown
+- Avoid one connection per request
 
-Connection limits should account for the resources available to the Railway PostgreSQL service.
+Connection limits should be configurable if deployment scale changes.
 
-## Better Auth Production URL
+## Better Auth URL
 
-Better Auth must be configured with the final production backend URL.
+Better Auth must know the production API origin.
 
 Conceptually:
 
@@ -402,70 +532,103 @@ Conceptually:
 BETTER_AUTH_URL=https://api.example.com
 ```
 
-The exact environment-variable name should follow the installed Better Auth version and application configuration.
+The exact variable name and configuration should follow the installed Better Auth version.
 
-The value should point to the externally accessible Fastify API origin rather than the Vercel frontend origin.
+The value should reference the Fastify API origin.
 
-## Trusted Origins
+## Frontend Origin
 
-Better Auth and Fastify CORS should trust only approved frontend origins.
+The backend should know the approved frontend origin.
 
-Potential trusted origins include:
+Conceptually:
 
 ```text
-http://localhost:5173
-https://steward.example.com
-Approved Vercel preview origins
+FRONTEND_ORIGIN=https://steward.example.com
 ```
 
-Production should not allow arbitrary origins.
-
-Preview-origin support must be implemented deliberately rather than by allowing every requesting origin.
+Multiple trusted origins may be represented separately.
 
 ## CORS
 
-Because Vercel and Railway use different origins, the Fastify API must configure credential-aware CORS.
+Because the frontend and backend are separate origins, Fastify must use credential-aware CORS.
 
 The configuration should:
 
-- Allow the production Vercel frontend origin
+- Allow local development frontend
+- Allow production Vercel frontend
 - Allow approved preview origins
-- Allow the local frontend during development
 - Allow credentials
 - Reject unrelated origins
-- Support Better Auth session cookies
-- Use environment-specific configuration
+- Support Better Auth cookies
+- Use environment-specific values
 
-Wildcard origins must not be used with credentialed authentication requests.
+Wildcard origins must not be used with credentials.
 
-## Authentication Cookies
+## Preview Origins
 
-The deployed authentication setup must account for:
+Vercel preview origins may be temporary.
+
+Possible strategies include:
+
+- Explicit allowlist
+- Controlled suffix validation
+- Dedicated preview API without credentials
+- Disabling authentication in arbitrary previews
+- Using a stable custom preview domain
+
+The final strategy should not accept arbitrary malicious origins.
+
+## Cookie Configuration
+
+Authentication cookie behavior must account for:
 
 - HTTPS
-- Secure cookies
-- Same-site policy
-- Frontend and API domains
-- Credentialed browser requests
-- Better Auth trusted origins
+- Secure attribute
+- HttpOnly attribute
+- SameSite policy
+- Frontend origin
+- API origin
+- Custom domain structure
 - Preview deployments
+- Local development
 
-The final domain structure should be chosen before cookie behavior is finalized.
+The production cookie configuration should be verified in a production-like browser test.
 
-A custom domain structure such as:
+## Custom Domains
+
+The initial application may use platform domains.
+
+A later custom-domain structure may use:
 
 ```text
-app.example.com
-api.example.com
+Frontend:
+steward.example.com
+
+Backend:
+api.steward.example.com
 ```
 
-may simplify the relationship between frontend and API services.
+Custom domains must be reflected in:
+
+- Vercel
+- Railway
+- DNS
+- `VITE_API_URL`
+- Better Auth base URL
+- Fastify CORS
+- Trusted origins
+- Cookie configuration
+- Playwright deployment tests
+
+## HTTPS
+
+Production frontend and backend traffic must use HTTPS.
+
+Authentication cookies and financial data must not travel over unencrypted public connections.
 
 ## Health Check
 
-The Railway backend should expose a health-check route.
-
-Recommended route:
+Railway should use:
 
 ```text
 GET /health
@@ -479,211 +642,457 @@ A successful response may be:
 }
 ```
 
-The health check should confirm that the Fastify process is ready to receive requests.
-
-The initial health check should not expose:
+The health route should not expose:
 
 - Secrets
-- Environment variables
 - Database credentials
-- Internal configuration
+- Environment variables
+- Internal service names
 - User data
-- Detailed dependency information
 
-## Readiness and Database State
+## Health-Check Activation
 
-The Railway health check should only report success after the Fastify application has completed startup.
+A new Railway deployment should not become active until the health endpoint succeeds.
 
-This includes:
+The backend should report ready only after:
 
 - Environment validation
-- Plugin registration
-- Better Auth configuration
+- Fastify plugin registration
 - Database client initialization
-- Required startup checks
-
-The initial health check does not need to run an expensive database query on every request.
-
-A separate readiness strategy may be introduced later if needed.
+- Better Auth configuration
+- Route registration
 
 ## Graceful Shutdown
 
-The Fastify service should handle termination signals.
+The backend should handle termination signals.
 
 Shutdown should:
 
 1. Stop accepting new requests.
-2. Allow active requests to complete where practical.
+2. Allow active requests to finish where practical.
 3. Close Fastify.
-4. Close the PostgreSQL connection pool.
-5. Release associated resources.
+4. Close PostgreSQL connections.
+5. Release resources.
 6. Exit cleanly.
 
-This behavior is required for safe Railway redeployments and restarts.
+This supports safe Railway redeployment.
 
 ## Database Migrations
 
 Drizzle Kit will manage production migrations.
 
-Production migrations must be:
+Migrations must be:
 
 - Version controlled
-- Reviewed before deployment
+- Reviewed
 - Applied before incompatible application code becomes active
 - Logged
-- Allowed to fail the deployment
-- Kept separate from normal HTTP request handling
-
-The application must not run uncontrolled schema synchronization on every request.
+- Allowed to stop a failed release
+- Separate from normal request handling
 
 ## Migration Strategy
 
-The exact Railway migration mechanism may use one of these approaches:
+The final release workflow may use:
 
-### Pre-deployment command
+### Railway pre-deploy command
 
-Run migrations before the new backend version starts accepting traffic.
+Run migrations before activating the new backend.
 
 ### Dedicated migration command
 
-Run a one-time Railway command as part of the release workflow.
+Run a one-time release command.
 
-### CI deployment workflow
+### CI-managed migration
 
-Run migrations from CI before or during an approved production release.
+Run migrations from an approved CI release job.
 
-The final mechanism should ensure:
+The selected mechanism must ensure:
 
 ```text
 Migration succeeds
-→ New backend becomes active
+→ New backend activates
 
 Migration fails
 → Deployment stops
 ```
 
-Running migrations concurrently from multiple backend replicas should be avoided.
+## Migration Concurrency
+
+Migrations must not run concurrently from multiple backend replicas.
+
+The deployment process should have one clearly owned migration step.
+
+The Fastify startup command should not cause every process to race to migrate.
 
 ## Migration Command
 
-The migration command should use the project’s Drizzle migration script.
-
-Conceptually:
+A package script should provide a command such as:
 
 ```text
 db:migrate
 ```
 
-The script should:
+The migration script should:
 
-- Load validated database configuration
-- Connect to Railway PostgreSQL
-- Apply pending Drizzle migrations
+- Validate database configuration
+- Connect to PostgreSQL
+- Apply pending migrations
 - Exit successfully when complete
-- Exit unsuccessfully when migration fails
-- Close the database connection
+- Exit unsuccessfully on failure
+- Close its connection
 
-## Backward-Compatible Migrations
+## Backward-Compatible Releases
 
-Schema changes should prefer backward-compatible deployment steps.
+Complex changes should use staged deployment.
 
-For more complex changes:
+Example:
 
 ```text
 Add compatible schema
-→ Deploy compatible application code
-→ Migrate or backfill data
-→ Remove old schema in a later deployment
+→ Deploy compatible backend
+→ Backfill data
+→ Deploy new behavior
+→ Remove old schema later
 ```
 
-Destructive schema changes should not be combined casually with application deployment.
+This reduces rollback risk.
 
-## Seed Data
+## Production Seeds
 
-Production startup should not automatically reseed the entire database.
+Production startup must not automatically reseed all data.
 
 Seed commands should be explicit.
 
 Production seeding may create:
 
-- The initial demo user
-- Canonical demo financial data
+- Demo user
+- Demo financial data
 - Required system categories
 
-Seed commands must:
+Seed commands should be:
 
-- Be idempotent where practical
-- Avoid overwriting regular users
-- Avoid exposing demo credentials
-- Run separately from normal backend startup
+- Environment-aware
+- Idempotent where practical
+- Transactional where appropriate
+- Safe for existing users
 
 ## Demo Reset
 
-Demo reset remains an authenticated application operation.
-
-It should not depend on redeploying either Railway or Vercel.
-
-The reset should execute through:
+Demo reset should remain an authenticated application workflow:
 
 ```text
-React frontend
-→ Protected Fastify endpoint
-→ Better Auth session validation
+Vercel frontend
+→ Railway Fastify endpoint
+→ Better Auth session
 → Drizzle transaction
 → Railway PostgreSQL
 ```
 
-## Database Backups
+It should not require:
 
-The Railway PostgreSQL production service should use scheduled backups when the application reaches a production-ready state.
+- Redeploying the frontend
+- Redeploying the backend
+- Resetting the full database
 
-The backup schedule should reflect:
+## Backups
 
-- Data importance
-- Expected update frequency
-- Railway plan capabilities
-- Acceptable recovery window
+Production backups should be enabled when the application reaches production readiness.
 
-At minimum, the project should document:
+The project should document:
 
-- Whether backups are enabled
-- Backup frequency
-- Retention expectations
+- Backup status
+- Frequency
+- Retention
 - Restore procedure
-- Who can initiate a restore
+- Access controls
+- Recovery time expectations
 
-Backup availability should not replace migration review or safe deletion practices.
+Backup policy may depend on Railway plan capabilities.
 
-## Recovery
+## Restore Testing
 
-Recovery planning should cover:
+A backup is not reliable until the restore process is understood.
 
-- Restoring a database backup
-- Rolling back a Railway backend deployment
-- Rolling back a Vercel frontend deployment
-- Correcting a failed migration
-- Restoring demo data
-- Rotating compromised secrets
+The project should eventually test:
 
-An application rollback does not automatically reverse a database migration.
-
-Database and application rollback compatibility must be considered before deployment.
+- Restoring into a non-production database
+- Starting the backend against restored data
+- Verifying Better Auth records
+- Verifying financial data
+- Confirming migration state
 
 ## Frontend Rollback
 
-A previous Vercel deployment may be promoted or restored when a frontend release fails.
+Vercel can restore or promote a previous frontend deployment.
 
-Frontend rollback is generally independent from PostgreSQL when the API contract remains compatible.
+Frontend rollback is generally safe when the backend API remains compatible.
 
-A frontend rollback may fail if the backend contract has already changed incompatibly.
+An old frontend may fail if the backend contract changed incompatibly.
 
 ## Backend Rollback
 
-Railway may restore a previously successful backend deployment.
+Railway may restore a prior successful backend deployment.
 
-A backend rollback must be checked against the current PostgreSQL schema.
+A previous backend version must remain compatible with the current PostgreSQL schema.
 
-The previous backend version may not work if a migration removed or changed required columns.
+Database migrations are not automatically reversed by application rollback.
+
+## Database Rollback
+
+Database rollback may require:
+
+- Restoring a backup
+- Applying a corrective migration
+- Running a data repair
+- Redeploying compatible code
+
+Destructive down migrations should not be assumed safe.
+
+## Deployment Testing Decision
+
+Deployment should be gated by:
+
+- Vitest unit tests
+- React Testing Library component tests
+- Fastify `inject()` integration tests
+- PostgreSQL Testcontainer integration tests
+- Drizzle migration verification
+- Playwright end-to-end tests
+- Frontend build
+- Backend build
+
+## Required Pre-Deployment Checks
+
+Before production deployment, CI should eventually verify:
+
+1. Dependency installation
+2. Formatting
+3. Linting
+4. Type checking
+5. Unit tests
+6. Frontend component tests
+7. Fastify integration tests
+8. PostgreSQL integration tests
+9. Drizzle migration validity
+10. Frontend production build
+11. Backend production build
+12. Critical Playwright workflows
+
+A required failure should block production deployment.
+
+## Recommended CI Flow
+
+```text
+Install dependencies
+        ↓
+Formatting and linting
+        ↓
+Type checking
+        ↓
+Unit and component tests
+        ↓
+Fastify and PostgreSQL integration tests
+        ↓
+Migration verification
+        ↓
+Frontend and backend builds
+        ↓
+Playwright end-to-end tests
+        ↓
+Production deployment
+```
+
+Independent jobs may run in parallel where safe.
+
+## Testcontainers in CI
+
+The selected CI provider must support:
+
+- Docker or compatible container runtime
+- Pulling a pinned PostgreSQL image
+- Starting disposable containers
+- Temporary port exposure
+- Container cleanup
+- Sufficient memory and disk
+
+Test jobs should use temporary database credentials.
+
+They should not receive production `DATABASE_URL`.
+
+## Migration Verification in CI
+
+CI should start a clean PostgreSQL Testcontainer and apply all committed Drizzle migrations.
+
+The job should fail when:
+
+- A migration cannot apply
+- Required Better Auth tables are unavailable
+- Steward tables are missing
+- The current backend cannot query the schema
+- Seed setup fails
+- Migration tooling exits incorrectly
+
+## Playwright in CI
+
+CI should install the required Playwright browser and operating-system dependencies.
+
+The initial required suite should use Chromium.
+
+The project may add Firefox and WebKit later.
+
+## Playwright Test Environment
+
+Playwright should run against:
+
+```text
+Vite frontend
+Fastify backend
+Disposable PostgreSQL database
+```
+
+The test environment should use test-only:
+
+- Better Auth secret
+- Database
+- User accounts
+- Session state
+- Demo data
+
+## Playwright Failure Artifacts
+
+CI should retain useful artifacts when Playwright fails.
+
+Possible artifacts include:
+
+- Trace
+- Screenshot
+- HTML report
+- Video where useful
+- Browser console output
+
+Artifacts must not contain production secrets or real financial data.
+
+## Preview Deployment Testing
+
+Vercel previews may be used for:
+
+- Manual review
+- Smoke tests
+- Accessibility review
+- Responsive review
+- Stakeholder review
+
+Preview deployments should not automatically use production data.
+
+## Production Smoke Tests
+
+After deployment, a small smoke suite may verify:
+
+- Frontend root loads
+- Nested frontend route loads directly
+- Static assets load
+- Railway health check succeeds
+- Frontend can reach the API
+- Public auth endpoint responds
+- Protected endpoint rejects unauthenticated access
+
+Smoke tests should not modify real financial data.
+
+## Deployment Approval
+
+Early development may allow automatic deployments from the production branch.
+
+As Steward approaches public launch, production deployments may require:
+
+- Protected branch
+- Required status checks
+- Manual approval
+- Migration review
+- Backup confirmation for risky changes
+
+The final policy depends on CI and project maturity.
+
+## Logging
+
+### Vercel logs
+
+Useful for:
+
+- Dependency-install failures
+- Type-check failures
+- Vite build failures
+- Missing public environment variables
+- Invalid output configuration
+
+### Railway logs
+
+Useful for:
+
+- Backend startup failures
+- Environment-validation failures
+- Database connection failures
+- Migration failures
+- Health-check failures
+- Unexpected API errors
+
+Logs must not include:
+
+- Passwords
+- Authentication cookies
+- Better Auth secrets
+- Database passwords
+- Full database URLs
+- Session tokens
+- Sensitive financial payloads
+
+## Monitoring
+
+The MVP may initially rely on:
+
+- Vercel deployment logs
+- Railway deployment logs
+- Railway runtime logs
+- Fastify structured logs
+- Railway service metrics
+- PostgreSQL metrics available through Railway
+
+A dedicated error-monitoring provider remains undecided.
+
+## Alerts
+
+Future operational alerts may cover:
+
+- Backend unavailable
+- Health check failing
+- Repeated deployment failure
+- High error rate
+- Database unavailable
+- Connection exhaustion
+- Backup failure
+- Migration failure
+
+Alerting should be added as production usage grows.
+
+## Secrets
+
+Secrets must be stored only in server-side configuration.
+
+Examples include:
+
+- Better Auth secret
+- Database URL
+- Database credentials
+- Private service tokens
+- Future email credentials
+
+Secrets must not be:
+
+- Committed to Git
+- Added to Vite environment variables
+- Included in frontend bundles
+- Printed in logs
+- Added to documentation
+- Stored in screenshots
 
 ## Environment Separation
 
@@ -694,64 +1103,18 @@ At minimum:
 ```text
 Production frontend
 Production backend
-Production database
+Production PostgreSQL
 
 Local frontend
 Local backend
-Local database
+Local PostgreSQL
 
-Test backend
-Test database
+Automated test frontend
+Automated test backend
+Disposable PostgreSQL
 ```
 
-A staging environment may be added when the release workflow requires it.
-
-## Preview Deployment Safety
-
-Vercel preview deployments should not automatically receive:
-
-- Production-only secrets
-- Database administration credentials
-- Unrestricted production API access
-- Demo-user passwords
-- Private Railway database URLs
-
-Preview frontend deployments should communicate only with an approved API environment.
-
-## Git Deployment
-
-The deployment platforms should connect to the Steward Git repository.
-
-Expected behavior:
-
-```text
-Pull request or branch update
-→ Vercel preview deployment
-
-Production branch update
-→ Vercel production deployment
-→ Railway backend deployment
-```
-
-The final production branch and deployment controls should be documented.
-
-Automatic production deployment may be enabled after tests and migration safeguards are in place.
-
-## CI Requirements
-
-Before production deployment, CI should eventually verify:
-
-- Installation succeeds
-- Formatting checks pass
-- Linting passes
-- Type checking passes
-- Unit tests pass
-- Integration tests pass
-- Frontend build succeeds
-- Backend build succeeds
-- Drizzle migrations are valid
-
-Deployment should not replace CI validation.
+A shared staging environment may be introduced later.
 
 ## Build Reproducibility
 
@@ -761,183 +1124,148 @@ The repository should pin:
 - Package-manager version
 - Dependency lockfile
 - Build scripts
+- PostgreSQL Testcontainer image
+- Playwright version
 
-Vercel, Railway, local development, and CI should use compatible runtime and package-manager versions.
+Local development, CI, Vercel, and Railway should use compatible versions.
 
-## Logging
+## Package Scripts
 
-### Vercel
+Exact scripts depend on the selected package manager.
 
-Frontend deployment logs should be used to diagnose:
-
-- Dependency installation failures
-- Type-check failures
-- Vite build failures
-- Invalid environment configuration
-- Missing output files
-
-### Railway
-
-Backend logs should be used to diagnose:
-
-- Startup failures
-- Invalid environment variables
-- Database connection failures
-- Migration failures
-- Health-check failures
-- Unexpected Fastify errors
-
-Logs must not include:
-
-- Passwords
-- Authentication cookies
-- Session tokens
-- Better Auth secrets
-- Database passwords
-- Full database URLs
-- Sensitive financial payloads
-
-## Observability
-
-The MVP should initially rely on:
-
-- Vercel deployment logs
-- Railway deployment and runtime logs
-- Fastify structured logs
-- Railway service metrics
-- PostgreSQL monitoring available through Railway
-
-Additional error tracking or observability services may be introduced later.
-
-## Domains
-
-The initial deployment may use platform-provided domains.
-
-Custom domains may later use a structure such as:
+The repository should provide commands equivalent to:
 
 ```text
-steward.example.com
-api.steward.example.com
+dev
+build
+build:web
+build:api
+start
+typecheck
+lint
+test
+test:run
+test:integration
+test:e2e
+test:coverage
+db:generate
+db:migrate
+db:seed
 ```
-
-The final domains must be reflected in:
-
-- Vercel configuration
-- Railway networking
-- `VITE_API_URL`
-- Better Auth base URL
-- Better Auth trusted origins
-- Fastify CORS
-- Cookie configuration
-
-## HTTPS
-
-Production frontend and backend traffic must use HTTPS.
-
-The application should not send authentication cookies or financial data over unencrypted public connections.
-
-## Secrets
-
-Secrets must be stored only in approved server-side configuration.
-
-Examples include:
-
-- Better Auth secret
-- PostgreSQL credentials
-- Database connection URL
-- Private service tokens
-
-Secrets must not be:
-
-- Committed to Git
-- Stored in Vite browser variables
-- Included in frontend bundles
-- Printed in deployment logs
-- Added directly to documentation
-- Included in screenshots
 
 ## Deployment Documentation
 
-The repository should eventually document:
+The repository should document:
 
 - How Vercel is connected
 - How Railway is connected
-- Required environment variables
+- Root directories
+- Environment variables
 - Build commands
 - Start commands
 - Migration commands
 - Health-check path
 - Production domains
+- Trusted origins
+- CORS behavior
 - Backup configuration
-- Rollback procedures
+- Rollback procedure
+- Smoke tests
+- CI requirements
 
-Values that are secret should be represented by variable names rather than real credentials.
+Secret values should be represented only by variable names.
 
-## Deployment Testing
+## Deployment Verification
 
-Deployment verification should include:
-
-### Frontend
+### Frontend checks
 
 - Root page loads
-- Direct navigation to nested routes works
+- Login page loads
+- Direct nested route loads
 - Static assets load
-- Correct API origin is used
-- Authentication pages render
-- Production build contains no server secrets
+- Correct API URL is used
+- No server secrets exist in the bundle
+- Light and dark themes work
+- Mobile navigation works
 
-### Backend
+### Backend checks
 
-- Health check succeeds
-- Fastify starts using Railway’s port
-- CORS accepts approved origins
-- CORS rejects unrelated origins
-- Better Auth endpoints work
-- Protected routes reject unauthenticated requests
-- Database connections succeed
+- Health endpoint succeeds
+- Fastify listens on Railway's port
+- Approved CORS origins work
+- Unrelated origins fail
+- Better Auth endpoints respond
+- Protected routes require authentication
+- Database connection succeeds
+- Graceful shutdown works
 
-### Full application
+### Full application checks
 
 - Registration works
 - Login works
-- Demo login works
-- Session cookies persist
-- Dashboard data loads
-- Protected data remains user-scoped
-- Sign out works
-- Direct browser refreshes work on frontend routes
+- Logout works
+- Session persists
+- Dashboard loads
+- Account creation works
+- Transaction creation works
+- Budget creation works
+- Ownership remains isolated
+- Direct browser refresh works
 
 ## Non-Goals
 
-The initial deployment will not require:
+The initial deployment architecture will not require:
 
 - Kubernetes
 - AWS infrastructure management
-- Multiple production regions
-- Active-active databases
-- Self-hosted CI runners
-- Microservice orchestration
+- Multiple active regions
+- Active-active PostgreSQL
 - Custom load balancers
-- Multiple backend providers
 - Multiple frontend providers
-- Per-pull-request PostgreSQL databases
+- Multiple backend providers
+- One database per pull request
+- Self-hosted CI runners
 - Enterprise disaster-recovery guarantees
+- Production data in browser tests
+- Automatic destructive migrations
+- Vercel Functions as the primary backend
 
 These should only be introduced for concrete operational requirements.
+
+## Open Decisions
+
+The following deployment decisions remain open:
+
+- Continuous-integration provider
+- Package manager
+- Workspace tooling
+- Custom domains
+- Error monitoring
+- Production log aggregation
+- Backup schedule
+- Backup retention
+- Staging environment
+- Preview API strategy
+- Manual production approval
+- Post-deployment smoke-test runner
+- Production PostgreSQL version
 
 ## Success Criteria
 
 The deployment architecture is successful when:
 
 - Vercel builds and serves the React and Vite frontend.
-- TanStack Router routes work on direct navigation and refresh.
-- Railway builds and runs the Fastify API.
-- Fastify listens on Railway’s assigned port.
+- Direct TanStack Router navigation and refreshes work.
+- Railway builds and runs the Fastify backend.
+- Fastify listens on Railway's assigned port.
 - Railway health checks pass.
-- PostgreSQL is accessible to the backend.
-- Drizzle migrations run safely.
-- Better Auth cookies work between Vercel and Railway.
-- CORS permits only approved frontend origins.
+- Railway PostgreSQL is accessible to the backend.
+- Drizzle migrations run safely once per release.
+- Better Auth cookies work between frontend and backend.
+- CORS permits only approved origins.
 - Secrets remain outside frontend bundles and source control.
-- Preview and production environments use appropriate configuration.
-- Frontend, backend, and database deployments can be diagnosed and rolled back safely.
+- Automated tests use disposable PostgreSQL instead of production.
+- Required tests and builds block invalid deployments.
+- Playwright verifies critical full-stack workflows.
+- Frontend and backend releases can be diagnosed and rolled back.
+- Database compatibility is considered before rollback.

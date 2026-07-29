@@ -8,7 +8,7 @@ Items marked as open have not yet been selected.
 
 ## Architecture Summary
 
-Steward is a client-rendered full-stack web application.
+Steward is a client-rendered full-stack personal-finance web application.
 
 ```text
 User browser
@@ -35,39 +35,79 @@ Drizzle ORM
 Railway PostgreSQL
 ```
 
+## Testing Summary
+
+```text
+Vitest
+├── Frontend unit tests
+├── React component tests
+├── Backend unit tests
+├── Fastify integration tests
+├── Drizzle integration tests
+└── Coverage
+
+React Testing Library
+├── User-visible component behavior
+├── Forms
+├── Dialogs
+├── Tables
+└── Error and loading states
+
+Fastify inject()
+└── HTTP lifecycle without a network port
+
+Testcontainers
+└── Disposable real PostgreSQL databases
+
+Playwright
+└── Critical complete browser workflows
+```
+
 ## Frontend
 
-| Area                    | Selection       | Status   |
-| ----------------------- | --------------- | -------- |
-| UI library              | React           | Selected |
-| Language                | TypeScript      | Selected |
-| Build tool              | Vite            | Selected |
-| Routing                 | TanStack Router | Selected |
-| Runtime validation      | Zod             | Selected |
-| Styling                 | Tailwind CSS    | Selected |
-| Component system        | shadcn/ui       | Selected |
-| Frontend hosting        | Vercel          | Selected |
-| Server-state management | Undecided       | Open     |
-| Form management         | Undecided       | Open     |
-| Charting                | Undecided       | Open     |
-| Frontend testing        | Undecided       | Open     |
-| Primary icon library    | Undecided       | Open     |
-| Error monitoring        | Undecided       | Open     |
+| Area                            | Selection                     | Status   |
+| ------------------------------- | ----------------------------- | -------- |
+| UI library                      | React                         | Selected |
+| Language                        | TypeScript                    | Selected |
+| Build tool                      | Vite                          | Selected |
+| Routing                         | TanStack Router               | Selected |
+| Runtime validation              | Zod                           | Selected |
+| Styling                         | Tailwind CSS                  | Selected |
+| Component system                | shadcn/ui                     | Selected |
+| Unit test runner                | Vitest                        | Selected |
+| Component testing               | React Testing Library         | Selected |
+| User interaction testing        | `@testing-library/user-event` | Selected |
+| DOM assertions                  | `@testing-library/jest-dom`   | Selected |
+| Test DOM environment            | jsdom                         | Selected |
+| End-to-end testing              | Playwright                    | Selected |
+| Coverage                        | `@vitest/coverage-v8`         | Selected |
+| Frontend hosting                | Vercel                        | Selected |
+| Server-state management         | Undecided                     | Open     |
+| Form management                 | Undecided                     | Open     |
+| Charting                        | Undecided                     | Open     |
+| Primary icon library            | Undecided                     | Open     |
+| Error monitoring                | Undecided                     | Open     |
+| Automated accessibility scanner | Undecided                     | Open     |
+| Visual regression testing       | Undecided                     | Open     |
 
 ## Backend
 
-| Area                           | Selection                   | Status   |
-| ------------------------------ | --------------------------- | -------- |
-| Runtime                        | Node.js                     | Selected |
-| Language                       | TypeScript                  | Selected |
-| Web framework                  | Fastify                     | Selected |
-| Runtime validation             | Zod                         | Selected |
-| Fastify validation integration | `fastify-type-provider-zod` | Selected |
-| Authentication                 | Better Auth                 | Selected |
-| API style                      | HTTP JSON API               | Selected |
-| Backend hosting                | Railway                     | Selected |
-| Backend testing                | Undecided                   | Open     |
-| Error monitoring               | Undecided                   | Open     |
+| Area                             | Selection                   | Status   |
+| -------------------------------- | --------------------------- | -------- |
+| Runtime                          | Node.js                     | Selected |
+| Language                         | TypeScript                  | Selected |
+| Web framework                    | Fastify                     | Selected |
+| Runtime validation               | Zod                         | Selected |
+| Fastify Zod integration          | `fastify-type-provider-zod` | Selected |
+| Authentication                   | Better Auth                 | Selected |
+| API style                        | HTTP JSON API               | Selected |
+| Unit and integration runner      | Vitest                      | Selected |
+| HTTP route testing               | Fastify `inject()`          | Selected |
+| Database integration environment | Testcontainers for Node.js  | Selected |
+| Backend hosting                  | Railway                     | Selected |
+| API documentation                | Undecided                   | Open     |
+| Error monitoring                 | Undecided                   | Open     |
+| Rate limiting                    | Undecided                   | Open     |
 
 ## Database
 
@@ -77,23 +117,107 @@ Railway PostgreSQL
 | ORM and query layer          | Drizzle ORM                 | Selected |
 | Migration tooling            | Drizzle Kit                 | Selected |
 | Authentication adapter       | Better Auth Drizzle adapter | Selected |
+| Integration-test database    | PostgreSQL Testcontainer    | Selected |
 | Production database hosting  | Railway PostgreSQL          | Selected |
 | PostgreSQL driver            | Undecided                   | Open     |
+| Monetary representation      | Undecided                   | Open     |
+| Account balance strategy     | Undecided                   | Open     |
 | Local PostgreSQL environment | Undecided                   | Open     |
+| Backup schedule              | Undecided                   | Open     |
 
-## Infrastructure
+## Testing
 
-| Area                   | Selection | Status   |
-| ---------------------- | --------- | -------- |
-| Frontend deployment    | Vercel    | Selected |
-| Backend deployment     | Railway   | Selected |
-| Database deployment    | Railway   | Selected |
-| Package manager        | Undecided | Open     |
-| Repository structure   | Undecided | Open     |
-| Workspace tooling      | Undecided | Open     |
-| Continuous integration | Undecided | Open     |
-| Custom domains         | Undecided | Open     |
-| Production monitoring  | Undecided | Open     |
+| Area                            | Selection                     | Status   |
+| ------------------------------- | ----------------------------- | -------- |
+| Primary test runner             | Vitest                        | Selected |
+| Frontend unit testing           | Vitest                        | Selected |
+| Backend unit testing            | Vitest                        | Selected |
+| React component testing         | React Testing Library         | Selected |
+| Browser-like test DOM           | jsdom                         | Selected |
+| User interaction simulation     | `@testing-library/user-event` | Selected |
+| DOM matchers                    | `@testing-library/jest-dom`   | Selected |
+| Fastify route testing           | Fastify `inject()`            | Selected |
+| Database integration testing    | Testcontainers for Node.js    | Selected |
+| Integration database engine     | Real PostgreSQL               | Selected |
+| End-to-end testing              | Playwright                    | Selected |
+| Coverage provider               | V8                            | Selected |
+| Coverage package                | `@vitest/coverage-v8`         | Selected |
+| Visual regression testing       | Undecided                     | Open     |
+| Automated accessibility scanner | Undecided                     | Open     |
+| Cross-browser CI cadence        | Undecided                     | Open     |
+
+## Deployment
+
+| Area                           | Selection           | Status   |
+| ------------------------------ | ------------------- | -------- |
+| Frontend deployment            | Vercel              | Selected |
+| Backend deployment             | Railway             | Selected |
+| Database deployment            | Railway PostgreSQL  | Selected |
+| Preview frontend deployments   | Vercel              | Selected |
+| Backend health checks          | Railway + `/health` | Selected |
+| Production migration tooling   | Drizzle Kit         | Selected |
+| Required automated test layers | Defined             | Selected |
+| CI provider                    | Undecided           | Open     |
+| Package manager                | Undecided           | Open     |
+| Repository structure           | Undecided           | Open     |
+| Workspace tooling              | Undecided           | Open     |
+| Custom domains                 | Undecided           | Open     |
+| Production monitoring          | Undecided           | Open     |
+
+## Confirmed Production Architecture
+
+```text
+Vercel
+└── React frontend
+    ├── TypeScript
+    ├── Vite
+    ├── TanStack Router
+    ├── Zod
+    ├── Tailwind CSS
+    └── shadcn/ui
+
+Railway
+├── Fastify backend
+│   ├── Node.js
+│   ├── TypeScript
+│   ├── Zod
+│   ├── Better Auth
+│   └── Drizzle ORM
+└── PostgreSQL
+    ├── Steward financial tables
+    └── Better Auth tables
+```
+
+## Confirmed Test Architecture
+
+```text
+Vitest unit tests
+├── Zod schemas
+├── Financial utilities
+├── Date utilities
+├── Service logic
+├── Environment validation
+└── Response mapping
+
+React component tests
+├── React Testing Library
+├── user-event
+├── jest-dom
+└── jsdom
+
+Backend integration tests
+├── Vitest
+├── Fastify inject()
+├── Better Auth
+├── Drizzle ORM
+└── PostgreSQL Testcontainer
+
+End-to-end tests
+├── Playwright
+├── React frontend
+├── Fastify API
+└── Disposable PostgreSQL database
+```
 
 ## Frontend Decisions
 
@@ -103,97 +227,89 @@ React provides Steward's component and rendering model.
 
 React is responsible for:
 
-- Rendering the user interface
-- Composing reusable components
-- Managing local interface state
-- Supporting interactive financial workflows
-- Integrating routing, forms, validation, and server state
+- Interface composition
+- Interactive workflows
+- Local component state
+- Integration with routing
+- Integration with forms
+- Integration with server state
+- Accessible user experiences
 
-The initial application will use client-side rendering.
-
-Server-side rendering is not required for the MVP.
+The MVP will use client-side rendering.
 
 ### TypeScript
 
-TypeScript is used across the frontend and backend.
+TypeScript is used across:
 
-TypeScript provides:
+- Frontend
+- Backend
+- Shared contracts
+- Database schema
+- Migrations
+- Tests
+- Configuration
 
-- Static type checking
-- Safer refactoring
-- Typed component properties
-- Typed API contracts
-- Typed route definitions
-- Typed database queries
-- Shared language across the application
-
-Runtime validation remains necessary because TypeScript types do not validate data at runtime.
+TypeScript provides static checks but does not replace runtime validation.
 
 ### Vite
 
 Vite provides:
 
-- Local frontend development server
-- Fast development builds
-- Production bundling
-- Environment-variable integration
+- Local development server
 - React development tooling
-- Tailwind CSS integration
+- Production frontend build
+- Environment-variable integration
+- Tailwind integration
 
-The production build output will be deployed to Vercel.
+The Vite build is deployed to Vercel.
 
 ### TanStack Router
 
 TanStack Router provides:
 
-- Type-safe routing
+- Typed routes
 - Nested layouts
 - Route parameters
 - Search-parameter validation
 - Route lifecycle hooks
-- Lazy route loading
+- Lazy loading
+- Error boundaries
 - Not-found handling
-- Route-level error boundaries
 
-Authentication-aware navigation may use route lifecycle features such as `beforeLoad`.
-
-Frontend route checks improve user experience but do not replace backend authorization.
+Frontend authentication checks do not replace backend authorization.
 
 ### Zod
 
 Zod provides runtime validation for:
 
-- Form values
+- Forms
 - Route parameters
 - Search parameters
-- API request contracts
-- API response contracts where appropriate
+- API requests
+- API responses where appropriate
 - Environment variables
-- Browser-storage values
-- Imported data when implemented
+- Browser storage
+- Imported data
 
-Types should generally be inferred from Zod schemas rather than manually duplicated.
+Types should generally be inferred from Zod schemas.
 
 ### Tailwind CSS
 
-Tailwind CSS provides Steward's utility-based styling system.
-
-Tailwind is responsible for:
+Tailwind CSS provides:
 
 - Layout
 - Spacing
 - Typography
 - Responsive behavior
-- Color usage
 - Visual states
 - Theme variants
-- Component styling
+- Utility-based styling
 
-Shared design tokens should be preferred over unrelated arbitrary values.
+The project should use shared tokens rather than unrelated arbitrary values.
 
 ### shadcn/ui
 
-shadcn/ui provides customizable component implementations that are added directly to Steward's source code.
+shadcn/ui provides source-controlled component implementations.
 
 Likely components include:
 
@@ -202,6 +318,7 @@ Likely components include:
 - Input
 - Label
 - Select
+- Checkbox
 - Dialog
 - Alert Dialog
 - Sheet
@@ -212,154 +329,122 @@ Likely components include:
 - Tooltip
 - Popover
 - Skeleton
-- Toast or notification components
+- Notification components
 
-Steward owns and may customize the generated component source.
-
-shadcn/ui components may depend on supporting runtime packages such as primitive libraries, class-name utilities, animation utilities, and icons.
+Steward owns and may customize the added component code.
 
 ### Vercel
 
-Vercel hosts the React and Vite frontend.
-
 Vercel provides:
 
-- Production frontend deployments
+- Production frontend hosting
 - Preview deployments
 - HTTPS
-- Git-based deployment workflows
-- Frontend environment configuration
-- Static asset hosting
+- Git integration
+- Frontend environment variables
+- Deployment history
+- Frontend rollback
 
-Because Steward uses client-side routing, application routes must resolve to the frontend entry document when directly loaded or refreshed.
+Vercel must be configured for Vite single-page application routing.
 
 ## Backend Decisions
 
 ### Node.js
 
-Node.js provides the backend JavaScript runtime.
+Node.js provides the Fastify runtime.
 
-The exact supported Node.js version should be pinned once repository tooling is finalized.
-
-Local development, CI, Railway, and Vercel should use compatible versions.
+The supported Node.js version should eventually be pinned.
 
 ### Fastify
 
-Fastify hosts Steward's backend API.
+Fastify hosts:
 
-Fastify is responsible for:
+- Steward's API
+- Better Auth endpoints
+- Health check
+- Protected financial operations
 
-- HTTP routing
-- Request lifecycle
-- Request validation integration
-- Response serialization
-- Authentication hooks
-- Error handling
-- Structured logging
-- Health checks
+Fastify provides:
+
+- Routing
+- Plugin lifecycle
+- Validation integration
+- Serialization
+- Logging
+- Request injection for tests
 - Graceful shutdown
-
-The backend should be organized into domain-focused modules.
-
-Likely modules include:
-
-- Authentication
-- Accounts
-- Transactions
-- Categories
-- Budgets
-- Dashboard
-- Settings
-- Demo data
 
 ### Zod Backend Validation
 
-Zod validates backend trust boundaries.
+Zod validates:
 
-Backend schemas may validate:
-
-- Route parameters
-- Query parameters
 - Request bodies
+- Query parameters
+- Route parameters
 - Response payloads
 - Environment configuration
 
-Structural validation should occur before business logic.
-
-Database-backed business rules should remain in application services rather than Zod refinements.
+Database-backed rules remain in services and queries.
 
 ### `fastify-type-provider-zod`
 
-`fastify-type-provider-zod` connects Zod with Fastify.
+`fastify-type-provider-zod` connects Zod with:
 
-It provides integration for:
-
-- Request validation
-- Response serialization
+- Fastify validation
+- Fastify serialization
 - Route schema definitions
-- Inferred TypeScript route types
-
-The exact configuration should match the installed package versions.
+- Type inference
 
 ### Better Auth
 
-Better Auth manages authentication.
+Better Auth manages:
 
-Better Auth is responsible for:
-
-- User registration
+- Registration
 - Email and password authentication
 - Session creation
 - Session validation
 - Cookie-based authentication
-- Sign out
-- Authentication database records
+- Logout
+- Authentication records
 
-Steward should not create a competing custom authentication system.
+Steward will not build a competing authentication system.
 
-### Railway Backend Hosting
+### Railway Backend
 
-Railway hosts the Fastify backend as a persistent service.
+Railway provides:
 
-Railway is responsible for:
-
-- Building the backend
-- Running the Fastify production process
-- Providing server environment variables
-- Hosting the public API
+- Backend deployment
+- HTTPS API hosting
+- Backend variables
 - Service logs
 - Health checks
 - Deployment history
-- Connectivity to Railway PostgreSQL
-
-Fastify must listen on Railway's provided port and bind to an externally reachable host.
+- Private connectivity to PostgreSQL
+- Backend rollback
 
 ## Database Decisions
 
 ### PostgreSQL
 
-PostgreSQL stores Steward's relational data.
+PostgreSQL stores:
 
-Likely data includes:
-
-- Better Auth users
-- Better Auth sessions
+- Better Auth records
 - Financial accounts
-- Transactions
 - Categories
+- Transactions
 - Budgets
 - Budget allocations
 - User preferences
-- Demo-user data
+- Demo data
 
-PostgreSQL constraints should protect stored-data integrity.
+PostgreSQL constraints protect persisted integrity.
 
 ### Drizzle ORM
 
-Drizzle ORM provides:
+Drizzle provides:
 
-- TypeScript database schemas
-- Typed SQL queries
+- TypeScript table definitions
+- Typed queries
 - Typed inserts
 - Typed updates
 - Typed deletes
@@ -367,29 +452,20 @@ Drizzle ORM provides:
 - Transactions
 - PostgreSQL integration
 
-Drizzle table types describe database records.
-
-They should not automatically be treated as public API contracts.
+Drizzle table types are not automatically public API types.
 
 ### Drizzle Kit
 
-Drizzle Kit manages database migrations.
+Drizzle Kit provides:
 
-The expected workflow is:
-
-```text
-Edit Drizzle schema
-→ Generate SQL migration
-→ Review migration
-→ Commit migration
-→ Apply migration
-```
-
-Production migrations must be version controlled and reviewed.
+- SQL migration generation
+- Migration metadata
+- Migration execution
+- Version-controlled schema evolution
 
 ### Better Auth Drizzle Adapter
 
-Better Auth uses its Drizzle adapter with PostgreSQL.
+Better Auth uses its Drizzle adapter configured for PostgreSQL.
 
 Conceptually:
 
@@ -402,74 +478,125 @@ betterAuth({
 });
 ```
 
-The exact configuration should match the installed Better Auth version.
-
 ### Railway PostgreSQL
 
-Railway hosts the production PostgreSQL database.
+Railway hosts production PostgreSQL.
 
-The Fastify service connects using Railway-provided database variables.
+The backend should use private connectivity where available.
 
-The backend should use private service connectivity where available.
+## Testing Decisions
 
-The database should not be exposed publicly without an explicit operational requirement.
+### Vitest
 
-## Deployment Decisions
+Vitest is the primary runner for:
 
-### Frontend Deployment
+- Frontend unit tests
+- React component tests
+- Backend unit tests
+- Fastify integration tests
+- Drizzle integration tests
+- Shared-contract tests
+- Coverage
+
+### React Testing Library
+
+React Testing Library verifies user-visible behavior through accessible queries.
+
+It is used for:
+
+- Forms
+- Dialogs
+- Tables
+- Filters
+- Loading states
+- Empty states
+- Error states
+- shadcn/ui compositions
+
+### `@testing-library/user-event`
+
+`user-event` simulates:
+
+- Typing
+- Clicking
+- Tabbing
+- Selecting
+- Checking controls
+- Keyboard interaction
+
+### `@testing-library/jest-dom`
+
+`jest-dom` provides readable DOM assertions for Vitest.
+
+### jsdom
+
+jsdom provides a simulated browser DOM for component tests.
+
+### Fastify `inject()`
+
+Fastify `inject()` tests:
+
+- Routes
+- Hooks
+- Validation
+- Serialization
+- Authentication
+- Authorization
+- Errors
+- Cookies
+- Headers
+
+without opening a network port.
+
+### Testcontainers for Node.js
+
+Testcontainers provides disposable real PostgreSQL instances.
+
+Integration tests should:
 
 ```text
-Git repository
-→ Vercel build
-→ Vite production build
-→ Vercel deployment
+Start PostgreSQL
+→ Apply Drizzle migrations
+→ Seed test data
+→ Run tests
+→ Stop PostgreSQL
 ```
 
-The frontend deployment must include:
+### Playwright
 
-- Correct frontend root directory
-- Build command
-- Output directory
-- Public environment variables
-- SPA routing configuration
+Playwright verifies critical browser workflows.
 
-### Backend Deployment
+Initial workflows include:
+
+- Registration
+- Login
+- Logout
+- Account creation
+- Transaction creation
+- Transaction editing
+- Transfer creation
+- Budget creation
+- Demo reset
+- Session persistence
+- Protected routes
+- Direct route refresh
+
+### V8 Coverage
+
+Vitest uses:
 
 ```text
-Git repository
-→ Railway build
-→ Database migration step
-→ Fastify production process
-→ Railway health check
+@vitest/coverage-v8
 ```
 
-The backend deployment must include:
-
-- Backend root directory
-- Install command where needed
-- Build command
-- Start command
-- Migration command
-- Environment variables
-- Health-check path
-
-### Database Deployment
-
-```text
-Drizzle TypeScript schema
-→ Drizzle Kit migration
-→ Railway PostgreSQL
-```
-
-Application startup should not perform uncontrolled schema synchronization.
+Coverage should prioritize high-risk behavior rather than percentage alone.
 
 ## Production Request Flow
 
 ```text
-User interaction
+User action
 → React component
 → Zod frontend validation
-→ TanStack Router or API client
 → Credentialed HTTPS request
 → Fastify route
 → Zod backend validation
@@ -479,14 +606,11 @@ User interaction
 → Railway PostgreSQL
 ```
 
-The response returns through the layers in reverse.
-
 ## Authentication Flow
 
 ```text
-Vercel frontend
-→ Login or registration form
-→ Zod frontend validation
+Vercel login form
+→ Zod validation
 → Railway Better Auth endpoint
 → Better Auth
 → Drizzle adapter
@@ -494,8 +618,6 @@ Vercel frontend
 → Session cookie
 → Browser
 ```
-
-The browser must send authentication credentials with cross-origin API requests when the frontend and backend use different origins.
 
 ## Validation Flow
 
@@ -509,33 +631,46 @@ User input
 → PostgreSQL constraints
 ```
 
-Each layer has a separate role:
+Each layer serves a separate purpose:
 
 - Frontend validation improves usability.
 - Backend validation protects the API boundary.
-- Application services enforce business rules.
+- Services enforce business rules.
 - PostgreSQL constraints protect stored data.
 
-## API Contract Flow
+## API Response Flow
 
 ```text
-Zod request schema
-→ Typed Fastify route input
-→ Application service
+PostgreSQL record
 → Drizzle query
 → Response mapping
 → Zod response schema
+→ Fastify serialization
 → React frontend
 ```
 
-Public contracts should not expose:
+Database records should not be exposed without deliberate mapping.
 
-- Database-only fields
-- Better Auth internals
-- Secrets
-- Internal ownership fields
-- Raw PostgreSQL errors
-- Raw Drizzle errors
+## Integration-Test Flow
+
+```text
+Vitest
+→ Fastify inject()
+→ Zod validation
+→ Better Auth test session
+→ Service
+→ Drizzle
+→ PostgreSQL Testcontainer
+```
+
+## End-to-End Test Flow
+
+```text
+Playwright browser
+→ Vite frontend
+→ Fastify API
+→ Disposable PostgreSQL
+```
 
 ## Styling Architecture
 
@@ -544,51 +679,57 @@ Tailwind CSS and design tokens
                 ↓
 shadcn/ui primitives
                 ↓
-Shared application components
+Shared Steward components
                 ↓
 Feature components
                 ↓
-Pages and route layouts
+Routes and pages
 ```
 
-Examples of shared application components include:
+## Schema Ownership
 
-- PageHeader
-- EmptyState
-- ErrorState
-- ConfirmationDialog
-- SearchField
-- PaginationControls
-- ThemeToggle
-- CurrencyDisplay
+### Zod schemas
 
-Examples of feature components include:
+Own runtime boundaries:
 
-- AccountCard
-- TransactionTable
-- BudgetProgress
-- BudgetCategoryRow
-- NetWorthSummary
-- SpendingSummary
-- RecentTransactions
-- DashboardWidget
+- API input
+- API output
+- Forms
+- Environment configuration
+- URL state
+- Browser storage
+
+### Drizzle schemas
+
+Own persistent structure:
+
+- Tables
+- Columns
+- Foreign keys
+- Indexes
+- Constraints
+- Relations
+
+### TypeScript types
+
+Provide compile-time safety.
+
+TypeScript does not replace runtime validation or database constraints.
 
 ## Environment Configuration
 
-### Vercel Frontend
+### Vercel frontend
 
-Expected public variables may include:
+Likely public variables:
 
 ```text
 VITE_API_URL
 VITE_APP_ENV
 ```
 
-These values are included in browser-delivered code and must not contain secrets.
+### Railway backend
 
-### Railway Backend
-
-Expected server variables may include:
+Likely server variables:
 
 ```text
 NODE_ENV
@@ -603,9 +744,7 @@ LOG_LEVEL
 DEMO_USER_EMAIL
 ```
 
-The exact set may change as the application is implemented.
-
-Backend environment configuration should be validated with Zod before the server starts.
+Exact secret values must not be committed.
 
 ## Cross-Origin Authentication
 
@@ -613,107 +752,77 @@ Vercel and Railway will normally use different origins.
 
 The application must coordinate:
 
-- Frontend `credentials` configuration
+- Frontend `credentials` behavior
 - Fastify CORS
 - Better Auth trusted origins
 - Secure cookie settings
-- SameSite cookie behavior
+- SameSite behavior
 - Production domains
 - Preview domains
 
-Wildcard CORS origins must not be used with credentialed authentication requests.
+Wildcard CORS must not be used with credentialed authentication.
 
-## Local Development
-
-A likely local setup is:
+## Database Workflow
 
 ```text
-Frontend:
-http://localhost:5173
-
-Backend:
-http://localhost:3000
-
-Database:
-Local PostgreSQL
+Edit Drizzle schema
+→ Generate migration
+→ Review SQL
+→ Run integration tests
+→ Commit migration
+→ Apply during Railway release
 ```
 
-The exact ports and local database tooling remain open decisions.
-
-Local development should reflect production boundaries where practical.
-
-## Repository Structure
-
-The repository structure has not yet been finalized.
-
-A likely monorepo structure is:
+## Deployment Workflow
 
 ```text
-steward/
-├── apps/
-│   ├── web/
-│   └── api/
-├── packages/
-│   └── contracts/
-├── docs/
-├── package.json
-└── workspace configuration
+Commit or pull request
+→ CI checks
+→ Tests
+→ Builds
+→ Preview or production deployment
 ```
 
-Possible responsibilities:
+Production release:
 
 ```text
-apps/web
-→ React, Vite, TanStack Router, Tailwind, shadcn/ui
-
-apps/api
-→ Fastify, Better Auth, Drizzle, Zod
-
-packages/contracts
-→ Shared public Zod schemas and types
+Required checks pass
+→ Apply Drizzle migrations
+→ Deploy Fastify
+→ Pass Railway health check
+→ Deploy or promote Vercel frontend
+→ Run smoke checks
 ```
 
-The final structure should be documented separately.
+The final order may vary based on backward compatibility.
 
-## Shared Contracts
+## Required CI Stages
 
-Shared Zod contracts may include:
+Required checks should eventually include:
 
-- API request schemas
-- API response schemas
-- Pagination schemas
-- Filter schemas
-- Public enums
-- Standard API error schemas
+1. Formatting
+2. Linting
+3. Type checking
+4. Unit tests
+5. React component tests
+6. Fastify integration tests
+7. PostgreSQL integration tests
+8. Migration verification
+9. Frontend build
+10. Backend build
+11. Critical Playwright tests
 
-Shared contracts must not import:
+A failed required check should block production deployment.
 
-- Fastify plugins
-- Drizzle database clients
-- PostgreSQL connections
-- Better Auth secrets
-- Server-only environment configuration
+## Local Development Architecture
 
-## Service Ownership
+```text
+Vite frontend
+→ Local Fastify API
+→ Local PostgreSQL
+```
 
-| Concern                        | Technology         |
-| ------------------------------ | ------------------ |
-| Interface rendering            | React              |
-| Frontend language              | TypeScript         |
-| Frontend development and build | Vite               |
-| Client-side routing            | TanStack Router    |
-| Runtime validation             | Zod                |
-| Styling                        | Tailwind CSS       |
-| UI component implementations   | shadcn/ui          |
-| Frontend hosting               | Vercel             |
-| HTTP API                       | Fastify            |
-| Backend runtime                | Node.js            |
-| Authentication                 | Better Auth        |
-| Database queries               | Drizzle ORM        |
-| Database migrations            | Drizzle Kit        |
-| Relational storage             | PostgreSQL         |
-| Backend hosting                | Railway            |
-| Production database hosting    | Railway PostgreSQL |
+The local PostgreSQL tooling remains undecided.
 
 ## Security Boundaries
 
@@ -724,8 +833,7 @@ The frontend is not trusted for:
 - Authentication
 - Authorization
 - Ownership
-- Financial data integrity
-- Business-rule enforcement
+- Financial integrity
 - Secret storage
 
 ### Backend
@@ -733,9 +841,10 @@ The frontend is not trusted for:
 The backend is responsible for:
 
 - Session validation
-- Ownership enforcement
-- Request validation
+- Authorization
+- Ownership
 - Business rules
+- Request validation
 - Safe response mapping
 - Database access
 
@@ -743,57 +852,50 @@ The backend is responsible for:
 
 PostgreSQL is responsible for:
 
+- Required values
 - Foreign keys
 - Unique constraints
-- Required values
-- Supported value constraints
+- Check constraints
 - Transactional integrity
 
-## Testing Responsibilities
+### Testing
 
-The testing stack remains undecided.
+Automated tests must use:
 
-The eventual testing strategy should cover:
+- Test credentials
+- Disposable PostgreSQL
+- Synthetic financial data
+- Non-production secrets
 
-### Frontend
+## Service Ownership
 
-- Components
-- Forms
-- Route behavior
-- Search-parameter validation
-- Authentication redirects
-- Responsive workflows
-- Accessibility
-
-### Backend
-
-- Zod schemas
-- Fastify routes
-- Authentication hooks
-- Authorization
-- Services
-- Drizzle queries
-- Error mapping
-
-### Database
-
-- Migrations
-- Constraints
-- Transactions
-- Ownership queries
-- Better Auth schema integration
-
-### End-to-End
-
-- Registration
-- Login
-- Logout
-- Account creation
-- Transaction creation
-- Budget creation
-- Session persistence
-- Direct route refreshes
-- Deployed frontend-to-backend communication
+| Concern                     | Technology                    |
+| --------------------------- | ----------------------------- |
+| Interface rendering         | React                         |
+| Frontend language           | TypeScript                    |
+| Frontend build              | Vite                          |
+| Routing                     | TanStack Router               |
+| Runtime validation          | Zod                           |
+| Styling                     | Tailwind CSS                  |
+| UI components               | shadcn/ui                     |
+| Frontend hosting            | Vercel                        |
+| HTTP API                    | Fastify                       |
+| Backend runtime             | Node.js                       |
+| Authentication              | Better Auth                   |
+| Database schema and queries | Drizzle ORM                   |
+| Database migrations         | Drizzle Kit                   |
+| Relational persistence      | PostgreSQL                    |
+| Backend hosting             | Railway                       |
+| Production database hosting | Railway PostgreSQL            |
+| Primary test runner         | Vitest                        |
+| React component testing     | React Testing Library         |
+| User interaction tests      | `@testing-library/user-event` |
+| DOM assertions              | `@testing-library/jest-dom`   |
+| Simulated DOM               | jsdom                         |
+| Backend route testing       | Fastify `inject()`            |
+| Integration database        | PostgreSQL Testcontainer      |
+| End-to-end testing          | Playwright                    |
+| Coverage                    | Vitest V8 coverage            |
 
 ## Explicitly Not Selected
 
@@ -805,11 +907,13 @@ The current architecture does not use:
 - Express
 - Hono
 - NestJS
+- GraphQL
 - Prisma
 - Sequelize
 - TypeORM
 - SQLite
 - MongoDB
+- MySQL
 - Joi
 - Yup
 - Valibot
@@ -822,10 +926,18 @@ The current architecture does not use:
 - Netlify
 - Render
 - Supabase database hosting
+- Neon database hosting
 - Vercel Functions as the primary backend
 - A custom authentication system
+- Jest
+- Cypress
+- Enzyme
+- Sinon
+- Heavy Drizzle mocking
+- Production data in automated tests
+- Full-page snapshot testing
 
-These tools should not be introduced without revisiting the corresponding technology decision.
+These choices should not be introduced without revisiting the relevant technology decision.
 
 ## Remaining Decisions
 
@@ -834,32 +946,42 @@ The remaining major technology decisions are:
 1. Server-state management
 2. Form management
 3. Charting
-4. Frontend testing
-5. Backend testing
-6. PostgreSQL driver
+4. PostgreSQL driver
+5. Monetary database representation
+6. Account balance strategy
 7. Package manager
 8. Repository and workspace structure
 9. Local PostgreSQL environment
-10. Continuous integration
+10. Continuous-integration provider
 11. Error monitoring
 12. Primary icon library
 13. Custom domains
+14. Backup schedule
+15. Automated accessibility scanner
+16. Visual regression testing
 
 ## Success Criteria
 
 The selected stack is successful when:
 
 - React and Vite provide a maintainable frontend workflow.
-- TanStack Router provides typed routes and validated URL state.
+- TanStack Router provides typed navigation and validated URL state.
 - Zod validates frontend and backend trust boundaries.
 - Tailwind CSS provides consistent utility-based styling.
-- shadcn/ui provides customizable component foundations.
+- shadcn/ui provides accessible customizable component foundations.
 - Fastify provides a modular backend API.
-- Better Auth provides secure session-based authentication.
+- Better Auth provides reliable session-based authentication.
 - Drizzle provides typed PostgreSQL access.
-- Drizzle Kit provides controlled migrations.
+- Drizzle Kit provides controlled schema migrations.
+- PostgreSQL protects relational and financial integrity.
 - Vercel reliably hosts the frontend.
-- Railway reliably hosts the backend and PostgreSQL.
-- Authentication works across the deployed frontend and backend.
+- Railway reliably hosts the backend and database.
+- Authentication works across Vercel and Railway origins.
 - Database access remains isolated to the backend.
+- Vitest provides one primary automated test runner.
+- React Testing Library verifies user-visible component behavior.
+- Fastify routes are tested through request injection.
+- Testcontainers verify real PostgreSQL behavior.
+- Playwright verifies critical browser workflows.
+- Required checks block invalid production deployments.
 - New features can be added without replacing the core architecture.
