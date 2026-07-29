@@ -2,67 +2,13 @@
 
 ## Status
 
-This document records confirmed technology decisions for Steward.
+This document records the confirmed technology decisions for Steward.
 
 Items marked as open have not yet been selected.
 
-## Frontend
+## Architecture Summary
 
-| Area                    | Selection       | Status   |
-| ----------------------- | --------------- | -------- |
-| UI library              | React           | Selected |
-| Language                | TypeScript      | Selected |
-| Build tool              | Vite            | Selected |
-| Routing                 | TanStack Router | Selected |
-| Runtime validation      | Zod             | Selected |
-| Deployment              | Vercel          | Selected |
-| Server-state management | Undecided       | Open     |
-| Form management         | Undecided       | Open     |
-| Styling                 | Undecided       | Open     |
-| Component library       | Undecided       | Open     |
-| Charting                | Undecided       | Open     |
-| Frontend testing        | Undecided       | Open     |
-
-## Backend
-
-| Area                    | Selection                   | Status   |
-| ----------------------- | --------------------------- | -------- |
-| Runtime                 | Node.js                     | Selected |
-| Language                | TypeScript                  | Selected |
-| Web framework           | Fastify                     | Selected |
-| Runtime validation      | Zod                         | Selected |
-| Fastify Zod integration | `fastify-type-provider-zod` | Selected |
-| Authentication          | Better Auth                 | Selected |
-| API style               | HTTP JSON API               | Selected |
-| Deployment              | Railway                     | Selected |
-| Backend testing         | Undecided                   | Open     |
-
-## Database
-
-| Area                   | Selection                   | Status   |
-| ---------------------- | --------------------------- | -------- |
-| Database               | PostgreSQL                  | Selected |
-| ORM and query layer    | Drizzle ORM                 | Selected |
-| Migration tooling      | Drizzle Kit                 | Selected |
-| Authentication adapter | Better Auth Drizzle adapter | Selected |
-| Database hosting       | Railway PostgreSQL          | Selected |
-| PostgreSQL driver      | Undecided                   | Open     |
-
-## Infrastructure
-
-| Area                         | Selection                                                       | Status   |
-| ---------------------------- | --------------------------------------------------------------- | -------- |
-| Frontend hosting             | Vercel                                                          | Selected |
-| Backend hosting              | Railway                                                         | Selected |
-| Database hosting             | Railway                                                         | Selected |
-| Package manager              | Undecided                                                       | Open     |
-| Repository structure         | Undecided                                                       | Open     |
-| Local PostgreSQL environment | Undecided                                                       | Open     |
-| CI/CD                        | Vercel and Railway Git deployments with additional CI undecided | Partial  |
-| Custom domains               | Undecided                                                       | Open     |
-| Error monitoring             | Undecided                                                       | Open     |
-
-## Confirmed Architecture
+Steward is a client-rendered full-stack web application.
 
 ```text
 User browser
@@ -73,6 +19,8 @@ Vercel
 React + TypeScript + Vite
 TanStack Router
 Zod
+Tailwind CSS
+shadcn/ui
       |
       | Credentialed HTTPS requests
       v
@@ -87,105 +35,315 @@ Drizzle ORM
 Railway PostgreSQL
 ```
 
+## Frontend
+
+| Area                    | Selection       | Status   |
+| ----------------------- | --------------- | -------- |
+| UI library              | React           | Selected |
+| Language                | TypeScript      | Selected |
+| Build tool              | Vite            | Selected |
+| Routing                 | TanStack Router | Selected |
+| Runtime validation      | Zod             | Selected |
+| Styling                 | Tailwind CSS    | Selected |
+| Component system        | shadcn/ui       | Selected |
+| Frontend hosting        | Vercel          | Selected |
+| Server-state management | Undecided       | Open     |
+| Form management         | Undecided       | Open     |
+| Charting                | Undecided       | Open     |
+| Frontend testing        | Undecided       | Open     |
+| Primary icon library    | Undecided       | Open     |
+| Error monitoring        | Undecided       | Open     |
+
+## Backend
+
+| Area                           | Selection                   | Status   |
+| ------------------------------ | --------------------------- | -------- |
+| Runtime                        | Node.js                     | Selected |
+| Language                       | TypeScript                  | Selected |
+| Web framework                  | Fastify                     | Selected |
+| Runtime validation             | Zod                         | Selected |
+| Fastify validation integration | `fastify-type-provider-zod` | Selected |
+| Authentication                 | Better Auth                 | Selected |
+| API style                      | HTTP JSON API               | Selected |
+| Backend hosting                | Railway                     | Selected |
+| Backend testing                | Undecided                   | Open     |
+| Error monitoring               | Undecided                   | Open     |
+
+## Database
+
+| Area                         | Selection                   | Status   |
+| ---------------------------- | --------------------------- | -------- |
+| Database                     | PostgreSQL                  | Selected |
+| ORM and query layer          | Drizzle ORM                 | Selected |
+| Migration tooling            | Drizzle Kit                 | Selected |
+| Authentication adapter       | Better Auth Drizzle adapter | Selected |
+| Production database hosting  | Railway PostgreSQL          | Selected |
+| PostgreSQL driver            | Undecided                   | Open     |
+| Local PostgreSQL environment | Undecided                   | Open     |
+
+## Infrastructure
+
+| Area                   | Selection | Status   |
+| ---------------------- | --------- | -------- |
+| Frontend deployment    | Vercel    | Selected |
+| Backend deployment     | Railway   | Selected |
+| Database deployment    | Railway   | Selected |
+| Package manager        | Undecided | Open     |
+| Repository structure   | Undecided | Open     |
+| Workspace tooling      | Undecided | Open     |
+| Continuous integration | Undecided | Open     |
+| Custom domains         | Undecided | Open     |
+| Production monitoring  | Undecided | Open     |
+
 ## Frontend Decisions
 
 ### React
 
-React provides Steward’s component and rendering model.
+React provides Steward's component and rendering model.
+
+React is responsible for:
+
+- Rendering the user interface
+- Composing reusable components
+- Managing local interface state
+- Supporting interactive financial workflows
+- Integrating routing, forms, validation, and server state
+
+The initial application will use client-side rendering.
+
+Server-side rendering is not required for the MVP.
+
+### TypeScript
+
+TypeScript is used across the frontend and backend.
+
+TypeScript provides:
+
+- Static type checking
+- Safer refactoring
+- Typed component properties
+- Typed API contracts
+- Typed route definitions
+- Typed database queries
+- Shared language across the application
+
+Runtime validation remains necessary because TypeScript types do not validate data at runtime.
 
 ### Vite
 
-Vite provides the frontend development server and production build process.
+Vite provides:
+
+- Local frontend development server
+- Fast development builds
+- Production bundling
+- Environment-variable integration
+- React development tooling
+- Tailwind CSS integration
+
+The production build output will be deployed to Vercel.
 
 ### TanStack Router
 
 TanStack Router provides:
 
-- Type-safe client-side routes
+- Type-safe routing
 - Nested layouts
 - Route parameters
-- Validated search parameters
-- Authentication-aware navigation
-- Route-level code splitting where appropriate
+- Search-parameter validation
+- Route lifecycle hooks
+- Lazy route loading
+- Not-found handling
+- Route-level error boundaries
+
+Authentication-aware navigation may use route lifecycle features such as `beforeLoad`.
+
+Frontend route checks improve user experience but do not replace backend authorization.
 
 ### Zod
 
 Zod provides runtime validation for:
 
-- Forms
-- Route search parameters
-- Frontend environment configuration
-- Browser storage
-- Selected API boundaries
+- Form values
+- Route parameters
+- Search parameters
+- API request contracts
+- API response contracts where appropriate
+- Environment variables
+- Browser-storage values
+- Imported data when implemented
+
+Types should generally be inferred from Zod schemas rather than manually duplicated.
+
+### Tailwind CSS
+
+Tailwind CSS provides Steward's utility-based styling system.
+
+Tailwind is responsible for:
+
+- Layout
+- Spacing
+- Typography
+- Responsive behavior
+- Color usage
+- Visual states
+- Theme variants
+- Component styling
+
+Shared design tokens should be preferred over unrelated arbitrary values.
+
+### shadcn/ui
+
+shadcn/ui provides customizable component implementations that are added directly to Steward's source code.
+
+Likely components include:
+
+- Button
+- Card
+- Input
+- Label
+- Select
+- Dialog
+- Alert Dialog
+- Sheet
+- Dropdown Menu
+- Tabs
+- Table
+- Badge
+- Tooltip
+- Popover
+- Skeleton
+- Toast or notification components
+
+Steward owns and may customize the generated component source.
+
+shadcn/ui components may depend on supporting runtime packages such as primitive libraries, class-name utilities, animation utilities, and icons.
 
 ### Vercel
 
-Vercel builds and hosts the React and Vite frontend.
+Vercel hosts the React and Vite frontend.
 
 Vercel provides:
 
 - Production frontend deployments
 - Preview deployments
-- HTTPS hosting
+- HTTPS
+- Git-based deployment workflows
 - Frontend environment configuration
-- Git-based deployments
+- Static asset hosting
+
+Because Steward uses client-side routing, application routes must resolve to the frontend entry document when directly loaded or refreshed.
 
 ## Backend Decisions
 
+### Node.js
+
+Node.js provides the backend JavaScript runtime.
+
+The exact supported Node.js version should be pinned once repository tooling is finalized.
+
+Local development, CI, Railway, and Vercel should use compatible versions.
+
 ### Fastify
 
-Fastify hosts:
+Fastify hosts Steward's backend API.
 
-- Steward’s HTTP API
-- Better Auth endpoints
-- Protected financial operations
-- Health-check endpoints
+Fastify is responsible for:
 
-### Zod
+- HTTP routing
+- Request lifecycle
+- Request validation integration
+- Response serialization
+- Authentication hooks
+- Error handling
+- Structured logging
+- Health checks
+- Graceful shutdown
 
-Zod validates:
+The backend should be organized into domain-focused modules.
 
-- Request bodies
+Likely modules include:
+
+- Authentication
+- Accounts
+- Transactions
+- Categories
+- Budgets
+- Dashboard
+- Settings
+- Demo data
+
+### Zod Backend Validation
+
+Zod validates backend trust boundaries.
+
+Backend schemas may validate:
+
 - Route parameters
 - Query parameters
+- Request bodies
 - Response payloads
-- Backend environment configuration
+- Environment configuration
+
+Structural validation should occur before business logic.
+
+Database-backed business rules should remain in application services rather than Zod refinements.
 
 ### `fastify-type-provider-zod`
 
-`fastify-type-provider-zod` connects Zod schemas to Fastify’s validation, serialization, and TypeScript inference.
+`fastify-type-provider-zod` connects Zod with Fastify.
+
+It provides integration for:
+
+- Request validation
+- Response serialization
+- Route schema definitions
+- Inferred TypeScript route types
+
+The exact configuration should match the installed package versions.
 
 ### Better Auth
 
-Better Auth manages:
+Better Auth manages authentication.
 
-- Registration
+Better Auth is responsible for:
+
+- User registration
 - Email and password authentication
-- Cookie-based sessions
-- Authenticated user identity
+- Session creation
+- Session validation
+- Cookie-based authentication
 - Sign out
+- Authentication database records
 
-### Railway
+Steward should not create a competing custom authentication system.
 
-Railway builds and runs the Fastify backend.
+### Railway Backend Hosting
 
-Railway provides:
+Railway hosts the Fastify backend as a persistent service.
 
-- Backend service hosting
-- Server environment variables
-- Service networking
+Railway is responsible for:
+
+- Building the backend
+- Running the Fastify production process
+- Providing server environment variables
+- Hosting the public API
+- Service logs
 - Health checks
-- Deployment logs
-- Rollback capabilities
+- Deployment history
 - Connectivity to Railway PostgreSQL
+
+Fastify must listen on Railway's provided port and bind to an externally reachable host.
 
 ## Database Decisions
 
 ### PostgreSQL
 
-PostgreSQL stores:
+PostgreSQL stores Steward's relational data.
 
-- Better Auth records
+Likely data includes:
+
+- Better Auth users
+- Better Auth sessions
 - Financial accounts
 - Transactions
 - Categories
@@ -194,62 +352,127 @@ PostgreSQL stores:
 - User preferences
 - Demo-user data
 
+PostgreSQL constraints should protect stored-data integrity.
+
 ### Drizzle ORM
 
-Drizzle defines PostgreSQL schemas in TypeScript and provides typed database queries.
+Drizzle ORM provides:
+
+- TypeScript database schemas
+- Typed SQL queries
+- Typed inserts
+- Typed updates
+- Typed deletes
+- Joins
+- Transactions
+- PostgreSQL integration
+
+Drizzle table types describe database records.
+
+They should not automatically be treated as public API contracts.
 
 ### Drizzle Kit
 
-Drizzle Kit generates and applies version-controlled SQL migrations.
+Drizzle Kit manages database migrations.
+
+The expected workflow is:
+
+```text
+Edit Drizzle schema
+→ Generate SQL migration
+→ Review migration
+→ Commit migration
+→ Apply migration
+```
+
+Production migrations must be version controlled and reviewed.
 
 ### Better Auth Drizzle Adapter
 
-Better Auth uses the official Drizzle adapter configured for PostgreSQL.
+Better Auth uses its Drizzle adapter with PostgreSQL.
+
+Conceptually:
+
+```ts
+betterAuth({
+  database: drizzleAdapter(db, {
+    provider: "pg",
+    schema,
+  }),
+});
+```
+
+The exact configuration should match the installed Better Auth version.
 
 ### Railway PostgreSQL
 
-Railway hosts the production PostgreSQL service.
+Railway hosts the production PostgreSQL database.
 
-The Fastify backend connects using Railway-managed database variables.
+The Fastify service connects using Railway-provided database variables.
+
+The backend should use private service connectivity where available.
+
+The database should not be exposed publicly without an explicit operational requirement.
 
 ## Deployment Decisions
 
-### Frontend deployment
+### Frontend Deployment
 
 ```text
 Git repository
 → Vercel build
 → Vite production build
-→ Vercel frontend deployment
+→ Vercel deployment
 ```
 
-### Backend deployment
+The frontend deployment must include:
+
+- Correct frontend root directory
+- Build command
+- Output directory
+- Public environment variables
+- SPA routing configuration
+
+### Backend Deployment
 
 ```text
 Git repository
 → Railway build
-→ Drizzle migration step
+→ Database migration step
 → Fastify production process
 → Railway health check
 ```
 
-### Database deployment
+The backend deployment must include:
+
+- Backend root directory
+- Install command where needed
+- Build command
+- Start command
+- Migration command
+- Environment variables
+- Health-check path
+
+### Database Deployment
 
 ```text
 Drizzle TypeScript schema
-→ Drizzle Kit SQL migration
+→ Drizzle Kit migration
 → Railway PostgreSQL
 ```
 
-## Production Data Flow
+Application startup should not perform uncontrolled schema synchronization.
+
+## Production Request Flow
 
 ```text
-React page
+User interaction
+→ React component
 → Zod frontend validation
-→ TanStack Router navigation
-→ Credentialed request to Railway
+→ TanStack Router or API client
+→ Credentialed HTTPS request
 → Fastify route
-→ Zod server validation
+→ Zod backend validation
 → Better Auth session validation
 → Application service
 → Drizzle query
@@ -261,75 +484,115 @@ The response returns through the layers in reverse.
 ## Authentication Flow
 
 ```text
-Vercel React authentication form
-→ Zod form validation
-→ Railway Fastify Better Auth endpoint
+Vercel frontend
+→ Login or registration form
+→ Zod frontend validation
+→ Railway Better Auth endpoint
 → Better Auth
 → Drizzle adapter
-→ Railway PostgreSQL authentication tables
-→ Session cookie returned to browser
+→ Railway PostgreSQL
+→ Session cookie
+→ Browser
 ```
+
+The browser must send authentication credentials with cross-origin API requests when the frontend and backend use different origins.
 
 ## Validation Flow
 
 ```text
 User input
-→ React form
-→ Zod frontend validation
+→ Frontend Zod schema
 → Fastify request
-→ Zod backend validation
+→ Backend Zod schema
 → Application business rules
 → Drizzle query
 → PostgreSQL constraints
 ```
 
-Each layer has a separate responsibility:
+Each layer has a separate role:
 
 - Frontend validation improves usability.
 - Backend validation protects the API boundary.
 - Application services enforce business rules.
 - PostgreSQL constraints protect stored data.
 
-## API Response Flow
+## API Contract Flow
 
 ```text
-Railway PostgreSQL record
-→ Drizzle query result
-→ Application response mapping
+Zod request schema
+→ Typed Fastify route input
+→ Application service
+→ Drizzle query
+→ Response mapping
 → Zod response schema
-→ Fastify serialization
-→ Vercel React frontend
+→ React frontend
 ```
 
-Drizzle database types are not public API contracts.
+Public contracts should not expose:
 
-## Database Workflow
+- Database-only fields
+- Better Auth internals
+- Secrets
+- Internal ownership fields
+- Raw PostgreSQL errors
+- Raw Drizzle errors
+
+## Styling Architecture
 
 ```text
-Edit Drizzle TypeScript schema
-→ Generate migration with Drizzle Kit
-→ Review SQL
-→ Commit migration
-→ Apply migration to Railway PostgreSQL
+Tailwind CSS and design tokens
+                ↓
+shadcn/ui primitives
+                ↓
+Shared application components
+                ↓
+Feature components
+                ↓
+Pages and route layouts
 ```
+
+Examples of shared application components include:
+
+- PageHeader
+- EmptyState
+- ErrorState
+- ConfirmationDialog
+- SearchField
+- PaginationControls
+- ThemeToggle
+- CurrencyDisplay
+
+Examples of feature components include:
+
+- AccountCard
+- TransactionTable
+- BudgetProgress
+- BudgetCategoryRow
+- NetWorthSummary
+- SpendingSummary
+- RecentTransactions
+- DashboardWidget
 
 ## Environment Configuration
 
-### Vercel frontend
+### Vercel Frontend
 
-Expected browser-safe values include:
+Expected public variables may include:
 
 ```text
 VITE_API_URL
 VITE_APP_ENV
 ```
 
-### Railway backend
+These values are included in browser-delivered code and must not contain secrets.
 
-Expected server-side values include:
+### Railway Backend
+
+Expected server variables may include:
 
 ```text
 NODE_ENV
+HOST
 PORT
 DATABASE_URL
 BETTER_AUTH_SECRET
@@ -340,48 +603,197 @@ LOG_LEVEL
 DEMO_USER_EMAIL
 ```
 
-Exact values must not be committed to source control.
+The exact set may change as the application is implemented.
 
-## Deployment Domains
+Backend environment configuration should be validated with Zod before the server starts.
 
-The initial implementation may use platform-provided domains.
+## Cross-Origin Authentication
 
-A later custom-domain structure may use:
+Vercel and Railway will normally use different origins.
+
+The application must coordinate:
+
+- Frontend `credentials` configuration
+- Fastify CORS
+- Better Auth trusted origins
+- Secure cookie settings
+- SameSite cookie behavior
+- Production domains
+- Preview domains
+
+Wildcard CORS origins must not be used with credentialed authentication requests.
+
+## Local Development
+
+A likely local setup is:
 
 ```text
 Frontend:
-steward.example.com
+http://localhost:5173
 
 Backend:
-api.steward.example.com
+http://localhost:3000
+
+Database:
+Local PostgreSQL
 ```
 
-The final domains must remain consistent across:
+The exact ports and local database tooling remain open decisions.
 
-- Vercel configuration
-- Railway networking
-- `VITE_API_URL`
-- Better Auth configuration
-- Trusted origins
-- Fastify CORS
-- Authentication-cookie configuration
+Local development should reflect production boundaries where practical.
 
-## Confirmed Service Ownership
+## Repository Structure
 
-| Concern                     | Owner           |
-| --------------------------- | --------------- |
-| Frontend rendering          | React           |
-| Frontend build              | Vite            |
-| Frontend routing            | TanStack Router |
-| Frontend hosting            | Vercel          |
-| HTTP API                    | Fastify         |
-| Backend hosting             | Railway         |
-| Runtime validation          | Zod             |
-| Authentication              | Better Auth     |
-| Database queries            | Drizzle ORM     |
-| Database migrations         | Drizzle Kit     |
-| Relational persistence      | PostgreSQL      |
-| Production database hosting | Railway         |
+The repository structure has not yet been finalized.
+
+A likely monorepo structure is:
+
+```text
+steward/
+├── apps/
+│   ├── web/
+│   └── api/
+├── packages/
+│   └── contracts/
+├── docs/
+├── package.json
+└── workspace configuration
+```
+
+Possible responsibilities:
+
+```text
+apps/web
+→ React, Vite, TanStack Router, Tailwind, shadcn/ui
+
+apps/api
+→ Fastify, Better Auth, Drizzle, Zod
+
+packages/contracts
+→ Shared public Zod schemas and types
+```
+
+The final structure should be documented separately.
+
+## Shared Contracts
+
+Shared Zod contracts may include:
+
+- API request schemas
+- API response schemas
+- Pagination schemas
+- Filter schemas
+- Public enums
+- Standard API error schemas
+
+Shared contracts must not import:
+
+- Fastify plugins
+- Drizzle database clients
+- PostgreSQL connections
+- Better Auth secrets
+- Server-only environment configuration
+
+## Service Ownership
+
+| Concern                        | Technology         |
+| ------------------------------ | ------------------ |
+| Interface rendering            | React              |
+| Frontend language              | TypeScript         |
+| Frontend development and build | Vite               |
+| Client-side routing            | TanStack Router    |
+| Runtime validation             | Zod                |
+| Styling                        | Tailwind CSS       |
+| UI component implementations   | shadcn/ui          |
+| Frontend hosting               | Vercel             |
+| HTTP API                       | Fastify            |
+| Backend runtime                | Node.js            |
+| Authentication                 | Better Auth        |
+| Database queries               | Drizzle ORM        |
+| Database migrations            | Drizzle Kit        |
+| Relational storage             | PostgreSQL         |
+| Backend hosting                | Railway            |
+| Production database hosting    | Railway PostgreSQL |
+
+## Security Boundaries
+
+### Frontend
+
+The frontend is not trusted for:
+
+- Authentication
+- Authorization
+- Ownership
+- Financial data integrity
+- Business-rule enforcement
+- Secret storage
+
+### Backend
+
+The backend is responsible for:
+
+- Session validation
+- Ownership enforcement
+- Request validation
+- Business rules
+- Safe response mapping
+- Database access
+
+### Database
+
+PostgreSQL is responsible for:
+
+- Foreign keys
+- Unique constraints
+- Required values
+- Supported value constraints
+- Transactional integrity
+
+## Testing Responsibilities
+
+The testing stack remains undecided.
+
+The eventual testing strategy should cover:
+
+### Frontend
+
+- Components
+- Forms
+- Route behavior
+- Search-parameter validation
+- Authentication redirects
+- Responsive workflows
+- Accessibility
+
+### Backend
+
+- Zod schemas
+- Fastify routes
+- Authentication hooks
+- Authorization
+- Services
+- Drizzle queries
+- Error mapping
+
+### Database
+
+- Migrations
+- Constraints
+- Transactions
+- Ownership queries
+- Better Auth schema integration
+
+### End-to-End
+
+- Registration
+- Login
+- Logout
+- Account creation
+- Transaction creation
+- Budget creation
+- Session persistence
+- Direct route refreshes
+- Deployed frontend-to-backend communication
 
 ## Explicitly Not Selected
 
@@ -401,27 +813,53 @@ The current architecture does not use:
 - Joi
 - Yup
 - Valibot
+- CSS Modules
+- Styled Components
+- Emotion
+- Material UI
+- Chakra UI
+- Bootstrap
 - Netlify
 - Render
-- Fly.io
 - Supabase database hosting
-- Vercel Functions for the primary backend
+- Vercel Functions as the primary backend
 - A custom authentication system
 
 These tools should not be introduced without revisiting the corresponding technology decision.
 
 ## Remaining Decisions
 
-The next technology evaluations should cover:
+The remaining major technology decisions are:
 
 1. Server-state management
 2. Form management
-3. Styling and component library
-4. Frontend and backend testing
-5. PostgreSQL driver
-6. Package manager
-7. Repository and workspace structure
-8. Local PostgreSQL environment
-9. CI validation
-10. Error monitoring
-11. Custom domains
+3. Charting
+4. Frontend testing
+5. Backend testing
+6. PostgreSQL driver
+7. Package manager
+8. Repository and workspace structure
+9. Local PostgreSQL environment
+10. Continuous integration
+11. Error monitoring
+12. Primary icon library
+13. Custom domains
+
+## Success Criteria
+
+The selected stack is successful when:
+
+- React and Vite provide a maintainable frontend workflow.
+- TanStack Router provides typed routes and validated URL state.
+- Zod validates frontend and backend trust boundaries.
+- Tailwind CSS provides consistent utility-based styling.
+- shadcn/ui provides customizable component foundations.
+- Fastify provides a modular backend API.
+- Better Auth provides secure session-based authentication.
+- Drizzle provides typed PostgreSQL access.
+- Drizzle Kit provides controlled migrations.
+- Vercel reliably hosts the frontend.
+- Railway reliably hosts the backend and PostgreSQL.
+- Authentication works across the deployed frontend and backend.
+- Database access remains isolated to the backend.
+- New features can be added without replacing the core architecture.
