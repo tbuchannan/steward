@@ -1,89 +1,43 @@
 # Steward
 
-Steward is a full-stack personal finance application for managing accounts, transactions, budgets, and financial insights.
+Steward is a responsive personal-finance record-keeping application for manually managing accounts, transactions, monthly budgets, and financial summaries. It never initiates payments, transfers funds, or communicates with financial institutions.
 
-The project is being built from the ground up to explore modern technologies, application architecture, and engineering practices while building a complete web application.
+> **Status:** Discovery and architecture. The product and technical decisions are documented; application scaffolding has not started.
 
-> 🚧 **Status:** Active Development
+## MVP
 
----
+The first release will let an individual:
 
-## Features
+- Register or sign in with email and password
+- Explore an isolated, seeded demo
+- Manage financial accounts
+- Create, edit, categorize, search, filter, and delete transactions
+- Create and update monthly budgets
+- See saved changes reflected in dashboard summaries
+- Select a light, dark, or system theme
 
-### Planned
+Account-to-account transfer records, investment holdings, multi-currency behavior, and household collaboration are deferred. Real bank connections and payment execution are product non-goals.
 
-- User authentication
-- Account management
-- Transaction management
-- Budgeting
-- Dashboard
-- Financial insights
-- Investment tracking
-- Responsive design
-- Light and dark themes
+## Architecture
 
----
+Steward will use:
 
-## Development Phases
+- React, TypeScript, Vite, and TanStack Router
+- TanStack Query, React Hook Form, and Zod
+- Tailwind CSS and shadcn/ui
+- Fastify, Better Auth, Drizzle ORM, and PostgreSQL
+- Vitest, React Testing Library, Testcontainers, and Playwright
+- Vercel for the frontend and Railway for the API and database
 
-### Phase 1 — Discovery & Architecture
+The production frontend will proxy `/api/*` requests to Railway so browser authentication remains same-origin.
 
-- Define product requirements
-- Design the application architecture
-- Create wireframes and user flows
-- Plan the development roadmap
+## Documentation
 
-### Phase 2 — Foundation
-
-- Configure the development environment
-- Establish the frontend and backend foundations
-- Configure the database
-- Set up testing and CI/CD
-
-### Phase 3 — Application Shell
-
-- Authentication
-- Application layout
-- Navigation
-- Theme support
-- Settings
-
-### Phase 4 — Financial Management
-
-- Account management
-- Transaction management
-- Categories
-- Search and filtering
-
-### Phase 5 — Budgeting MVP
-
-- Monthly budgets
-- Budget categories
-- Budget progress
-- Dashboard overview
-
-### Phase 6 — Insights & Analytics
-
-- Spending trends
-- Charts and visualizations
-- Net worth
-- Investment tracking
-
-### Phase 7 — Polish & Launch
-
-- Accessibility improvements
-- Responsive design
-- Performance optimization
-- Documentation
-- Deployment
-
----
+Start with the [documentation index](docs/README.md). It identifies the source of truth for product scope, financial rules, UX behavior, architecture, testing, and operations.
 
 ## Getting Started
 
-Installation and setup instructions will be added as the project evolves.
-
----
+Setup instructions will be added to [local development](docs/operations/local-development.md) when the repository contains runnable application code.
 
 ## License
 
