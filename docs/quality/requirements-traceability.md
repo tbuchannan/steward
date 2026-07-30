@@ -22,10 +22,10 @@ The [MVP requirements](../product/mvp-requirements.md) are authoritative. This t
 | `TXN-02`–`TXN-05` | [Transactions](../ux/workflows/transactions.md) | Form component, API integration, Playwright |
 | `TXN-06`–`TXN-07` | [Transactions](../ux/workflows/transactions.md) | Search-schema, router, and query integration |
 | `TXN-08` | [Financial rules](../domain/financial-rules.md) | Domain/database integration, Playwright |
-| `BUD-01`–`BUD-03` | [Budgets](../ux/workflows/budgets.md) | Component, API integration, Playwright |
+| `BUD-01`–`BUD-03`, `BUD-07`–`BUD-09` | [Budgets](../ux/workflows/budgets.md) | Component, API integration, Playwright |
 | `BUD-04` | [Financial rules](../domain/financial-rules.md#budget-spending) | Table-driven domain and query tests |
 | `BUD-05`–`BUD-06` | [Budgets](../ux/workflows/budgets.md) | Component, transactional integration, Playwright |
-| `SET-01`–`SET-04` | [Settings](../ux/workflows/settings.md) | Component, API integration, Playwright |
+| `SET-01`–`SET-05` | [Settings](../ux/workflows/settings.md) | Component, API integration, Playwright |
 | `QUAL-01` | [Backend architecture](../architecture/backend.md) | Multi-user authorization suite |
 | `QUAL-02` | [Patterns](../ux/design/patterns.md#errors) | Contract and component tests |
 | `QUAL-03` | [Accessibility](accessibility.md) | Automated and manual accessibility checks |

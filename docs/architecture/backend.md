@@ -68,6 +68,8 @@ Representative application areas:
 
 The implemented route specification becomes the detailed API reference; this architecture document does not duplicate every endpoint.
 
+Transaction routes mutate only Steward-owned records. They do not integrate with payment rails, banks, brokerages, or money-movement providers.
+
 ## Error Contract
 
 ```json

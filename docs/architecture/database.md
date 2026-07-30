@@ -12,7 +12,8 @@
 - UUIDs identify Steward financial records.
 - Better Auth-generated identifiers remain authoritative for authentication records.
 - Money uses signed 64-bit integer minor units.
-- Account balance is opening balance plus posted transactions.
+- Transaction-derived account balance is opening balance plus posted transactions.
+- Investment value comes from the latest dated manual snapshot.
 
 Financial meaning is defined in [financial rules](../domain/financial-rules.md).
 
@@ -39,17 +40,18 @@ Likely financial tables:
 - `budget_allocation`
 - `user_preference`
 - `demo_identity_metadata`
+- `investment_balance_snapshot`
 
 Names are finalized with the generated Better Auth schema to avoid ambiguity between authentication accounts and financial accounts.
 
 ## Core Constraints
 
 - Every user-owned root record has a non-null user foreign key.
-- One budget exists per user and month.
+- At most one budget exists per user and month.
 - One allocation exists per budget and category.
 - Transaction amounts are non-zero.
 - Currency is `USD` in the MVP.
-- Category names follow one documented user-scoped uniqueness policy.
+- Category names are case-insensitively unique within a predefined group for one user.
 - Foreign-key delete actions preserve history according to [data lifecycle](../domain/data-lifecycle.md).
 
 ## Query Rules

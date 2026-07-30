@@ -1,6 +1,6 @@
 # Steward
 
-Steward is a responsive personal-finance web application for managing financial accounts, transactions, monthly budgets, and summary information.
+Steward is a responsive personal-finance record-keeping application for manually managing accounts, transactions, monthly budgets, and financial summaries. It never initiates payments, transfers funds, or communicates with financial institutions.
 
 > **Status:** Discovery and architecture. The product and technical decisions are documented; application scaffolding has not started.
 
@@ -16,7 +16,7 @@ The first release will let an individual:
 - See saved changes reflected in dashboard summaries
 - Select a light, dark, or system theme
 
-Real bank connections, account-to-account transfers, investment holdings, multi-currency behavior, and household collaboration are deferred.
+Account-to-account transfer records, investment holdings, multi-currency behavior, and household collaboration are deferred. Real bank connections and payment execution are product non-goals.
 
 ## Architecture
 

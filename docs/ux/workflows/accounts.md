@@ -18,17 +18,17 @@ An explicit `Show archived` action reveals archived accounts without mixing them
 
 ```text
 Select Add account
-→ Enter name, type, optional institution, opening balance, and as-of date
+→ Enter name, type, optional institution, balance, and as-of date
 → Correct validation errors
 → Save
 → Close editor and show the new account
 ```
 
-Investment accounts accept a manually valued opening balance only. Holdings and live prices are not shown.
+For asset accounts, balances are entered as owned value. For credit cards and loans, balances are entered as a positive amount owed. Investment accounts accept a manually valued balance snapshot. Holdings and live prices are not shown.
 
 ## Edit
 
-A user can edit account metadata and, when allowed by domain rules, the opening balance. The interface must explain any effect an opening-balance change has on historical totals.
+A user can edit account metadata. Transaction-derived accounts may edit their opening balance with a clear explanation of the historical effect. Editing an investment value creates or updates a dated snapshot instead of rewriting history.
 
 ## Archive
 

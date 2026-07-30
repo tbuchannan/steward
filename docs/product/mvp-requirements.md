@@ -50,6 +50,8 @@ Investment holdings, pricing, performance, and dedicated investment analytics ar
 
 ## Transactions
 
+Transactions are manually entered records. They do not initiate, authorize, or represent execution of a real payment or movement of funds.
+
 - **TXN-01 — List:** A user can view their transactions with deterministic ordering and pagination.
 - **TXN-02 — Create:** A user can create an income, expense, or refund transaction for an account they own.
 - **TXN-03 — Edit:** A user can edit a transaction they own.
@@ -59,7 +61,7 @@ Investment holdings, pricing, performance, and dedicated investment analytics ar
 - **TXN-07 — Sort:** A user can sort transactions by an approved date or amount ordering.
 - **TXN-08 — Recalculation:** Transaction mutations update related balances, budgets, and summaries consistently.
 
-Account-to-account transfers are not included.
+All MVP transactions are immediately posted. Pending, cleared, reconciled, linked-transfer, and payment-execution states are not included. Account-to-account transfers are not included.
 
 ## Budgets
 
@@ -69,8 +71,11 @@ Account-to-account transfers are not included.
 - **BUD-04 — Progress:** The budget shows allocated, spent, remaining, and overspent values using [financial rules](../domain/financial-rules.md).
 - **BUD-05 — Save or cancel:** A user can save a valid set of edits or cancel all unsaved edits.
 - **BUD-06 — Dashboard consistency:** Saved budget changes appear in dashboard summaries without a manual reload.
+- **BUD-07 — Lazy creation:** A monthly budget record is created when the user first saves at least one allocation for that month.
+- **BUD-08 — Month editing:** Past, current, and future budget months are editable.
+- **BUD-09 — Unbudgeted spending:** Categorized spending without an allocation is visible, included in overall budget results, and identified as requiring attention.
 
-Copying a prior month's budget is not included.
+Rollover, carryover, and copying a prior month's budget are not included.
 
 ## Settings
 
@@ -78,8 +83,9 @@ Copying a prior month's budget is not included.
 - **SET-02 — Appearance:** A user can select light, dark, or system theme.
 - **SET-03 — Sign out:** A user can sign out from Settings or the authenticated user menu.
 - **SET-04 — Demo controls:** A demo user can see a demo indicator and reset their demo data.
+- **SET-05 — Timezone:** Steward detects an initial IANA timezone and allows the user to select another supported IANA timezone.
 
-Profile editing, display density, currency selection, date-format selection, password management, and session management are not included.
+Changing timezone does not change stored date-only transaction values. Profile editing, display density, currency selection, date-format selection, password management, and session management are not included.
 
 ## Quality and Delivery
 

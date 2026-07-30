@@ -14,6 +14,8 @@ Open Budgets
 
 The selected year and month are part of the route. Invalid months show a safe not-found or validation state.
 
+A month without a saved budget displays an empty editor. Its budget record is created when the user first saves at least one allocation. Past, current, and future months are editable.
+
 ## Edit
 
 ```text
@@ -38,4 +40,6 @@ Removing a category from a budget removes only that month's allocation. It does 
 
 Overspent values use text and iconography in addition to color. Save updates dashboard budget progress without a manual reload. A failed save preserves the draft so the user can retry or cancel.
 
-Copying a prior month's budget is deferred.
+Spending for categories without allocations appears in a separate Unbudgeted spending section, counts against overall remaining funds, and creates an attention item. It does not create an allocation automatically.
+
+Rollover, carryover, and copying a prior month's budget are deferred.

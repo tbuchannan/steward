@@ -9,6 +9,7 @@ The MVP Settings page contains:
 
 - Identity
 - Appearance
+- Timezone
 - Demo data, for demo identities only
 - Sign out
 
@@ -28,6 +29,12 @@ Open Settings
 ```
 
 System follows the operating-system preference until the user selects an explicit theme.
+
+## Timezone
+
+Steward detects an initial browser timezone during registration or demo creation. Settings provides a searchable list of supported IANA timezones.
+
+Changing timezone affects the current-month default and timestamp display. It never changes stored date-only transaction values.
 
 ## Demo Reset
 

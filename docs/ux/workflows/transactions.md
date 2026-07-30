@@ -27,6 +27,10 @@ Select Add transaction
 
 The amount field accepts a positive decimal input; the application applies the canonical sign based on the selected transaction type. Transfer is not an available type.
 
+Creating a transaction records information only. It never initiates a payment or moves funds. Every MVP transaction is immediately posted; pending and reconciliation states are not displayed.
+
+A refund is a standalone record with an expense-capable category. It does not need to link to the original expense and does not count as income.
+
 ## Edit
 
 Editing uses the same fields and validation as creation. Cancel discards unsaved changes. A successful edit refreshes account balance, budget spending, attention items, and dashboard summaries.

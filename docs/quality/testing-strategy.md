@@ -34,10 +34,15 @@ Tests are selected by risk. Financial correctness, authorization, transactional 
 
 - Exact USD parsing and formatting
 - Positive income, negative expense, and positive refund signs
+- Asset-positive and liability-negative balances
+- Positive UI amount-owed input normalized to a negative liability value
 - Zero and excessive values rejected
 - Opening balance plus posted transactions
+- Latest dated investment snapshot
 - Liability presentation
 - Refunds reduce but do not make budget spending negative
+- Unbudgeted spending reduces overall budget remaining and creates attention
+- Timezone changes do not reinterpret date-only transactions
 - Month boundaries use date-only values
 - Deterministic transaction ordering
 - Archived accounts excluded from active summaries
@@ -66,6 +71,7 @@ Keep the initial browser suite small:
 4. Archive an account and verify active and historical behavior.
 5. Reset demo data without ending the session.
 6. Create two demo sessions and verify data isolation.
+7. Change timezone and verify current-month behavior without changing transaction dates.
 
 Transfers, investment holdings, password recovery, and copy-prior-budget tests are not part of the MVP.
 

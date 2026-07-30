@@ -31,8 +31,11 @@ A resource ID by itself is never authorization.
 
 ## Budgets
 
-- One budget exists per user and calendar month.
+- At most one budget exists per user and calendar month.
+- A budget record is created on the first save containing at least one allocation.
+- Past, current, and future months are editable.
 - Removing a budget allocation does not mutate transactions or the reusable category.
+- Removing the final allocation leaves an empty record for a previously created budget.
 - Deleting an entire historical budget is not an MVP requirement.
 
 ## Demo Records

@@ -54,4 +54,4 @@ The page shows month navigation, summary totals, grouped category allocations, p
 
 ![Settings wireframe](../wireframes/settings.png)
 
-Settings is simplified to read-only identity, theme selection, conditional demo reset, and sign out. Financial preferences and password management are deferred.
+Settings is simplified to read-only identity, theme selection, timezone selection, conditional demo reset, and sign out. Other financial preferences and password management are deferred.

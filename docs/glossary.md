@@ -17,5 +17,8 @@
 - **Minor units:** The smallest unit of a currency. For USD, 100 minor units equals one dollar.
 - **Opening balance:** The balance of a financial account immediately before Steward-managed transactions begin.
 - **Posted transaction:** A transaction included in balances and financial summaries.
+- **Refund:** A standalone positive record that reduces expense activity for a category. It does not count as income.
 - **Regular user:** A person who registered with an email address and password.
-- **Transfer:** A linked movement between two financial accounts. Transfers are not part of the MVP.
+- **Transfer:** A linked record representing movement between two financial accounts. Steward would not execute the movement. Transfer records are not part of the MVP.
+- **Unbudgeted spending:** Categorized expense activity in a month for a category without a budget allocation.
+- **User timezone:** The IANA timezone used to determine the current month and display timestamps. It does not reinterpret date-only transaction values.

@@ -100,6 +100,7 @@ User action
 - Better Auth determines identity; application queries enforce ownership.
 - Secrets remain server-side.
 - Tests use disposable data and never access production.
+- Transactions are internal records only; no API path initiates payments or moves funds.
 
 ## Decisions
 

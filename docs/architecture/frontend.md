@@ -40,6 +40,7 @@ TanStack Router implements the route map in [sitemap](../ux/sitemap.md).
 | Form values and validation display | React Hook Form |
 | Shareable filters and pagination | TanStack Router URL state |
 | Theme | Small presentation preference store plus persistence |
+| User timezone | Persisted user preference with detected initial value |
 | Authentication session | Better Auth client integrated with query/router state |
 | Temporary local UI state | Component state |
 
@@ -61,6 +62,7 @@ The API client:
 React Hook Form integrates with Zod for immediate, client-safe validation. The server validates every request again.
 
 - Decimal money input is parsed through the shared exact minor-unit utility.
+- Transaction forms state that saving records activity and does not execute a payment.
 - Server field errors map to fields without depending on raw Zod internals.
 - Successful mutations close the editor and invalidate or update affected queries.
 - Failed mutations preserve safe form values.

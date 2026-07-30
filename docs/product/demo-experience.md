@@ -42,6 +42,8 @@ Each dataset includes:
 
 Seed dates should be generated relative to a documented reference date so the current-month experience does not become stale.
 
+The demo records activity only. Demo actions cannot initiate real financial activity.
+
 ## Primary Walkthrough
 
 1. Enter the demo.
