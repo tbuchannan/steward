@@ -32,11 +32,11 @@ All MVP transactions are manual, immediately posted records. Steward never uses 
 
 Amounts are stored as their contribution to the account's net value:
 
-| Type | Stored amount | Meaning |
-|---|---:|---|
-| Income | Positive | Increases an asset account |
-| Expense | Negative | Decreases an asset account |
-| Refund | Positive | Reverses prior expense activity |
+| Type    | Stored amount | Meaning                         |
+| ------- | ------------: | ------------------------------- |
+| Income  |      Positive | Increases an asset account      |
+| Expense |      Negative | Decreases an asset account      |
+| Refund  |      Positive | Reverses prior expense activity |
 
 Users enter positive decimal amounts and Steward applies the canonical sign. A refund is standalone, requires an expense-capable category, does not require a link to an original expense, and does not count as income.
 

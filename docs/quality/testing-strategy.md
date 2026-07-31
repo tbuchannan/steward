@@ -9,26 +9,26 @@ Tests are selected by risk. Financial correctness, authorization, transactional 
 
 ## Layers
 
-| Layer | Purpose | Main tools |
-|---|---|---|
-| Unit | Exact financial, parsing, formatting, and schema behavior | Vitest |
-| Component | User-visible component and form behavior | Vitest, React Testing Library, `user-event` |
-| API integration | HTTP contracts, authentication, authorization, services | Vitest, Fastify `inject()` |
-| Database integration | Constraints, queries, migrations, transactions | Vitest, Testcontainers, PostgreSQL |
-| End-to-end | A small set of critical deployed-like workflows | Playwright |
+| Layer                | Purpose                                                   | Main tools                                  |
+| -------------------- | --------------------------------------------------------- | ------------------------------------------- |
+| Unit                 | Exact financial, parsing, formatting, and schema behavior | Vitest                                      |
+| Component            | User-visible component and form behavior                  | Vitest, React Testing Library, `user-event` |
+| API integration      | HTTP contracts, authentication, authorization, services   | Vitest, Fastify `inject()`                  |
+| Database integration | Constraints, queries, migrations, transactions            | Vitest, Testcontainers, PostgreSQL          |
+| End-to-end           | A small set of critical deployed-like workflows           | Playwright                                  |
 
 ## Risk Matrix
 
-| Risk | Required verification |
-|---|---|
-| User accesses another user's records | API and database integration tests with at least two users |
-| Incorrect balance or budget math | Table-driven domain unit tests and database query tests |
-| Partial mutation corrupts data | Integration tests that force failure and assert rollback |
-| Authentication appears valid after sign out or expiry | API integration and browser workflow |
-| Demo visitors share data | Concurrent isolated demo integration and browser tests |
-| Migration fails on a clean database | Apply all migrations to a fresh PostgreSQL container |
-| UI hides a server failure | Component tests for loading, error, retry, and preserved input |
-| Primary workflow breaks across services | Focused Playwright tests |
+| Risk                                                  | Required verification                                          |
+| ----------------------------------------------------- | -------------------------------------------------------------- |
+| User accesses another user's records                  | API and database integration tests with at least two users     |
+| Incorrect balance or budget math                      | Table-driven domain unit tests and database query tests        |
+| Partial mutation corrupts data                        | Integration tests that force failure and assert rollback       |
+| Authentication appears valid after sign out or expiry | API integration and browser workflow                           |
+| Demo visitors share data                              | Concurrent isolated demo integration and browser tests         |
+| Migration fails on a clean database                   | Apply all migrations to a fresh PostgreSQL container           |
+| UI hides a server failure                             | Component tests for loading, error, retry, and preserved input |
+| Primary workflow breaks across services               | Focused Playwright tests                                       |
 
 ## Critical Domain Cases
 
