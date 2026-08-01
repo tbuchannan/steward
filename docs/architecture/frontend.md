@@ -34,15 +34,15 @@ TanStack Router implements the route map in [sitemap](../ux/sitemap.md).
 
 ## State Ownership
 
-| State | Owner |
-|---|---|
-| API data and mutation state | TanStack Query |
-| Form values and validation display | React Hook Form |
-| Shareable filters and pagination | TanStack Router URL state |
-| Theme | Small presentation preference store plus persistence |
-| User timezone | Persisted user preference with detected initial value |
-| Authentication session | Better Auth client integrated with query/router state |
-| Temporary local UI state | Component state |
+| State                              | Owner                                                 |
+| ---------------------------------- | ----------------------------------------------------- |
+| API data and mutation state        | TanStack Query                                        |
+| Form values and validation display | React Hook Form                                       |
+| Shareable filters and pagination   | TanStack Router URL state                             |
+| Theme                              | Small presentation preference store plus persistence  |
+| User timezone                      | Persisted user preference with detected initial value |
+| Authentication session             | Better Auth client integrated with query/router state |
+| Temporary local UI state           | Component state                                       |
 
 Do not copy server data into a global client store without a demonstrated need.
 

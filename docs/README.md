@@ -17,18 +17,18 @@ Steward is in discovery and architecture. Documents marked **Accepted** define c
 
 ## Sources of Truth
 
-| Subject | Canonical document |
-|---|---|
-| Product purpose and users | [Product brief](product/product-brief.md) |
-| MVP scope and acceptance criteria | [MVP requirements](product/mvp-requirements.md) |
-| Deferred and excluded scope | [Post-MVP](product/post-mvp.md) |
-| Financial calculations and terminology | [Financial rules](domain/financial-rules.md) |
-| Archival, deletion, and reset behavior | [Data lifecycle](domain/data-lifecycle.md) |
-| Observable user behavior | [UX documentation](ux/sitemap.md) |
-| Current system design | [Architecture overview](architecture/overview.md) |
-| Reasons for architecture choices | [Architecture decisions](architecture/decisions/README.md) |
-| Verification approach | [Testing strategy](quality/testing-strategy.md) |
-| Deployment and recovery | [Operations documentation](operations/deployment.md) |
+| Subject                                | Canonical document                                         |
+| -------------------------------------- | ---------------------------------------------------------- |
+| Product purpose and users              | [Product brief](product/product-brief.md)                  |
+| MVP scope and acceptance criteria      | [MVP requirements](product/mvp-requirements.md)            |
+| Deferred and excluded scope            | [Post-MVP](product/post-mvp.md)                            |
+| Financial calculations and terminology | [Financial rules](domain/financial-rules.md)               |
+| Archival, deletion, and reset behavior | [Data lifecycle](domain/data-lifecycle.md)                 |
+| Observable user behavior               | [UX documentation](ux/sitemap.md)                          |
+| Current system design                  | [Architecture overview](architecture/overview.md)          |
+| Reasons for architecture choices       | [Architecture decisions](architecture/decisions/README.md) |
+| Verification approach                  | [Testing strategy](quality/testing-strategy.md)            |
+| Deployment and recovery                | [Operations documentation](operations/deployment.md)       |
 
 If two documents disagree, the canonical document in this table wins.
 

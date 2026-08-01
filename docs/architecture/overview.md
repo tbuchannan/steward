@@ -27,27 +27,27 @@ The Vercel rewrite makes production browser requests first-party. Railway remain
 
 ## Selected Stack
 
-| Area | Selection |
-|---|---|
-| Language | TypeScript |
-| Frontend | React and Vite |
-| Routing | TanStack Router |
-| Server state | TanStack Query |
-| Forms | React Hook Form |
-| Runtime validation | Zod |
-| Styling | Tailwind CSS and shadcn/ui |
-| Icons | Lucide React |
-| Backend | Node.js and Fastify |
-| Authentication | Better Auth |
-| Database | PostgreSQL |
-| Database access | Drizzle ORM, Drizzle Kit, and `pg` |
-| Unit/integration tests | Vitest |
-| Component tests | React Testing Library and `user-event` |
-| Database tests | Testcontainers for Node.js |
-| Browser tests | Playwright |
-| CI | GitHub Actions |
-| Hosting | Vercel and Railway |
-| Repository | pnpm workspaces |
+| Area                   | Selection                              |
+| ---------------------- | -------------------------------------- |
+| Language               | TypeScript                             |
+| Frontend               | React and Vite                         |
+| Routing                | TanStack Router                        |
+| Server state           | TanStack Query                         |
+| Forms                  | React Hook Form                        |
+| Runtime validation     | Zod                                    |
+| Styling                | Tailwind CSS and shadcn/ui             |
+| Icons                  | Lucide React                           |
+| Backend                | Node.js and Fastify                    |
+| Authentication         | Better Auth                            |
+| Database               | PostgreSQL                             |
+| Database access        | Drizzle ORM, Drizzle Kit, and `pg`     |
+| Unit/integration tests | Vitest                                 |
+| Component tests        | React Testing Library and `user-event` |
+| Database tests         | Testcontainers for Node.js             |
+| Browser tests          | Playwright                             |
+| CI                     | GitHub Actions                         |
+| Hosting                | Vercel and Railway                     |
+| Repository             | pnpm workspaces                        |
 
 Exact versions are pinned together when scaffolding begins and recorded in [configuration](../operations/configuration.md).
 
