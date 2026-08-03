@@ -16,6 +16,7 @@
 - Investment value comes from the latest dated manual snapshot.
 
 Financial meaning is defined in [financial rules](../domain/financial-rules.md).
+Logical entity responsibilities and aggregate boundaries are defined in the [financial domain model](../domain/financial-model.md).
 
 ## Initial Model
 
