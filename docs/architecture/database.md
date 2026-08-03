@@ -1,7 +1,7 @@
 # Database Architecture
 
 **Status:** Accepted
-**Last verified:** 2026-07-30
+**Last verified:** 2026-08-03
 
 ## Decisions
 
@@ -51,6 +51,14 @@ Names are finalized with the generated Better Auth schema to avoid ambiguity bet
 - One allocation exists per budget and category.
 - Transaction amounts are non-zero.
 - Currency is `USD` in the MVP.
+- Monetary columns use signed 64-bit storage and application/database constraints
+  keep persisted public values within the JavaScript safe-integer range defined
+  in [financial rules](../domain/financial-rules.md).
+- Account type, transaction type, category group, and category applicability use
+  the closed values defined in [financial rules](../domain/financial-rules.md).
+- Business dates use PostgreSQL `date` semantics without timezone conversion;
+  budget months use `date` values constrained to the first day; audit instants
+  use `timestamptz` and are written by the server.
 - Category names are case-insensitively unique within a predefined group for one user.
 - Foreign-key delete actions preserve history according to [data lifecycle](../domain/data-lifecycle.md).
 

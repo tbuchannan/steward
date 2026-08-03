@@ -1,7 +1,7 @@
 # Backend Architecture
 
 **Status:** Accepted
-**Last verified:** 2026-07-30
+**Last verified:** 2026-08-03
 
 ## Responsibilities
 
@@ -53,7 +53,8 @@ Route schema
 - Resource-oriented routes
 - Page-based pagination for transaction lists
 - ISO date-only strings for business dates
-- Integer minor units for money
+- JavaScript-safe JSON integer minor units for money
+- RFC 3339 UTC strings for server-generated audit timestamps
 
 Representative application areas:
 
