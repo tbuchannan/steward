@@ -20,8 +20,7 @@
 - **Posted transaction:** A transaction included in balances and financial summaries.
 - **Refund:** A standalone positive record that reduces expense activity for a category. It does not count as income.
 - **Regular user:** A person who registered with an email address and password.
-- **Unbudgeted spending:** Categorized expense and refund activity for a month whose category has no allocation in that month's budget.
+- **Unbudgeted spending:** Net categorized expense and refund activity for a month whose category has no allocation in that month's budget.
 - **Uncategorized spending:** Expense and refund activity with no category assignment; it remains separate from budget spending until categorized.
 - **Transfer:** A linked record representing movement between two financial accounts. Steward would not execute the movement. Transfer records are not part of the MVP.
-- **Unbudgeted spending:** Categorized expense activity in a month for a category without a budget allocation.
 - **User timezone:** The IANA timezone used to determine the current month and display timestamps. It does not reinterpret date-only transaction values.

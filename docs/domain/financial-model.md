@@ -34,7 +34,12 @@ Steward owns all application and financial records:
 - Demo Identity Metadata
 - Investment Balance Snapshot
 
-Every Steward aggregate belongs to exactly one Better Auth user. Aggregate roots carry that ownership directly; child ownership is established through the owning root. The authenticated session, never a client-supplied user ID, determines the owner for protected operations.
+Every Steward record belongs to exactly one Better Auth user. Most aggregate
+roots store that ownership directly. Transaction ownership is established
+through its required financial-account relationship, while child-entity
+ownership is established through the owning aggregate. The authenticated
+session, never a client-supplied user ID, determines the owner for protected
+operations.
 
 ## Entity Catalog
 
@@ -49,7 +54,7 @@ Every Steward aggregate belongs to exactly one Better Auth user. Aggregate roots
 
 ### Transaction
 
-- **Role:** Aggregate root.
+- **Role:** Independently addressable aggregate root.
 - **Responsibility:** Records one manual income, expense, or refund event and its contribution to an account's net value.
 - **Ownership:** Belongs directly to exactly one Better Auth user.
 - **Relationships:** Must reference one financial account owned by the same user and may reference one category owned by that user. Owner-qualified foreign keys prevent either relationship from crossing users.

@@ -2,7 +2,10 @@
 
 ## Status
 
-Steward is in discovery and architecture. Documents marked **Accepted** define current decisions. Documents marked **Draft** require implementation validation.
+Steward is in early implementation. The web, API, and public-contract packages
+are scaffolded, while most MVP behavior remains unimplemented. Documents marked
+**Accepted** define current decisions. Documents marked **Draft** require
+implementation validation.
 
 ## Reading Order
 
@@ -18,22 +21,22 @@ Steward is in discovery and architecture. Documents marked **Accepted** define c
 
 ## Sources of Truth
 
-| Subject                                | Canonical document                                         |
-| -------------------------------------- | ---------------------------------------------------------- |
-| Product purpose and users              | [Product brief](product/product-brief.md)                  |
-| MVP scope and acceptance criteria      | [MVP requirements](product/mvp-requirements.md)            |
-| Deferred and excluded scope            | [Post-MVP](product/post-mvp.md)                            |
-| Financial entities and boundaries      | [Financial domain model](domain/financial-model.md)        |
-| Financial calculations and terminology | [Financial rules](domain/financial-rules.md)               |
-| Financial transaction model            | [Financial transactions](domain/financial-transactions.md) |
-| Financial account model                | [Financial accounts](domain/financial-accounts.md)         |
-| Archival, deletion, and reset behavior | [Data lifecycle](domain/data-lifecycle.md)                 |
+| Subject                                | Canonical document                                                         |
+| -------------------------------------- | -------------------------------------------------------------------------- |
+| Product purpose and users              | [Product brief](product/product-brief.md)                                  |
+| MVP scope and acceptance criteria      | [MVP requirements](product/mvp-requirements.md)                            |
+| Deferred and excluded scope            | [Post-MVP](product/post-mvp.md)                                            |
+| Financial entities and boundaries      | [Financial domain model](domain/financial-model.md)                        |
+| Financial calculations and terminology | [Financial rules](domain/financial-rules.md)                               |
+| Financial transaction model            | [Financial transactions](domain/financial-transactions.md)                 |
+| Financial account model                | [Financial accounts](domain/financial-accounts.md)                         |
+| Archival, deletion, and reset behavior | [Data lifecycle](domain/data-lifecycle.md)                                 |
 | Category and budget model              | [Financial categories and budgets](domain/financial-categories-budgets.md) |
-| Observable user behavior               | [UX documentation](ux/sitemap.md)                          |
-| Current system design                  | [Architecture overview](architecture/overview.md)          |
-| Reasons for architecture choices       | [Architecture decisions](architecture/decisions/README.md) |
-| Verification approach                  | [Testing strategy](quality/testing-strategy.md)            |
-| Deployment and recovery                | [Operations documentation](operations/deployment.md)       |
+| Observable user behavior               | [UX documentation](ux/sitemap.md)                                          |
+| Current system design                  | [Architecture overview](architecture/overview.md)                          |
+| Reasons for architecture choices       | [Architecture decisions](architecture/decisions/README.md)                 |
+| Verification approach                  | [Testing strategy](quality/testing-strategy.md)                            |
+| Deployment and recovery                | [Operations documentation](operations/deployment.md)                       |
 
 If two documents disagree, the canonical document in this table wins.
 

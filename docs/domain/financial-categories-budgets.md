@@ -11,7 +11,7 @@ remains defined in [data lifecycle](data-lifecycle.md).
 ## Category Groups and Applicability
 
 Category groups are a fixed presentation taxonomy in the MVP. The supported
-group values are:
+group values below are listed in their canonical display order:
 
 - `income`
 - `housing`
