@@ -1,6 +1,8 @@
 # Architecture Decision Records
 
-ADRs record decisions that materially constrain implementation. Accepted ADRs are not duplicated in component documents; those documents link here.
+ADRs record decisions that materially constrain implementation. Component
+documents may summarize accepted decisions where necessary to describe the
+system, but they link to ADRs for rationale, alternatives, and consequences.
 
 ## Index
 

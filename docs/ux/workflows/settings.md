@@ -1,6 +1,6 @@
 # Settings Workflow
 
-**Requirements:** `SET-01`–`SET-04`, `SHELL-03`
+**Requirements:** `SET-01`–`SET-05`, `SHELL-03`
 **Status:** Accepted
 
 ## Structure

@@ -1,41 +1,54 @@
 # Local Development
 
-**Status:** Placeholder until scaffolding
-**Last verified:** 2026-07-30
+**Status:** Current for the initial scaffold; database setup pending persistence implementation
+**Last verified:** 2026-08-03
 
-This document will become the executable clean-setup guide when application code exists. Commands below describe the intended interface and must be corrected against the implementation before the first development release.
+This document describes the runnable initial scaffold. Database, integration,
+and browser-test setup will be added as those parts of the accepted architecture
+are implemented.
 
 ## Prerequisites
 
 - Repository-pinned Node.js version
 - Repository-pinned pnpm version
-- Locally installed PostgreSQL
-- A container runtime for Testcontainers integration tests
+- Locally installed PostgreSQL, once persistence is implemented
+- A container runtime, once Testcontainers integration tests are implemented
 
 Docker Compose is not required for normal application development.
 
-## Intended Setup
+## Current Setup
 
 ```text
 pnpm install
-copy safe environment examples
-create local PostgreSQL database
-pnpm db:migrate
-pnpm db:seed
 pnpm dev
 ```
 
-The final guide must include exact supported versions, database creation instructions, local URLs, expected health output, seed identities, and troubleshooting for common setup failures.
+The root `predev` script builds `@steward/contracts` before starting workspace
+development processes. The current API exposes `GET /api/health`; the frontend
+is a placeholder application. Neither currently requires a database or seeded
+identity.
 
-## Intended Checks
+## Current Checks
 
 ```text
 pnpm format:check
 pnpm lint
 pnpm typecheck
 pnpm test
-pnpm test:integration
 pnpm build
+```
+
+## Planned Setup and Commands
+
+When persistence and browser workflows are implemented, this guide will add
+safe environment-file setup, local PostgreSQL creation, migrations, seed data,
+integration tests, and end-to-end tests. The corresponding planned command
+interface is:
+
+```text
+pnpm db:migrate
+pnpm db:seed
+pnpm test:integration
 pnpm test:e2e
 ```
 

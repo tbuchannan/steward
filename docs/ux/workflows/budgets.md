@@ -1,6 +1,6 @@
 # Budget Workflow
 
-**Requirements:** `BUD-01`–`BUD-06`
+**Requirements:** `BUD-01`–`BUD-09`
 **Status:** Accepted
 
 ## Browse
@@ -33,7 +33,7 @@ Removing a category from a budget removes only that month's allocation. It does 
 
 - Allocations must be valid non-negative USD amounts.
 - Category names are required when creating a category.
-- Duplicate user-scoped category names are rejected according to the domain policy.
+- Category names must be unique, ignoring case, within the selected group for the current user.
 - Save is disabled when there are no valid changes or a request is pending.
 
 ## Feedback

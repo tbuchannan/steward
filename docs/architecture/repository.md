@@ -1,9 +1,16 @@
 # Repository Architecture
 
 **Status:** Accepted
-**Last verified:** 2026-07-30
+**Last verified:** 2026-08-03
 
-## Layout
+## Current State
+
+The current scaffold contains `apps/web`, `apps/api`, and
+`packages/contracts`. The database, shared test-utility, and end-to-end
+workspaces shown below are accepted target boundaries but have not yet been
+created.
+
+## Target MVP Layout
 
 ```text
 steward/
@@ -36,7 +43,7 @@ Packages do not reach into another package's internal source path.
 
 ## Root Commands
 
-The final scripts should provide:
+The root currently provides:
 
 ```text
 pnpm dev
@@ -45,6 +52,11 @@ pnpm lint
 pnpm format:check
 pnpm typecheck
 pnpm test
+```
+
+The completed MVP is expected to add:
+
+```text
 pnpm test:integration
 pnpm test:e2e
 pnpm db:generate
@@ -52,7 +64,8 @@ pnpm db:migrate
 pnpm db:seed
 ```
 
-Exact implementations are added during scaffolding. One lockfile covers all workspaces.
+The missing commands are added with the packages that implement them. One
+lockfile covers all workspaces.
 
 ## Versions
 

@@ -2,7 +2,10 @@
 
 Steward is a responsive personal-finance record-keeping application for manually managing accounts, transactions, monthly budgets, and financial summaries. It never initiates payments, transfers funds, or communicates with financial institutions.
 
-> **Status:** Discovery and architecture. The product and technical decisions are documented; application scaffolding has not started.
+> **Status:** Early implementation. The web, API, and public-contract packages
+> are scaffolded with a health endpoint and placeholder frontend.
+> Authentication, persistence, and MVP financial workflows are not yet
+> implemented.
 
 ## MVP
 
@@ -37,7 +40,17 @@ Start with the [documentation index](docs/README.md). It identifies the source o
 
 ## Getting Started
 
-Setup instructions will be added to [local development](docs/operations/local-development.md) when the repository contains runnable application code.
+Install dependencies and start the current scaffold from the repository root:
+
+```text
+pnpm install
+pnpm dev
+```
+
+The current scaffold does not yet require PostgreSQL. Database setup
+instructions will be added when persistence is implemented. See
+[local development](docs/operations/local-development.md) for current checks and
+planned setup steps.
 
 ## License
 
