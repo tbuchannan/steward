@@ -73,7 +73,7 @@ Unknown values are rejected rather than mapped to a default.
 | ---------------------- | ------------------------------------------------------------------------------------------------------------- |
 | Account type           | `checking`, `savings`, `cash`, `credit_card`, `loan`, `investment`                                            |
 | Transaction type       | `income`, `expense`, `refund`                                                                                 |
-| Category group         | `income`, `housing`, `transportation`, `food`, `health`, `personal`, `entertainment`, `savings_debt`, `other` |
+| Category group         | `income`, `housing`, `food`, `transportation`, `health`, `personal`, `entertainment`, `savings_debt`, `other` |
 | Category applicability | `income`, `expense`, `both`                                                                                   |
 
 Category group is organizational; applicability determines which transaction
@@ -142,11 +142,20 @@ credit debt =
 monthly income =
   sum(income amounts dated within the selected month)
 
+monthly expense magnitude =
+  absolute value of sum(expense amounts dated within the selected month)
+
+monthly refunds =
+  sum(refund amounts dated within the selected month)
+
 monthly spending =
-  absolute value of net expense activity dated within the selected month
+  max(monthly expense magnitude - monthly refunds, 0)
 ```
 
 Loan and investment balances do not contribute to available cash.
+Monthly spending includes categorized and uncategorized expenses and refunds.
+Category assignment affects budget categorization, not whether activity
+contributes to monthly spending.
 
 ## Categories
 
@@ -178,9 +187,14 @@ defined in [financial categories and budgets](financial-categories-budgets.md).
 Only categorized expense and refund activity affects a budget:
 
 ```text
+category expense magnitude =
+  absolute value of sum(expense amounts for the category and month)
+
+category refunds =
+  sum(refund amounts for the category and month)
+
 category spending =
-  absolute value of expenses for the category and month
-  - refunds for the category and month
+  max(category expense magnitude - category refunds, 0)
 
 remaining = allocation - category spending
 
@@ -191,13 +205,13 @@ Rules:
 
 - Uncategorized transactions do not count toward a category.
 - Income does not count as category spending.
-- Spending cannot be less than zero; excess refunds clamp spending to zero.
 - Removing a category from one monthly budget does not delete the category or change transactions.
 - Editing a category name or group preserves transaction history.
 - Budget totals are derived from category allocations and spending.
 - Transaction spending belongs to the transaction's date month, even if the record is entered or edited later.
 
-Categorized expense activity without an allocation is unbudgeted spending:
+Categorized expense and refund activity without an allocation is unbudgeted
+spending:
 
 - It counts toward total monthly spending.
 - It reduces overall budget remaining.
@@ -209,7 +223,8 @@ Categorized expense activity without an allocation is unbudgeted spending:
 total allocated = sum(all allocations)
 
 total budget spending =
-  sum(all categorized expense activity for the month)
+  sum(category spending for every category with activity in the month,
+      including categories without an allocation)
 
 overall remaining =
   total allocated - total budget spending

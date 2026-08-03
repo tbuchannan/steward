@@ -10,8 +10,9 @@ in [data lifecycle](data-lifecycle.md).
 
 ## Transaction
 
-`transaction` is a posted child record of one financial account. The MVP has no
-pending, cleared, reconciled, void, or transfer transaction states.
+`transaction` is an independently addressable posted record associated with one
+required financial account. Its ownership is proven through that account. The
+MVP has no pending, cleared, reconciled, void, or transfer transaction states.
 
 | Field             | Required | Meaning                                                       |
 | ----------------- | -------- | ------------------------------------------------------------- |

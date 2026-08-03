@@ -1,11 +1,11 @@
 # Configuration
 
-**Status:** Draft pending scaffolding
-**Last verified:** 2026-07-30
+**Status:** Draft; initial runtime and package configuration implemented
+**Last verified:** 2026-08-03
 
 ## Version Pins
 
-At scaffolding, record and enforce exact compatible versions for:
+Record compatible versions as each part of the architecture is implemented:
 
 - Node.js
 - pnpm
@@ -17,7 +17,10 @@ At scaffolding, record and enforce exact compatible versions for:
 - Tailwind CSS and shadcn/ui CLI
 - Vitest, Testcontainers, and Playwright
 
-The lockfile is committed. Dependency upgrades that affect schemas, generated code, runtime requirements, or deployment receive explicit review.
+The root manifest constrains Node.js and pins pnpm. Package manifests declare
+compatible dependency ranges, and the committed lockfile records exact resolved
+versions for reproducible installs. Dependency upgrades that affect schemas,
+generated code, runtime requirements, or deployment receive explicit review.
 
 ## Frontend
 

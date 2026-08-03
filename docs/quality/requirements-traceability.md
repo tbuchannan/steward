@@ -1,9 +1,9 @@
 # Requirements Traceability
 
 **Status:** Draft until implementation
-**Last verified:** 2026-07-30
+**Last verified:** 2026-08-03
 
-The [MVP requirements](../product/mvp-requirements.md) are authoritative. This table identifies the intended UX and minimum verification. Implementation links are added when code exists.
+The [MVP requirements](../product/mvp-requirements.md) are authoritative. This table identifies the intended UX and minimum verification. Implementation and test links are added individually when code for the corresponding requirement exists.
 
 | Requirements                         | UX or design                                                    | Minimum verification                             |
 | ------------------------------------ | --------------------------------------------------------------- | ------------------------------------------------ |

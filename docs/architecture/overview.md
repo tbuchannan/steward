@@ -1,7 +1,7 @@
 # Architecture Overview
 
 **Status:** Accepted
-**Last verified:** 2026-07-30
+**Last verified:** 2026-08-03
 
 ## System
 
@@ -49,7 +49,10 @@ The Vercel rewrite makes production browser requests first-party. Railway remain
 | Hosting                | Vercel and Railway                     |
 | Repository             | pnpm workspaces                        |
 
-Exact versions are pinned together when scaffolding begins and recorded in [configuration](../operations/configuration.md).
+Versions are selected and recorded as each part of the architecture is
+implemented. Runtime and package-manager constraints live in the root manifest;
+installed dependency versions are reproducible through the shared lockfile. See
+[configuration](../operations/configuration.md).
 
 ## Boundaries
 
