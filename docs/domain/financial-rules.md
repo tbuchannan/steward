@@ -105,6 +105,9 @@ Each user receives a basic set of categories copied into user-owned records. Use
 - Only expense-capable categories may receive budget allocations or be assigned to refunds.
 - Referenced categories may be renamed or archived without losing history.
 
+Category fields, supported groups and applicability, and persistence constraints
+are defined in [financial categories and budgets](financial-categories-budgets.md).
+
 ## Budget Lifecycle
 
 - A budget is created when the user first saves at least one allocation for a month.
@@ -112,6 +115,9 @@ Each user receives a basic set of categories copied into user-owned records. Use
 - Past, current, and future months are editable.
 - Rollover, carryover, and copy-from-prior-month behavior are not included.
 - Removing the final allocation leaves an empty budget record after the month has first been saved.
+
+Budget and allocation fields, relationships, and persistence constraints are
+defined in [financial categories and budgets](financial-categories-budgets.md).
 
 ## Budget Spending
 

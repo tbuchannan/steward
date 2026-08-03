@@ -17,6 +17,8 @@
   the opening balance when no snapshot exists.
 
 Financial meaning is defined in [financial rules](../domain/financial-rules.md).
+Category, budget, and allocation fields and relationships are defined in
+[financial categories and budgets](../domain/financial-categories-budgets.md).
 Transaction fields and relationships are defined in
 [financial transactions](../domain/financial-transactions.md).
 Account fields and relationships are defined in
@@ -56,6 +58,8 @@ Names are finalized with the generated Better Auth schema to avoid ambiguity bet
 - Every user-owned root record has a non-null user foreign key.
 - At most one budget exists per user and month.
 - One allocation exists per budget and category.
+- Budget months are first-of-month PostgreSQL `date` values.
+- Allocation amounts are non-negative signed 64-bit integer minor units.
 - Transaction amounts are non-zero.
 - Transaction type and amount sign agree, and transaction dates do not precede
   the parent account's opening-balance date.
