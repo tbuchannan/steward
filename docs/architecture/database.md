@@ -17,6 +17,8 @@
   the opening balance when no snapshot exists.
 
 Financial meaning is defined in [financial rules](../domain/financial-rules.md).
+Transaction fields and relationships are defined in
+[financial transactions](../domain/financial-transactions.md).
 Account fields and relationships are defined in
 [financial accounts](../domain/financial-accounts.md).
 Logical entity responsibilities and aggregate boundaries are defined in the [financial domain model](../domain/financial-model.md).
@@ -55,6 +57,8 @@ Names are finalized with the generated Better Auth schema to avoid ambiguity bet
 - At most one budget exists per user and month.
 - One allocation exists per budget and category.
 - Transaction amounts are non-zero.
+- Transaction type and amount sign agree, and transaction dates do not precede
+  the parent account's opening-balance date.
 - Currency is `USD` in the MVP.
 - Financial-account types are restricted to `checking`, `savings`, `cash`,
   `credit_card`, `loan`, and `investment`.
@@ -67,6 +71,8 @@ Names are finalized with the generated Better Auth schema to avoid ambiguity bet
 - The session-derived user ID is included in every protected root query.
 - Child ownership is proved through a join or parent constraint.
 - Ordering includes a stable unique tie-breaker.
+- The default transaction order is transaction date descending, creation
+  timestamp descending, then ID descending.
 - Search and sorting use allowlisted expressions.
 - Archived records are excluded unless explicitly requested.
 

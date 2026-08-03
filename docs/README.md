@@ -25,6 +25,7 @@ Steward is in discovery and architecture. Documents marked **Accepted** define c
 | Deferred and excluded scope            | [Post-MVP](product/post-mvp.md)                            |
 | Financial entities and boundaries      | [Financial domain model](domain/financial-model.md)        |
 | Financial calculations and terminology | [Financial rules](domain/financial-rules.md)               |
+| Financial transaction model            | [Financial transactions](domain/financial-transactions.md) |
 | Financial account model                | [Financial accounts](domain/financial-accounts.md)         |
 | Archival, deletion, and reset behavior | [Data lifecycle](domain/data-lifecycle.md)                 |
 | Observable user behavior               | [UX documentation](ux/sitemap.md)                          |
