@@ -1,6 +1,6 @@
 # Financial Domain Model
 
-**Status:** Draft until schema validation
+**Status:** Accepted
 **Last verified:** 2026-08-03
 
 ## Purpose
@@ -34,12 +34,12 @@ Steward owns all application and financial records:
 - Demo Identity Metadata
 - Investment Balance Snapshot
 
-Every Steward record belongs to exactly one Better Auth user. Most aggregate
-roots store that ownership directly. Transaction ownership is established
-through its required financial-account relationship, while child-entity
-ownership is established through the owning aggregate. The authenticated
-session, never a client-supplied user ID, determines the owner for protected
-operations.
+Every Steward record belongs to exactly one Better Auth user, directly or
+through an owning parent. User-owned aggregate roots, including transactions,
+store that ownership directly. Child-entity ownership is established through
+the owning aggregate; copied owner keys on relationship rows exist only for
+database constraints. The authenticated session, never a client-supplied user
+ID, determines the owner for protected operations.
 
 ## Entity Catalog
 
@@ -150,3 +150,7 @@ The following concepts are intentionally deferred and are not entities in the MV
 These concepts require separate product and modeling decisions before they can alter the initial aggregates.
 
 Steward also explicitly excludes payment execution, bill payment, automated trading, storage of bank credentials, cryptocurrency wallets, and other mechanisms that initiate or authorize movement of real funds.
+
+The accepted physical relationships, keys, cardinalities, and constraint
+boundaries are consolidated in the
+[initial financial ERD](../architecture/financial-erd.md).

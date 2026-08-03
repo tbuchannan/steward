@@ -24,8 +24,13 @@ Transaction fields and relationships are defined in
 Account fields and relationships are defined in
 [financial accounts](../domain/financial-accounts.md).
 Logical entity responsibilities and aggregate boundaries are defined in the [financial domain model](../domain/financial-model.md).
+The implementation-ready physical model, including keys, cardinalities,
+optionality, and uniqueness constraints, is defined in the
+[initial financial ERD](financial-erd.md).
 
-## Initial Model
+## Initial Model Summary
+
+The ERD linked above is authoritative; this tree is a compact ownership view.
 
 ```text
 Better Auth user
@@ -41,7 +46,7 @@ Better Auth user
 └── demo identity metadata
 ```
 
-Likely financial tables:
+Accepted Steward-owned tables:
 
 - `financial_account`
 - `transaction`
@@ -52,7 +57,9 @@ Likely financial tables:
 - `demo_identity_metadata`
 - `investment_balance_snapshot`
 
-Names are finalized with the generated Better Auth schema to avoid ambiguity between authentication accounts and financial accounts.
+Generated Better Auth names and fields are reviewed with the pinned version
+before the first migration to avoid ambiguity between authentication accounts
+and financial accounts.
 
 ## Core Constraints
 
