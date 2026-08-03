@@ -23,6 +23,7 @@ Steward is in discovery and architecture. Documents marked **Accepted** define c
 | MVP scope and acceptance criteria      | [MVP requirements](product/mvp-requirements.md)            |
 | Deferred and excluded scope            | [Post-MVP](product/post-mvp.md)                            |
 | Financial calculations and terminology | [Financial rules](domain/financial-rules.md)               |
+| Financial account model                | [Financial accounts](domain/financial-accounts.md)         |
 | Archival, deletion, and reset behavior | [Data lifecycle](domain/data-lifecycle.md)                 |
 | Observable user behavior               | [UX documentation](ux/sitemap.md)                          |
 | Current system design                  | [Architecture overview](architecture/overview.md)          |
