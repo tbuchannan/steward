@@ -113,12 +113,15 @@ or investment snapshots.
 
 - `financial_account.id` is the primary key.
 - `financial_account.userId` is non-null and references the authoritative
-  authentication user.
+  authentication user with restrictive delete behavior.
+- `(financial_account.id, financial_account.userId)` is unique so dependent
+  records can enforce owner-qualified relationships.
 - Account type is restricted to the supported enum and currency to `USD`.
 - Opening balances and snapshot values use signed 64-bit integers.
 - Opening-balance and snapshot dates use PostgreSQL `date`, not timestamps.
 - `investment_balance_snapshot.id` is the primary key.
-- `investment_balance_snapshot.accountId` is non-null and references its parent.
+- `investment_balance_snapshot.accountId` is non-null and references its parent
+  with restrictive delete behavior.
 - `(accountId, asOfDate)` is unique for investment snapshots.
 - Protected reads and writes include session-derived ownership; an account or
   snapshot owned by another user behaves as not found.

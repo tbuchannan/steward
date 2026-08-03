@@ -1,7 +1,7 @@
 # Demo Experience
 
 **Status:** Accepted
-**Last verified:** 2026-07-30
+**Last verified:** 2026-08-03
 
 ## Goal
 
@@ -14,7 +14,8 @@ The demo must not use one shared mutable user. Each visitor receives:
 1. A temporary Better Auth identity and normal authenticated session.
 2. A new financial dataset cloned from immutable canonical seed definitions.
 3. Authorization through the same protected routes and ownership checks as a regular user.
-4. An expiration timestamp used by scheduled cleanup.
+4. Application-owned demo metadata with creation and expiration timestamps used
+   for reset eligibility and scheduled cleanup.
 
 The canonical seed definitions are never mutated by visitors.
 
@@ -67,9 +68,25 @@ Reset is one protected database transaction:
 5. Preserve the current identity and session.
 6. Roll back the entire reset on failure.
 
+The reset boundary includes accounts, transactions, categories, budgets,
+allocations, and investment balance snapshots. It preserves Better Auth records,
+demo metadata and expiration, and user preferences such as theme and timezone.
+The session-derived user ID is the only reset target; a client cannot choose an
+identity.
+
 ## Cleanup
 
-Expired demo identities must be removed by an idempotent scheduled job. Cleanup deletes the expired identity's financial data, sessions, authentication account, and user record in a safe dependency order.
+Expired demo identities must be removed by an idempotent scheduled job. Cleanup
+rechecks expiration and deletes the expired identity's financial data, user
+preferences, demo metadata, sessions, authentication account, and user record in
+a safe dependency order. Authentication records are removed through
+Better Auth-supported server behavior; Steward does not take ownership of their
+schema or lifecycle.
+
+Cleanup never targets regular identities, unexpired demo identities, canonical
+seed definitions, or another visitor's dataset. A failed cleanup cannot commit
+a partially removed identity, and retrying an already completed cleanup is a
+successful no-op.
 
 The retention period and cleanup schedule are deployment configuration, documented in [configuration](../operations/configuration.md).
 

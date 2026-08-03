@@ -56,8 +56,8 @@ operations.
 
 - **Role:** Independently addressable aggregate root.
 - **Responsibility:** Records one manual income, expense, or refund event and its contribution to an account's net value.
-- **Ownership:** Belongs to exactly one Better Auth user through its required financial account.
-- **Relationships:** Must reference one financial account owned by that user and may reference one category owned by the same user.
+- **Ownership:** Belongs directly to exactly one Better Auth user.
+- **Relationships:** Must reference one financial account owned by the same user and may reference one category owned by that user. Owner-qualified foreign keys prevent either relationship from crossing users.
 - **Lifecycle:** Independently identified, queried, edited, and permanently deleted after confirmation.
 - **Derived behavior:** Transaction mutations affect account balances, budget spending, dashboard summaries, and attention items. These cross-aggregate effects are coordinated by an application service rather than by nesting the transaction inside another aggregate.
 
@@ -83,7 +83,7 @@ operations.
 - **Role:** Child entity within the Budget aggregate.
 - **Responsibility:** Assigns an amount from one monthly budget to one reusable category.
 - **Ownership:** Inherited through its owning budget.
-- **Relationships:** Must reference its budget and one expense-capable category owned by the same user.
+- **Relationships:** Must reference its budget and one expense-capable category owned by the same user. A copied owner key exists only so both relationships can be enforced with owner-qualified foreign keys; ownership remains inherited from the budget.
 - **Lifecycle:** Created, edited, or removed only through its budget. It has no independent meaning without the budget month.
 
 ### User Preference
@@ -96,7 +96,7 @@ operations.
 ### Demo Identity Metadata
 
 - **Role:** Optional Steward-owned singleton aggregate.
-- **Responsibility:** Marks a Better Auth user as a temporary demo identity and records the information required for reset eligibility and expiration cleanup.
+- **Responsibility:** Marks a Better Auth user as a temporary demo identity. Its required `createdAt` and `expiresAt` instants establish reset eligibility and expiration cleanup without adding application fields to Better Auth tables.
 - **Ownership:** Has a required relationship to exactly one Better Auth user. A Better Auth user has zero or one demo metadata record.
 - **Lifecycle:** Created when a visitor enters the demo and removed when the expired demo identity is cleaned up. Regular registered users have no demo metadata record.
 - **Isolation:** Demo visitors never share a mutable identity or dataset. Each visitor receives a separate Better Auth user, session, metadata record, and cloned financial dataset.
