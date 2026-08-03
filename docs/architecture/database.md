@@ -19,6 +19,7 @@
 Financial meaning is defined in [financial rules](../domain/financial-rules.md).
 Account fields and relationships are defined in
 [financial accounts](../domain/financial-accounts.md).
+Logical entity responsibilities and aggregate boundaries are defined in the [financial domain model](../domain/financial-model.md).
 
 ## Initial Model
 
