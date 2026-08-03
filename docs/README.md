@@ -27,6 +27,7 @@ implementation validation.
 | MVP scope and acceptance criteria      | [MVP requirements](product/mvp-requirements.md)                            |
 | Deferred and excluded scope            | [Post-MVP](product/post-mvp.md)                                            |
 | Financial entities and boundaries      | [Financial domain model](domain/financial-model.md)                        |
+| Initial physical entity relationships  | [Initial financial ERD](architecture/financial-erd.md)                     |
 | Financial calculations and terminology | [Financial rules](domain/financial-rules.md)                               |
 | Financial transaction model            | [Financial transactions](domain/financial-transactions.md)                 |
 | Financial account model                | [Financial accounts](domain/financial-accounts.md)                         |
