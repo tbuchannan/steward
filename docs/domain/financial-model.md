@@ -85,7 +85,7 @@ Every Steward aggregate belongs to exactly one Better Auth user. Aggregate roots
 
 - **Role:** Steward-owned singleton aggregate.
 - **Responsibility:** Stores application preferences that do not belong in the authentication schema, including theme and IANA timezone.
-- **Ownership:** Has a required one-to-one relationship with a Better Auth user; at most one preference record exists for a user.
+- **Ownership:** A preference record belongs to exactly one Better Auth user. A Better Auth user has zero or one preference record.
 - **Lifecycle:** Created for a user when needed and updated independently through Settings. Removing authentication identity removes its preferences.
 
 ### Demo Identity Metadata
