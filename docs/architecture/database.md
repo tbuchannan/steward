@@ -1,7 +1,7 @@
 # Database Architecture
 
 **Status:** Accepted
-**Last verified:** 2026-07-30
+**Last verified:** 2026-08-03
 
 ## Decisions
 
@@ -16,6 +16,8 @@
 - Investment value comes from the latest dated manual snapshot.
 
 Financial meaning is defined in [financial rules](../domain/financial-rules.md).
+Transaction fields and relationships are defined in
+[financial transactions](../domain/financial-transactions.md).
 
 ## Initial Model
 
@@ -50,6 +52,8 @@ Names are finalized with the generated Better Auth schema to avoid ambiguity bet
 - At most one budget exists per user and month.
 - One allocation exists per budget and category.
 - Transaction amounts are non-zero.
+- Transaction type and amount sign agree, and transaction dates do not precede
+  the parent account's opening-balance date.
 - Currency is `USD` in the MVP.
 - Category names are case-insensitively unique within a predefined group for one user.
 - Foreign-key delete actions preserve history according to [data lifecycle](../domain/data-lifecycle.md).
@@ -59,6 +63,8 @@ Names are finalized with the generated Better Auth schema to avoid ambiguity bet
 - The session-derived user ID is included in every protected root query.
 - Child ownership is proved through a join or parent constraint.
 - Ordering includes a stable unique tie-breaker.
+- The default transaction order is transaction date descending, creation
+  timestamp descending, then ID descending.
 - Search and sorting use allowlisted expressions.
 - Archived records are excluded unless explicitly requested.
 
