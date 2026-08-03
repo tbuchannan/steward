@@ -1,7 +1,7 @@
 # Database Architecture
 
 **Status:** Accepted
-**Last verified:** 2026-07-30
+**Last verified:** 2026-08-03
 
 ## Decisions
 
@@ -16,6 +16,8 @@
 - Investment value comes from the latest dated manual snapshot.
 
 Financial meaning is defined in [financial rules](../domain/financial-rules.md).
+Category, budget, and allocation fields and relationships are defined in
+[financial categories and budgets](../domain/financial-categories-budgets.md).
 
 ## Initial Model
 
@@ -49,6 +51,8 @@ Names are finalized with the generated Better Auth schema to avoid ambiguity bet
 - Every user-owned root record has a non-null user foreign key.
 - At most one budget exists per user and month.
 - One allocation exists per budget and category.
+- Budget months are first-of-month PostgreSQL `date` values.
+- Allocation amounts are non-negative signed 64-bit integer minor units.
 - Transaction amounts are non-zero.
 - Currency is `USD` in the MVP.
 - Category names are case-insensitively unique within a predefined group for one user.

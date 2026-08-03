@@ -1,7 +1,7 @@
 # Data Lifecycle
 
 **Status:** Accepted
-**Last verified:** 2026-07-30
+**Last verified:** 2026-08-03
 
 ## Ownership
 
@@ -26,8 +26,10 @@ A resource ID by itself is never authorization.
 ## Categories
 
 - Removing a category from a monthly budget removes only its allocation.
-- A category referenced by transactions cannot be permanently deleted.
-- Referenced categories may be archived and remain visible on historical transactions.
+- A category referenced by transactions or budget allocations cannot be permanently deleted.
+- Referenced categories may be archived and remain visible on historical transactions and saved allocations.
+- Archived categories are excluded from selectors for new transactions and allocations but continue to contribute to historical and current calculations.
+- Archiving a category does not remove allocations or uncategorize transactions.
 
 ## Budgets
 
