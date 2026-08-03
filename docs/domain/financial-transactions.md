@@ -10,12 +10,16 @@ in [data lifecycle](data-lifecycle.md).
 
 ## Transaction
 
-`transaction` is a posted child record of one financial account. The MVP has no
-pending, cleared, reconciled, void, or transfer transaction states.
+`transaction` is a user-owned aggregate root that references one financial
+account. It is independently addressed for user-wide search, editing, and
+deletion while its required account relationship participates in ownership
+enforcement. The MVP has no pending, cleared, reconciled, void, or transfer
+transaction states.
 
 | Field             | Required | Meaning                                                       |
 | ----------------- | -------- | ------------------------------------------------------------- |
 | `id`              | Yes      | Steward-generated UUID                                        |
+| `userId`          | Yes      | Owning Better Auth user identifier                            |
 | `accountId`       | Yes      | Parent financial-account UUID                                 |
 | `categoryId`      | No       | Assigned user-owned category UUID; null means uncategorized   |
 | `type`            | Yes      | `income`, `expense`, or `refund`                              |
@@ -26,10 +30,11 @@ pending, cleared, reconciled, void, or transfer transaction states.
 | `createdAt`       | Yes      | Immutable UTC creation timestamp                              |
 | `updatedAt`       | Yes      | UTC timestamp of the latest persisted change                  |
 
-The account relationship is required. Checking, savings, cash, credit-card, and
-loan accounts accept transactions; investment accounts use manual balance
-snapshots and reject them. A transaction stores no separate currency because
-the MVP account currency is always `USD`.
+The server derives `userId` from the authenticated session; clients never
+supply it. The account relationship is required. Checking, savings, cash,
+credit-card, and loan accounts accept transactions; investment accounts use
+manual balance snapshots and reject them. A transaction stores no separate
+currency because the MVP account currency is always `USD`.
 
 The category relationship is optional so uncategorized transactions remain
 representable. When present, the category must belong to the same user as the
@@ -79,9 +84,9 @@ transactionDate descending
 The UUID primary key is the final unique tie-breaker, so rows with the same
 transaction date and creation timestamp remain deterministic across pages. An
 index beginning with `accountId` and followed by these ordering fields supports
-account-detail queries. User-wide queries use the same complete ordering after
-restricting rows through user-owned accounts. Approved alternate sorts still
-append `id` as a unique tie-breaker.
+account-detail queries. User-wide queries restrict directly by the
+session-derived `userId` and use the same complete ordering. Approved alternate
+sorts still append `id` as a unique tie-breaker.
 
 ## Account Balances and Opening Dates
 
@@ -141,15 +146,18 @@ will select the exact representation and migration.
 ## Required Constraints
 
 - `transaction.id` is the primary key.
-- `transaction.accountId` is non-null and references its parent financial
-  account with history-preserving delete behavior.
-- `transaction.categoryId` is nullable and references a category with
-  history-preserving delete behavior.
+- `transaction.userId` is non-null and references the authoritative Better Auth
+  user with restrictive delete behavior.
+- `(accountId, userId)` references the owning financial account's `(id, userId)`
+  with restrictive delete behavior.
+- `(categoryId, userId)` is nullable through `categoryId` and, when present,
+  references the category's `(id, userId)` with restrictive delete behavior.
 - Transaction type is restricted to `income`, `expense`, or `refund`.
 - `amountMinor` is a signed 64-bit integer, is non-zero, and has the sign required
   by its type.
 - `transactionDate` uses PostgreSQL `date`; audit fields use UTC timestamps.
 - The service rejects transactions before the parent opening-balance date and
   transactions on investment accounts.
-- Protected reads and writes prove ownership through the parent account; a
-  transaction owned by another user behaves as not found.
+- Protected reads and writes restrict by the session-derived `userId` and prove
+  the owner-qualified account relationship; a transaction owned by another user
+  behaves as not found.

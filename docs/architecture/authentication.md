@@ -1,7 +1,7 @@
 # Authentication Architecture
 
 **Status:** Accepted
-**Last verified:** 2026-07-30
+**Last verified:** 2026-08-03
 
 ## Decision
 
@@ -46,6 +46,14 @@ Password recovery, email verification, social authentication, MFA, passkeys, and
 Demo entry creates a normal Better Auth user, authentication account, and session. The identity is marked as temporary in application-owned metadata; no public request can choose another user's demo identity.
 
 Rate limiting and cleanup prevent unbounded identity creation. Reset preserves the active user and session while replacing only that user's financial dataset.
+
+The application-owned metadata records `createdAt` and `expiresAt`; Steward does
+not add demo flags or financial fields to Better Auth tables. Reset eligibility
+comes from the current session user's metadata row. Expired cleanup removes the
+Steward-owned dependency graph first and removes the user, authentication
+account, and sessions through Better Auth-supported server behavior. Better Auth
+remains authoritative for the authentication schema, relationships, and
+ordinary record lifecycle.
 
 ## Cookies and Origins
 

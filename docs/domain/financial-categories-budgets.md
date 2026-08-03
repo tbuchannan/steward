@@ -112,6 +112,7 @@ budget for a calendar month. Different users never share a budget row.
 | Field         | Required | Meaning                                      |
 | ------------- | -------- | -------------------------------------------- |
 | `id`          | Yes      | Steward-generated UUID                       |
+| `userId`      | Yes      | Budget owner copied for database constraints |
 | `budgetId`    | Yes      | Owning monthly-budget UUID                   |
 | `categoryId`  | Yes      | Reusable expense-capable category UUID       |
 | `amountMinor` | Yes      | Non-negative 64-bit integer USD allocation   |
@@ -119,9 +120,12 @@ budget for a calendar month. Different users never share a budget row.
 | `updatedAt`   | Yes      | UTC timestamp of the latest persisted change |
 
 The allocation inherits ownership from its budget and has no independent
-lifecycle. Its category must belong to the same user as the budget and be
-expense-capable. The service proves both relationships in the authenticated
-operation; another user's budget or category behaves as not found.
+lifecycle. Its `userId` is server-written from the owning budget, is not a
+client-editable field, and exists only so PostgreSQL can prove that both the
+budget and category have the same owner. Its category must belong to that user
+and be expense-capable. The service proves both relationships in the
+authenticated operation; another user's budget or category behaves as not
+found.
 
 The database enforces uniqueness on `(budgetId, categoryId)`, allowing at most
 one allocation for a category in a monthly budget. The amount is an allocation,
@@ -177,14 +181,19 @@ states, not persisted financial entities.
 
 - `category.id`, `budget.id`, and `budget_allocation.id` are primary keys.
 - Category and budget `userId` values are non-null and reference the
-  authoritative authentication user.
+  authoritative authentication user with restrictive delete behavior.
+- Category and budget each provide an owner-qualified unique key `(id, userId)`
+  for cross-root relationship constraints.
 - Category group and applicability are restricted to their supported enums.
 - `(userId, group, lower(name))` is unique for categories, including archived
   categories.
 - Budget `month` uses PostgreSQL `date`, is constrained to the first day, and is
   unique within `(userId, month)`.
-- Allocation foreign keys reference the owning budget and reusable category
-  with history-preserving delete behavior.
+- `(budgetId, userId)` references the owning budget's `(id, userId)` with
+  cascading delete behavior because an allocation has no meaning without its
+  budget.
+- `(categoryId, userId)` references the reusable category's `(id, userId)` with
+  restrictive, history-preserving delete behavior.
 - `(budgetId, categoryId)` is unique for allocations.
 - Allocation amounts are non-negative signed 64-bit integers.
 - The service restricts allocations to expense-capable categories owned by the
