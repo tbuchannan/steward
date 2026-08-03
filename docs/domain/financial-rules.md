@@ -8,23 +8,77 @@ This document is the source of truth for financial meaning and calculations.
 ## Currency and Money
 
 - The MVP supports USD only.
-- Persist monetary values as signed 64-bit integer minor units.
-- API contracts expose minor-unit integers and the `USD` currency code.
+- `USD`, the uppercase ISO 4217 code, is the only accepted currency value. API
+  responses use the same literal value; symbols and localized names are display
+  concerns and are never persisted.
+- A financial account's currency is `USD`. Transactions inherit their account's
+  currency, and budgets, allocations, investment snapshots, and dashboard totals
+  use the user's single MVP currency. Clients cannot select or override currency.
+- Persist monetary values in signed 64-bit integer columns. The physical database
+  range is `-9,223,372,036,854,775,808` through
+  `9,223,372,036,854,775,807` minor units.
+- Public API contracts expose money as JSON integer minor units plus the `USD`
+  currency code. They do not expose decimal amounts, formatted strings, or
+  JavaScript `bigint` values.
+- Every request value, response value, and authoritative calculated result must be
+  a JavaScript safe integer in the inclusive range
+  `-9,007,199,254,740,991` through `9,007,199,254,740,991`. This application
+  limit is narrower than the storage type and prevents JSON parsing from silently
+  losing precision.
+- PostgreSQL may calculate aggregates in a wider intermediate type, but the API
+  rejects a mutation that would make a persisted or returned monetary result
+  exceed the safe-integer range. Reads fail closed instead of serializing an
+  out-of-range value. Database values are converted from 64-bit values without
+  first passing through an unsafe JavaScript `number`.
 - UI input parses decimal strings without binary floating-point arithmetic.
 - UI output uses `Intl.NumberFormat`.
 - A future currency feature requires an explicit migration and exchange-rate model.
 
 ## Dates and Months
 
-- A transaction uses a date-only `YYYY-MM-DD` value.
-- A budget month uses `YYYY-MM`.
+- A transaction and an investment snapshot use date-only `YYYY-MM-DD` strings.
+  They are valid proleptic Gregorian calendar dates with four-digit years from
+  `0001` through `9999`; rollover values such as `2026-02-29` are rejected.
+- An account opening-balance date uses the same date-only representation.
+- A budget month uses a `YYYY-MM` string with a four-digit year from `0001`
+  through `9999` and a month from `01` through `12`.
+- Date-only and month values remain strings in API contracts. Date-only values
+  map to PostgreSQL `date`; a budget month maps to a PostgreSQL `date` constrained
+  to the month's first day and is serialized without the day. Neither is treated
+  as an instant, assigned an offset, or serialized through JavaScript `Date`.
+- Audit fields such as `createdAt` and `updatedAt` are server-generated instants.
+  PostgreSQL stores them as `timestamptz`; API contracts return RFC 3339 strings
+  normalized to UTC with a `Z` suffix, for example
+  `2026-08-03T14:05:06.123Z`. Clients cannot supply audit timestamps.
 - Registration and demo creation detect an initial IANA timezone from the browser.
 - A user can change their IANA timezone in Settings.
 - If detection fails, the MVP fallback is `America/New_York`.
+- The browser may suggest a runtime-supported IANA timezone and uses the persisted
+  preference for presentation. The API validates and persists the identifier and
+  is authoritative whenever timezone affects a query or financial result.
+- The server uses the user's timezone to derive "today" and the current budget
+  month. Scheduled jobs and audit timestamps use the server clock in UTC; the
+  database or host's local timezone must not affect domain behavior.
 - Month membership is determined by the transaction's date-only value, not the server timezone.
 - Changing timezone never reinterprets a stored transaction date.
 - Timezone controls the current month, relative-date behavior, and display of timestamp values.
-- Audit fields such as `createdAt` use UTC timestamps.
+
+## Closed Value Sets
+
+Public contracts and persistence use the following lowercase values exactly.
+Labels shown in the UI are presentation text and do not change the stored value.
+Unknown values are rejected rather than mapped to a default.
+
+| Value set              | Allowed values                                                                                                |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Account type           | `checking`, `savings`, `cash`, `credit_card`, `loan`, `investment`                                            |
+| Transaction type       | `income`, `expense`, `refund`                                                                                 |
+| Category group         | `income`, `housing`, `transportation`, `food`, `health`, `personal`, `entertainment`, `savings_debt`, `other` |
+| Category applicability | `income`, `expense`, `both`                                                                                   |
+
+Category group is organizational; applicability determines which transaction
+types and budget features may use a category. Category groups are predefined for
+the MVP, while category records within those groups are user-owned and extensible.
 
 ## Transaction Types and Signs
 
@@ -185,6 +239,21 @@ Items link to a filtered transaction list, the affected budget month, or the aff
 
 - Decimal input accepts no more than two fractional digits for USD.
 - Conversion to minor units is exact and occurs before persistence.
-- Stored values must remain inside the documented 64-bit range.
-- Zero-value transactions are rejected.
+- A decimal input uses ordinary base-10 notation with no exponent, currency
+  symbol, grouping separator, `NaN`, or infinity. After exact conversion, it must
+  be an integer inside the documented JavaScript-safe application range.
+- API minor-unit values must be integer JSON numbers; fractional numbers and
+  numeric strings are rejected.
+- Transaction form amounts must be greater than zero; Steward applies the stored
+  sign from the transaction type. A stored transaction amount must be non-zero
+  and have the canonical sign for its type.
+- Asset opening balances and positive amounts owed entered for liabilities may be
+  zero. Steward applies the liability sign before persistence.
+- Investment snapshot values may be zero. Budget allocations may be zero but may
+  not be negative.
+- Derived balances, spending, remaining values, and totals may be zero or negative
+  where their documented formulas permit it.
+- Every monetary operand and result is range-checked. A request that would overflow
+  the application range is rejected atomically with a validation or domain error;
+  values are never clamped or wrapped.
 - Domain calculations use integers until display formatting.

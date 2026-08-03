@@ -64,6 +64,14 @@ Names are finalized with the generated Better Auth schema to avoid ambiguity bet
 - Transaction type and amount sign agree, and transaction dates do not precede
   the parent account's opening-balance date.
 - Currency is `USD` in the MVP.
+- Monetary columns use signed 64-bit storage and application/database constraints
+  keep persisted public values within the JavaScript safe-integer range defined
+  in [financial rules](../domain/financial-rules.md).
+- Account type, transaction type, category group, and category applicability use
+  the closed values defined in [financial rules](../domain/financial-rules.md).
+- Business dates use PostgreSQL `date` semantics without timezone conversion;
+  budget months use `date` values constrained to the first day; audit instants
+  use `timestamptz` and are written by the server.
 - Financial-account types are restricted to `checking`, `savings`, `cash`,
   `credit_card`, `loan`, and `investment`.
 - One investment balance snapshot exists per account and date.
