@@ -66,9 +66,13 @@ Canonical signs:
 Investment accounts use manual balance snapshots rather than transaction-derived balances:
 
 - A snapshot contains a signed value and an `asOfDate`.
-- The newest snapshot is the current investment value.
+- The newest snapshot is the current investment value; when none exists, the account's opening balance is current.
 - Editing a current investment value creates or replaces the snapshot for that date; it does not rewrite the original opening value.
+- Investment accounts do not accept transactions in the MVP.
 - Holdings, prices, trades, and performance calculations are deferred.
+
+Account fields, supported types, and snapshot constraints are defined in
+[financial accounts](financial-accounts.md).
 
 ## Dashboard Metrics
 

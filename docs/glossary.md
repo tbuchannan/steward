@@ -14,8 +14,9 @@
 - **Credit debt:** The positive magnitude of balances owed across active credit-card accounts.
 - **Demo identity:** A temporary authenticated user created for one visitor's demo experience.
 - **Financial account:** A user-owned checking, savings, credit-card, cash, loan, or investment record.
+- **Investment balance snapshot:** A manual value for one investment account on one date. At most one snapshot exists per account and date.
 - **Minor units:** The smallest unit of a currency. For USD, 100 minor units equals one dollar.
-- **Opening balance:** The balance of a financial account immediately before Steward-managed transactions begin.
+- **Opening balance:** The baseline value of a financial account when tracking in Steward begins.
 - **Posted transaction:** A transaction included in balances and financial summaries.
 - **Refund:** A standalone positive record that reduces expense activity for a category. It does not count as income.
 - **Regular user:** A person who registered with an email address and password.

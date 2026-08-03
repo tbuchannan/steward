@@ -8,28 +8,32 @@ Steward is in discovery and architecture. Documents marked **Accepted** define c
 
 1. [Product brief](product/product-brief.md)
 2. [MVP requirements](product/mvp-requirements.md)
-3. [Financial rules](domain/financial-rules.md)
-4. [Demo experience](product/demo-experience.md)
-5. [UX sitemap](ux/sitemap.md) and [screen designs](ux/design/screens.md)
-6. [Architecture overview](architecture/overview.md)
-7. [Testing strategy](quality/testing-strategy.md)
-8. [Requirements traceability](quality/requirements-traceability.md)
+3. [Financial domain model](domain/financial-model.md)
+4. [Financial rules](domain/financial-rules.md)
+5. [Demo experience](product/demo-experience.md)
+6. [UX sitemap](ux/sitemap.md) and [screen designs](ux/design/screens.md)
+7. [Architecture overview](architecture/overview.md)
+8. [Testing strategy](quality/testing-strategy.md)
+9. [Requirements traceability](quality/requirements-traceability.md)
 
 ## Sources of Truth
 
-| Subject                                | Canonical document                                                         |
-| -------------------------------------- | -------------------------------------------------------------------------- |
-| Product purpose and users              | [Product brief](product/product-brief.md)                                  |
-| MVP scope and acceptance criteria      | [MVP requirements](product/mvp-requirements.md)                            |
-| Deferred and excluded scope            | [Post-MVP](product/post-mvp.md)                                            |
-| Financial calculations and terminology | [Financial rules](domain/financial-rules.md)                               |
+| Subject                                | Canonical document                                         |
+| -------------------------------------- | ---------------------------------------------------------- |
+| Product purpose and users              | [Product brief](product/product-brief.md)                  |
+| MVP scope and acceptance criteria      | [MVP requirements](product/mvp-requirements.md)            |
+| Deferred and excluded scope            | [Post-MVP](product/post-mvp.md)                            |
+| Financial entities and boundaries      | [Financial domain model](domain/financial-model.md)        |
+| Financial calculations and terminology | [Financial rules](domain/financial-rules.md)               |
+| Financial transaction model            | [Financial transactions](domain/financial-transactions.md) |
+| Financial account model                | [Financial accounts](domain/financial-accounts.md)         |
+| Archival, deletion, and reset behavior | [Data lifecycle](domain/data-lifecycle.md)                 |
 | Category and budget model              | [Financial categories and budgets](domain/financial-categories-budgets.md) |
-| Archival, deletion, and reset behavior | [Data lifecycle](domain/data-lifecycle.md)                                 |
-| Observable user behavior               | [UX documentation](ux/sitemap.md)                                          |
-| Current system design                  | [Architecture overview](architecture/overview.md)                          |
-| Reasons for architecture choices       | [Architecture decisions](architecture/decisions/README.md)                 |
-| Verification approach                  | [Testing strategy](quality/testing-strategy.md)                            |
-| Deployment and recovery                | [Operations documentation](operations/deployment.md)                       |
+| Observable user behavior               | [UX documentation](ux/sitemap.md)                          |
+| Current system design                  | [Architecture overview](architecture/overview.md)          |
+| Reasons for architecture choices       | [Architecture decisions](architecture/decisions/README.md) |
+| Verification approach                  | [Testing strategy](quality/testing-strategy.md)            |
+| Deployment and recovery                | [Operations documentation](operations/deployment.md)       |
 
 If two documents disagree, the canonical document in this table wins.
 

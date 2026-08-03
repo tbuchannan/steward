@@ -11,11 +11,12 @@ A resource ID by itself is never authorization.
 
 ## Accounts
 
-- An account with transaction history is archived, not deleted.
-- Archived accounts remain referenced by historical transactions.
+- An account with transaction or investment snapshot history is archived, not deleted.
+- Archived accounts remain referenced by historical transactions and investment balance snapshots.
 - Archived accounts are excluded from default lists, selectors, available-cash calculations, and other active summaries.
 - An explicit archived view allows inspection.
-- Permanent deletion may be supported only for an account with no dependent history. It is not an MVP requirement.
+- Archiving an account does not mutate its balances, dates, transactions, or snapshots.
+- Permanent deletion may be supported only for an account with no dependent transaction or snapshot history. It is not an MVP requirement.
 
 ## Transactions
 

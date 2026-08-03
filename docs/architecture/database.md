@@ -13,11 +13,17 @@
 - Better Auth-generated identifiers remain authoritative for authentication records.
 - Money uses signed 64-bit integer minor units.
 - Transaction-derived account balance is opening balance plus posted transactions.
-- Investment value comes from the latest dated manual snapshot.
+- Investment value comes from the latest dated manual snapshot, falling back to
+  the opening balance when no snapshot exists.
 
 Financial meaning is defined in [financial rules](../domain/financial-rules.md).
 Category, budget, and allocation fields and relationships are defined in
 [financial categories and budgets](../domain/financial-categories-budgets.md).
+Transaction fields and relationships are defined in
+[financial transactions](../domain/financial-transactions.md).
+Account fields and relationships are defined in
+[financial accounts](../domain/financial-accounts.md).
+Logical entity responsibilities and aggregate boundaries are defined in the [financial domain model](../domain/financial-model.md).
 
 ## Initial Model
 
@@ -26,7 +32,8 @@ Better Auth user
 ├── authentication accounts
 ├── sessions
 ├── financial accounts
-│   └── transactions
+│   ├── transactions
+│   └── investment balance snapshots
 ├── categories
 ├── budgets
 │   └── budget allocations ── category
@@ -54,7 +61,12 @@ Names are finalized with the generated Better Auth schema to avoid ambiguity bet
 - Budget months are first-of-month PostgreSQL `date` values.
 - Allocation amounts are non-negative signed 64-bit integer minor units.
 - Transaction amounts are non-zero.
+- Transaction type and amount sign agree, and transaction dates do not precede
+  the parent account's opening-balance date.
 - Currency is `USD` in the MVP.
+- Financial-account types are restricted to `checking`, `savings`, `cash`,
+  `credit_card`, `loan`, and `investment`.
+- One investment balance snapshot exists per account and date.
 - Category names are case-insensitively unique within a predefined group for one user.
 - Foreign-key delete actions preserve history according to [data lifecycle](../domain/data-lifecycle.md).
 
@@ -63,6 +75,8 @@ Names are finalized with the generated Better Auth schema to avoid ambiguity bet
 - The session-derived user ID is included in every protected root query.
 - Child ownership is proved through a join or parent constraint.
 - Ordering includes a stable unique tie-breaker.
+- The default transaction order is transaction date descending, creation
+  timestamp descending, then ID descending.
 - Search and sorting use allowlisted expressions.
 - Archived records are excluded unless explicitly requested.
 
