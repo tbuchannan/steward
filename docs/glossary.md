@@ -1,7 +1,7 @@
 # Glossary
 
 **Status:** Accepted
-**Last verified:** 2026-07-30
+**Last verified:** 2026-08-03
 
 - **Allocation:** The amount assigned to a budget category for one month.
 - **Authenticated user:** A person or temporary demo identity with a valid Better Auth session.
@@ -14,11 +14,14 @@
 - **Credit debt:** The positive magnitude of balances owed across active credit-card accounts.
 - **Demo identity:** A temporary authenticated user created for one visitor's demo experience.
 - **Financial account:** A user-owned checking, savings, credit-card, cash, loan, or investment record.
+- **Investment balance snapshot:** A manual value for one investment account on one date. At most one snapshot exists per account and date.
 - **Minor units:** The smallest unit of a currency. For USD, 100 minor units equals one dollar.
-- **Opening balance:** The balance of a financial account immediately before Steward-managed transactions begin.
+- **Opening balance:** The baseline value of a financial account when tracking in Steward begins.
 - **Posted transaction:** A transaction included in balances and financial summaries.
 - **Refund:** A standalone positive record that reduces expense activity for a category. It does not count as income.
 - **Regular user:** A person who registered with an email address and password.
+- **Unbudgeted spending:** Categorized expense and refund activity for a month whose category has no allocation in that month's budget.
+- **Uncategorized spending:** Expense and refund activity with no category assignment; it remains separate from budget spending until categorized.
 - **Transfer:** A linked record representing movement between two financial accounts. Steward would not execute the movement. Transfer records are not part of the MVP.
 - **Unbudgeted spending:** Categorized expense activity in a month for a category without a budget allocation.
 - **User timezone:** The IANA timezone used to determine the current month and display timestamps. It does not reinterpret date-only transaction values.

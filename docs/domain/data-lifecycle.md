@@ -1,7 +1,7 @@
 # Data Lifecycle
 
 **Status:** Accepted
-**Last verified:** 2026-07-30
+**Last verified:** 2026-08-03
 
 ## Ownership
 
@@ -11,11 +11,12 @@ A resource ID by itself is never authorization.
 
 ## Accounts
 
-- An account with transaction history is archived, not deleted.
-- Archived accounts remain referenced by historical transactions.
+- An account with transaction or investment snapshot history is archived, not deleted.
+- Archived accounts remain referenced by historical transactions and investment balance snapshots.
 - Archived accounts are excluded from default lists, selectors, available-cash calculations, and other active summaries.
 - An explicit archived view allows inspection.
-- Permanent deletion may be supported only for an account with no dependent history. It is not an MVP requirement.
+- Archiving an account does not mutate its balances, dates, transactions, or snapshots.
+- Permanent deletion may be supported only for an account with no dependent transaction or snapshot history. It is not an MVP requirement.
 
 ## Transactions
 
@@ -26,8 +27,10 @@ A resource ID by itself is never authorization.
 ## Categories
 
 - Removing a category from a monthly budget removes only its allocation.
-- A category referenced by transactions cannot be permanently deleted.
-- Referenced categories may be archived and remain visible on historical transactions.
+- A category referenced by transactions or budget allocations cannot be permanently deleted.
+- Referenced categories may be archived and remain visible on historical transactions and saved allocations.
+- Archived categories are excluded from selectors for new transactions and allocations but continue to contribute to historical and current calculations.
+- Archiving a category does not remove allocations or uncategorize transactions.
 
 ## Budgets
 

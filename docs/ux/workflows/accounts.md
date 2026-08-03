@@ -24,7 +24,7 @@ Select Add account
 → Close editor and show the new account
 ```
 
-For asset accounts, balances are entered as owned value. For credit cards and loans, balances are entered as a positive amount owed. Investment accounts accept a manually valued balance snapshot. Holdings and live prices are not shown.
+For asset accounts, balances are entered as owned value. For credit cards and loans, balances are entered as a positive amount owed. Investment accounts accept a manual opening valuation; later value edits create or update dated snapshots. Holdings and live prices are not shown.
 
 ## Edit
 
