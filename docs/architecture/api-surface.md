@@ -42,8 +42,7 @@ are defined in [public API contracts](api-contracts.md).
 - Collection responses use an `items` array. Paginated collections also return
   `page`, `pageSize`, `totalItems`, and `totalPages`.
 - Public resource shapes omit ownership keys and internal persistence details.
-  Expected errors use the shared error contract in
-  [backend architecture](backend.md#error-contract).
+  Expected errors use [public API errors](api-errors.md).
 
 ## Resource Summary
 

@@ -1,7 +1,7 @@
 # Backend Architecture
 
 **Status:** Accepted
-**Last verified:** 2026-08-03
+**Last verified:** 2026-08-06
 
 ## Responsibilities
 
@@ -78,23 +78,12 @@ Transaction routes mutate only Steward-owned records. They do not integrate with
 
 ## Error Contract
 
-```json
-{
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "The submitted data is invalid.",
-    "details": {
-      "fields": {
-        "amount": ["Enter a valid amount."]
-      }
-    }
-  }
-}
-```
-
-Expected application errors map to stable codes and HTTP statuses. Raw PostgreSQL, Drizzle, Zod, stack, cookie, or secret values never appear in public responses.
-
-Authorization failures use a consistent concealment policy: a user-owned resource not accessible to the authenticated user returns `404`, while a missing or invalid session returns `401`.
+All Steward-owned endpoints use the envelope, stable codes, HTTP mappings,
+validation details, ownership concealment, safe translation, and request
+correlation rules defined in [public API errors](api-errors.md). In particular,
+a user-owned resource not accessible to the authenticated user returns the same
+`404 RESOURCE_NOT_FOUND` response as an absent resource, while a missing or
+invalid session returns `401 AUTHENTICATION_REQUIRED`.
 
 ## Transactions
 
