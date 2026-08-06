@@ -16,6 +16,9 @@ authorization and the application routes below.
 
 ## Conventions
 
+Field-level request, response, validation, strictness, and representation rules
+are defined in [public API contracts](api-contracts.md).
+
 - Application routes use the `/api` base path; Better Auth uses `/api/auth/*`.
 - Requests and responses use JSON except successful deletes, which return no
   body.

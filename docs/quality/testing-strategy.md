@@ -57,6 +57,10 @@ Tests are selected by risk. Financial correctness, authorization, transactional 
 - Demo reset is restricted to the current demo identity
 - Demo seed and reset roll back on forced failure
 
+Contract tests and Fastify route tests follow the accepted matrix in
+[public API contracts](../architecture/api-contracts.md#verification-requirements),
+including strict request objects and allowlisted response serialization.
+
 ## Component Strategy
 
 Prefer accessible queries by role, label, and name. Test user behavior rather than component internals, Tailwind classes, or large snapshots. Mock the HTTP boundary for isolated component tests; do not mock Drizzle for database integration tests.

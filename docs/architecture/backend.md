@@ -41,6 +41,8 @@ Route schema
 ```
 
 - Route schemas validate parameters, query strings, bodies, and documented responses.
+- Request and response schemas follow the strictness, omission, serialization,
+  and primitive rules in [public API contracts](api-contracts.md).
 - Handlers translate HTTP details and call one service operation.
 - Services enforce business rules and transaction boundaries.
 - Query functions express database access and always include ownership where required.
@@ -68,8 +70,9 @@ Representative application areas:
 ```
 
 The [initial API surface](api-surface.md) defines the MVP routes, operations,
-success responses, and explicit exclusions. Implemented public Zod schemas
-become the field-level route specification as each endpoint is built.
+success responses, and explicit exclusions. [Public API contracts](api-contracts.md)
+defines their shared boundary conventions. Implemented public Zod schemas become
+the field-level route specification as each endpoint is built.
 
 Transaction routes mutate only Steward-owned records. They do not integrate with payment rails, banks, brokerages, or money-movement providers.
 

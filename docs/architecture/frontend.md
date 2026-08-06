@@ -48,7 +48,11 @@ Do not copy server data into a global client store without a demonstrated need.
 
 ## API Contracts
 
-`packages/contracts` contains public Zod request, response, pagination, enum, and error schemas. It does not expose Drizzle tables, Better Auth internals, or server configuration.
+`packages/contracts` contains public Zod request, response, pagination, enum, and
+error schemas. It does not expose Drizzle tables, Better Auth internals, or
+server configuration. Schema ownership, inferred-type usage, strictness, and
+public representations follow
+[public API contracts](api-contracts.md).
 
 The API client:
 
