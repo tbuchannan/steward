@@ -74,6 +74,11 @@ success responses, and explicit exclusions. [Public API contracts](api-contracts
 defines their shared boundary conventions. Implemented public Zod schemas become
 the field-level route specification as each endpoint is built.
 
+Paginated route schemas, query services, and response metadata follow
+[API collection queries](api-collections.md). Query services apply ownership
+and filters before counting, expand only allowlisted sort values, and keep the
+count and page read consistent within one response.
+
 Transaction routes mutate only Steward-owned records. They do not integrate with payment rails, banks, brokerages, or money-movement providers.
 
 ## Error Contract
