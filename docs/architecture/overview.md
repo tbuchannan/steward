@@ -99,6 +99,8 @@ User action
 
 - [MVP requirements](../product/mvp-requirements.md) own product scope.
 - [Financial rules](../domain/financial-rules.md) own calculations.
+- [Authentication architecture](authentication.md) owns the browser, session,
+  and application authorization boundaries.
 - Zod validates runtime boundaries; TypeScript alone is not validation.
 - Better Auth determines identity; application queries enforce ownership.
 - Secrets remain server-side.
