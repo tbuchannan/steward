@@ -57,12 +57,16 @@ Tests are selected by risk. Financial correctness, authorization, transactional 
 - Error responses omit raw validation, database, stack, cookie, and secret data
 - Request IDs correlate failures without becoming public error content
 - Response schemas omit internal fields
+- Pagination metadata, bounds, filtering, search, and stable sort tie-breakers
+  follow the accepted collection-query contract
 - Demo reset is restricted to the current demo identity
 - Demo seed and reset roll back on forced failure
 
 Contract tests and Fastify route tests follow the accepted matrix in
 [public API contracts](../architecture/api-contracts.md#verification-requirements),
 including strict request objects and allowlisted response serialization.
+Collection-query coverage additionally follows
+[API collection queries](../architecture/api-collections.md#verification-requirements).
 Error-path coverage follows
 [public API errors](../architecture/api-errors.md#verification-requirements).
 

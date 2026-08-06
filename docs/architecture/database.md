@@ -129,7 +129,8 @@ foreign-key actions.
 - Ordering includes a stable unique tie-breaker.
 - The default transaction order is transaction date descending, creation
   timestamp descending, then ID descending.
-- Search and sorting use allowlisted expressions.
+- Search, filtering, pagination, and alternate sorting follow the allowlisted
+  [API collection-query contract](api-collections.md).
 - Archived records are excluded unless explicitly requested.
 
 ## Migrations

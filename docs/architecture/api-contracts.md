@@ -8,8 +8,10 @@
 This document defines the shared request, response, and runtime-validation
 conventions for Steward-owned HTTP endpoints. The
 [initial API surface](api-surface.md) owns which routes exist and their
-high-level behavior; exported Zod schemas in `packages/contracts` are the
-field-level specification as each route is implemented.
+high-level behavior; [API collection queries](api-collections.md) owns
+pagination, filtering, search, and sorting; exported Zod schemas in
+`packages/contracts` are the field-level specification as each route is
+implemented.
 
 Better Auth owns the contracts under `/api/auth/*`. Steward does not copy or
 partially redefine those schemas, although application routes still validate
@@ -97,6 +99,9 @@ these stable shapes:
 - A command returns its documented result object or current resource
   representation.
 - A successful deletion with status `204` has no body.
+
+The metadata semantics, bounds, and empty-page behavior for paginated
+collections are defined in [API collection queries](api-collections.md).
 
 Response object schemas are allowlists. During serialization, undeclared
 properties are stripped recursively rather than sent to the client. Declared

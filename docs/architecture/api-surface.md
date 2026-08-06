@@ -17,7 +17,9 @@ authorization and the application routes below.
 ## Conventions
 
 Field-level request, response, validation, strictness, and representation rules
-are defined in [public API contracts](api-contracts.md).
+are defined in [public API contracts](api-contracts.md). Pagination, filtering,
+search, sorting, and collection query errors are defined in
+[API collection queries](api-collections.md).
 
 - Application routes use the `/api` base path; Better Auth uses `/api/auth/*`.
 - Requests and responses use JSON except successful deletes, which return no
@@ -164,11 +166,12 @@ unused CRUD.
 | `PATCH /api/transactions/:transactionId`  | Protected | `200`   | Updated transaction detail                                    |
 | `DELETE /api/transactions/:transactionId` | Protected | `204`   | No body                                                       |
 
-The collection accepts validated `page`, `pageSize`, `search`, `accountId`,
-`categoryId`, `type`, date-range, and approved sort parameters. Defaults follow
-the canonical transaction ordering. Mutations record information only and
-return after all affected derived views are transactionally consistent; they
-never initiate a payment or transfer.
+The collection accepts the exact validated query contract in
+[API collection queries](api-collections.md#transaction-collection), including
+`q`, `accountId`, `category`, `type`, inclusive date bounds, approved sorting,
+and pagination. Defaults follow the canonical transaction ordering. Mutations
+record information only and return after all affected derived views are
+transactionally consistent; they never initiate a payment or transfer.
 
 ## Monthly Budgets
 

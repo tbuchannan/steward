@@ -186,14 +186,21 @@ parameters:
 | `page`      | Results page                     | A positive integer                                   | `1`            |
 
 Defaults and empty values are omitted from the canonical URL. The page size is
-fixed by the application and is not URL-owned in the MVP. Changing `q`, a
-filter, or `sort` resets `page` to `1` and therefore removes it from the URL.
+fixed at the API default of 25 and is not URL-owned in the MVP. Validated URL
+parameters map directly to the identically named API query parameters; the
+client omits `pageSize`. Changing `q`, a filter, or `sort` resets `page` to `1`
+and therefore removes it from the URL.
 
 Invalid search parameters resolve to their documented defaults and the URL is
 replaced with its canonical form without adding a browser-history entry. When
 both dates are valid but `from` is later than `to`, both date filters are
 discarded. A valid filter that matches no accessible records shows the filtered
 empty state; it does not make the route invalid.
+
+These are browser canonicalization rules. The API remains strict: it rejects
+invalid, empty, repeated, unknown, unsupported, or inverted-range query values
+as documented in
+[API collection queries](../architecture/api-collections.md#transaction-collection).
 
 A malformed or non-positive `page` value resolves to page `1`. When a positive
 page value exceeds the last available page, Steward replaces it with the last
