@@ -1,7 +1,7 @@
 # Testing Strategy
 
 **Status:** Accepted
-**Last verified:** 2026-07-30
+**Last verified:** 2026-08-06
 
 ## Principle
 
@@ -53,6 +53,9 @@ Tests are selected by risk. Financial correctness, authorization, transactional 
 - Another user's resource behaves as not found
 - Client-provided user IDs do not change identity
 - Invalid input uses the public error contract
+- Expected and unexpected failures use the documented status and stable code
+- Error responses omit raw validation, database, stack, cookie, and secret data
+- Request IDs correlate failures without becoming public error content
 - Response schemas omit internal fields
 - Demo reset is restricted to the current demo identity
 - Demo seed and reset roll back on forced failure
@@ -60,6 +63,8 @@ Tests are selected by risk. Financial correctness, authorization, transactional 
 Contract tests and Fastify route tests follow the accepted matrix in
 [public API contracts](../architecture/api-contracts.md#verification-requirements),
 including strict request objects and allowlisted response serialization.
+Error-path coverage follows
+[public API errors](../architecture/api-errors.md#verification-requirements).
 
 ## Component Strategy
 

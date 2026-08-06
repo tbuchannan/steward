@@ -111,7 +111,8 @@ nullable relationship. Arrays are returned as empty arrays rather than omitted
 or `null`. Successful JSON responses do not contain properties whose value is
 `undefined`.
 
-Expected non-success responses use the shared envelope:
+Expected non-success responses use the envelope and status mappings defined in
+[public API errors](api-errors.md):
 
 ```json
 {
@@ -128,10 +129,10 @@ Expected non-success responses use the shared envelope:
 ```
 
 `error.code` is a stable machine-readable uppercase identifier and `message`
-is safe user-facing text. `details` is optional and its schema is specific to
-the error code. Field keys use public request paths, never database column names
-or raw Zod issue paths. Raw framework, database, authentication, stack, cookie,
-and secret values are never included.
+is safe user-facing text. Validation field keys use public request paths, never
+database column names or raw Zod issue paths. The error contract owns the
+allowed codes, optional details schema, safe translation rules, concealment
+policy, and separation of request correlation from public content.
 
 ## Canonical Public Values
 
@@ -203,6 +204,9 @@ to its public schema, invalid requests use the public error envelope, successful
 responses match the documented schema, and intentionally returned internal
 properties cannot cross serialization. Protected-resource tests separately
 prove session-derived ownership and the `401`/concealed-`404` policy.
+
+Error schema and route coverage follows the matrix in
+[public API errors](api-errors.md#verification-requirements).
 
 For each documented success or expected error status, the Fastify route declares
 the corresponding response schema. A route is not complete if only its
