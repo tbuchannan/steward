@@ -16,8 +16,9 @@ implementation validation.
 5. [Demo experience](product/demo-experience.md)
 6. [UX sitemap](ux/sitemap.md) and [screen designs](ux/design/screens.md)
 7. [Architecture overview](architecture/overview.md)
-8. [Testing strategy](quality/testing-strategy.md)
-9. [Requirements traceability](quality/requirements-traceability.md)
+8. [Initial API surface and frontend workflow mapping](architecture/api-surface.md)
+9. [Testing strategy](quality/testing-strategy.md)
+10. [Requirements traceability](quality/requirements-traceability.md)
 
 ## Sources of Truth
 

@@ -14,6 +14,11 @@ The surface covers the accepted MVP requirements. Better Auth continues to own
 its authentication request and response details, while Steward owns financial
 authorization and the application routes below.
 
+The [UX sitemap](../ux/sitemap.md) owns browser routes and URL state. The
+workflow mapping in this document records how those browser routes use the HTTP
+surface without turning dialogs, sheets, or other temporary UI state into
+additional URLs.
+
 ## Conventions
 
 Field-level request, response, validation, strictness, and representation rules
@@ -56,7 +61,7 @@ search, sorting, and collection query errors are defined in
 | Preferences        | Persist the current user's theme and timezone                                                 | Read and update                   |
 | Dashboard          | Return one computed current-month overview                                                    | Read only                         |
 | Financial accounts | Manage account metadata, lifecycle, calculated balances, and investment valuations            | Collection, detail, and mutations |
-| Categories         | Supply reusable user-owned classifications and budget groups                                  | Collection read only for MVP      |
+| Categories         | Supply and create reusable user-owned classifications within predefined groups                | Collection read and create        |
 | Transactions       | Manage manually recorded financial activity and user-wide search                              | Collection, detail, and mutations |
 | Monthly budgets    | Return and atomically save one month's allocations and computed progress                      | Detail read and replacement       |
 
@@ -64,6 +69,35 @@ Dashboard totals, account balances, budget progress, unbudgeted spending, and
 attention items are derived response data, not independently mutable resources.
 Budget allocations and investment valuations are children of their owning
 aggregate rather than top-level routes.
+
+## Frontend Workflow Mapping
+
+| Frontend route or state      | User workflow                                      | HTTP operations                                                                                                                                 |
+| ---------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/login`                     | Sign in or enter an isolated demo                  | Better Auth `POST /api/auth/sign-in/email`; Steward `POST /api/demo`                                                                            |
+| `/register`                  | Register and persist the detected initial timezone | Better Auth `POST /api/auth/sign-up/email`, then `PATCH /api/preferences` using the established session                                         |
+| Protected application layout | Resolve the session and protect all child routes   | Better Auth `GET /api/auth/get-session`; every Steward data request independently validates the session                                         |
+| `/dashboard`                 | Review current summaries and attention items       | `GET /api/dashboard`                                                                                                                            |
+| `/accounts`                  | Browse active or archived accounts; create account | `GET /api/accounts`; dialog or sheet submission uses `POST /api/accounts`                                                                       |
+| `/accounts/:accountId`       | Review, edit, or archive one account               | `GET /api/accounts/:accountId`, `PATCH /api/accounts/:accountId`, `POST /api/accounts/:accountId/archive`, and filtered `GET /api/transactions` |
+| Account detail editor        | Record a dated investment valuation                | `PUT /api/accounts/:accountId/valuations/:asOfDate`                                                                                             |
+| `/transactions`              | Browse, search, filter, sort, and paginate         | `GET /api/transactions`, with selector data from `GET /api/accounts` and `GET /api/categories`                                                  |
+| Transaction editor or dialog | Create, edit, or delete recorded activity          | `POST /api/transactions`, `GET`/`PATCH`/`DELETE /api/transactions/:transactionId`                                                               |
+| `/budgets/:year/:month`      | View or atomically save one monthly budget         | `GET`/`PUT /api/budgets/:month`; the frontend combines the validated year and month segments as `YYYY-MM`                                       |
+| Budget editor                | Select or create an expense-capable category       | `GET /api/categories` and `POST /api/categories`; the resulting category ID may be included in the next budget replacement                      |
+| `/settings`                  | Read identity, update preferences, or reset demo   | Session data, `GET`/`PATCH /api/preferences`, `GET /api/demo`, and `POST /api/demo/reset`                                                       |
+| Authenticated user menu      | Sign out                                           | Better Auth `POST /api/auth/sign-out`                                                                                                           |
+
+Editors and confirmations listed above are route-free UI state as defined by
+the sitemap. Opening them does not imply an additional frontend or API route.
+After a successful mutation, the client invalidates or refreshes each affected
+read model so the consistency requirements are observable without a browser
+reload.
+
+Responsive presentation, accessible interaction, generic async states,
+deployment, and documentation operations do not require additional business
+endpoints. Their requirement coverage remains in
+[requirements traceability](../quality/requirements-traceability.md).
 
 ## Health
 
@@ -105,6 +139,11 @@ demo cleanup is an idempotent scheduled service operation, not a public HTTP
 route. These boundaries cover `DEMO-01` through `DEMO-05` without exposing
 internal lifecycle controls.
 
+Demo creation accepts the browser-detected IANA timezone needed to create the
+initial preference, or applies the canonical fallback when detection is
+unavailable. This is application input; it does not become an authentication
+field or expose demo metadata.
+
 ## Preferences
 
 | Method and path          | Access    | Success | High-level response                                                      |
@@ -114,7 +153,10 @@ internal lifecycle controls.
 
 Identity name and email come from the Better Auth session response and remain
 read-only in the MVP. Preferences are separate from the financial dataset, so
-demo reset preserves them.
+demo reset preserves them. After registration establishes a session, the web
+application uses the preference update to persist its detected initial timezone;
+the client submits the canonical fallback when browser detection is unavailable,
+and the API validates the resulting IANA identifier.
 
 ## Dashboard
 
@@ -136,7 +178,6 @@ representation. No dashboard mutation route exists.
 | `GET /api/accounts/:accountId`                      | Protected | `200`   | Account metadata, calculated balance or current investment valuation, and lifecycle state                                           |
 | `PATCH /api/accounts/:accountId`                    | Protected | `200`   | Updated account detail after validating editable metadata and historical effects                                                    |
 | `POST /api/accounts/:accountId/archive`             | Protected | `200`   | Archived account detail                                                                                                             |
-| `POST /api/accounts/:accountId/restore`             | Protected | `200`   | Restored account detail                                                                                                             |
 | `PUT /api/accounts/:accountId/valuations/:asOfDate` | Protected | `200`   | Upserted investment valuation for the date                                                                                          |
 
 Related activity uses `GET /api/transactions?accountId=...`, keeping transaction
@@ -146,15 +187,17 @@ account deletion is deferred.
 
 ## Categories
 
-| Method and path       | Access    | Success | High-level response                                                                                              |
-| --------------------- | --------- | ------- | ---------------------------------------------------------------------------------------------------------------- |
-| `GET /api/categories` | Protected | `200`   | `{ items }` containing categories in canonical group order; supports active/all status and applicability filters |
+| Method and path        | Access    | Success | High-level response                                                                                              |
+| ---------------------- | --------- | ------- | ---------------------------------------------------------------------------------------------------------------- |
+| `GET /api/categories`  | Protected | `200`   | `{ items }` containing categories in canonical group order; supports active/all status and applicability filters |
+| `POST /api/categories` | Protected | `201`   | Created category after validating its name, predefined group, applicability, and owner-scoped uniqueness         |
 
 The collection supplies transaction and budget selectors, including historical
-archived references when requested. The accepted MVP requires seeded reusable
-categories but has no category-management workflow, so category create, detail,
-edit, archive, restore, and delete routes are deferred rather than exposing
-unused CRUD.
+archived references when requested. Creation supports the accepted inline
+budget workflow and produces a reusable user-owned category; budget allocation
+still occurs only when the complete budget is saved. Category detail, edit,
+archive, restore, and delete routes are deferred rather than exposing unused
+CRUD.
 
 ## Transactions
 
@@ -195,7 +238,8 @@ The initial API has no routes for:
 - bank, brokerage, Plaid, CSV, price, holding, or security integrations;
 - pending, cleared, reconciled, or linked transaction states;
 - budget rollover, carryover, or copying a prior month;
-- category-management UI operations;
+- account restoration and category detail, editing, archival, restoration, or
+  deletion;
 - password recovery, email verification or changes, MFA, social login, or
   session management;
 - profile editing, multiple currencies, shared workspaces, or public third-party
@@ -208,16 +252,32 @@ decision first.
 
 ## Requirement Coverage
 
-| Area                               | Covered requirements                              |
-| ---------------------------------- | ------------------------------------------------- |
-| Authentication and ownership       | `AUTH-01` through `AUTH-06`, `QUAL-01`, `QUAL-02` |
-| Demo                               | `DEMO-01` through `DEMO-05`, `SET-04`             |
-| Dashboard                          | `DASH-01` through `DASH-05`                       |
-| Accounts and investment valuations | `ACCT-01` through `ACCT-06`                       |
-| Transactions and category lookup   | `TXN-01` through `TXN-08`                         |
-| Monthly budgets                    | `BUD-01` through `BUD-09`                         |
-| Identity and preferences           | `SET-01` through `SET-05`, `SHELL-03`             |
+| Area                                | Covered requirements                              |
+| ----------------------------------- | ------------------------------------------------- |
+| Authentication and ownership        | `AUTH-01` through `AUTH-06`, `QUAL-01`, `QUAL-02` |
+| Demo                                | `DEMO-01` through `DEMO-05`, `SET-04`             |
+| Dashboard                           | `DASH-01` through `DASH-05`                       |
+| Accounts and investment valuations  | `ACCT-01` through `ACCT-06`                       |
+| Transactions and category lookup    | `TXN-01` through `TXN-08`                         |
+| Monthly budgets and category create | `BUD-01` through `BUD-09`                         |
+| Identity and preferences            | `SET-01` through `SET-05`, `SHELL-03`             |
 
 This surface is consistent with the accepted financial entity model and does
 not make derived values, internal cleanup operations, or deferred capabilities
 publicly mutable.
+
+## Contract Review Result
+
+The combined route and API review resolved two scope mismatches:
+
+- Category creation is included only where the accepted budget workflow needs
+  it. Broader category management remains deferred.
+- Account restoration is not required by `ACCT-01` through `ACCT-06` and has no
+  accepted frontend workflow, so it is not part of the initial API.
+
+The review also confirms that browser budget segments map to the API's canonical
+`YYYY-MM` value, transaction URL state maps to the strict collection query, and
+frontend guards never replace session validation or owner-scoped authorization.
+The contract, collection, and error documents remain authoritative for their
+respective conventions. No open route-surface decision remains before field-
+level schemas are implemented.

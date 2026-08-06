@@ -1,7 +1,7 @@
 # MVP Requirements
 
 **Status:** Accepted
-**Last verified:** 2026-07-30
+**Last verified:** 2026-08-06
 
 This document is the authoritative source for MVP scope. Other documents reference these IDs instead of redefining scope.
 
@@ -67,7 +67,7 @@ All MVP transactions are immediately posted. Pending, cleared, reconciled, linke
 
 - **BUD-01 — Monthly view:** A user can view a budget for a selected calendar month and navigate between months.
 - **BUD-02 — Category organization:** Budget categories are displayed in groups.
-- **BUD-03 — Manage allocations:** A user can add a category to a budget and edit or remove its monthly allocation.
+- **BUD-03 — Manage allocations:** A user can add an existing category to a budget, create a category while editing a budget, and edit or remove its monthly allocation.
 - **BUD-04 — Progress:** The budget shows allocated, spent, remaining, and overspent values using [financial rules](../domain/financial-rules.md).
 - **BUD-05 — Save or cancel:** A user can save a valid set of edits or cancel all unsaved edits.
 - **BUD-06 — Dashboard consistency:** Saved budget changes appear in dashboard summaries without a manual reload.
