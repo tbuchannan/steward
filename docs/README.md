@@ -36,6 +36,7 @@ implementation validation.
 | Observable user behavior               | [UX documentation](ux/sitemap.md)                                          |
 | Current system design                  | [Architecture overview](architecture/overview.md)                          |
 | Initial HTTP API surface               | [Initial API surface](architecture/api-surface.md)                         |
+| Public API contract conventions        | [Public API contracts](architecture/api-contracts.md)                      |
 | Reasons for architecture choices       | [Architecture decisions](architecture/decisions/README.md)                 |
 | Verification approach                  | [Testing strategy](quality/testing-strategy.md)                            |
 | Deployment and recovery                | [Operations documentation](operations/deployment.md)                       |
