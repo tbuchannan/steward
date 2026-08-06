@@ -35,6 +35,7 @@ implementation validation.
 | Category and budget model              | [Financial categories and budgets](domain/financial-categories-budgets.md) |
 | Observable user behavior               | [UX documentation](ux/sitemap.md)                                          |
 | Current system design                  | [Architecture overview](architecture/overview.md)                          |
+| Authentication and authorization       | [Authentication architecture](architecture/authentication.md)              |
 | Initial HTTP API surface               | [Initial API surface](architecture/api-surface.md)                         |
 | Public API contract conventions        | [Public API contracts](architecture/api-contracts.md)                      |
 | API collection-query conventions       | [API collection queries](architecture/api-collections.md)                  |

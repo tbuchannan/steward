@@ -7,6 +7,11 @@
 
 Fastify hosts the JSON API and Better Auth endpoints. It validates input and output, derives authenticated identity, enforces ownership, coordinates financial workflows, maps database records to public contracts, and logs unexpected failures safely.
 
+The [authentication architecture](authentication.md) defines which endpoints
+are public or protected, the Better Auth versus Steward ownership boundary,
+session-derived identity, and the authorization behavior shared by regular and
+demo identities.
+
 ## Module Structure
 
 ```text
