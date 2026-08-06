@@ -67,7 +67,9 @@ Representative application areas:
 /api/health
 ```
 
-The implemented route specification becomes the detailed API reference; this architecture document does not duplicate every endpoint.
+The [initial API surface](api-surface.md) defines the MVP routes, operations,
+success responses, and explicit exclusions. Implemented public Zod schemas
+become the field-level route specification as each endpoint is built.
 
 Transaction routes mutate only Steward-owned records. They do not integrate with payment rails, banks, brokerages, or money-movement providers.
 

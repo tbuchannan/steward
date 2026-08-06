@@ -11,6 +11,16 @@ A page header contains a title, optional concise description, and no more than t
 
 Desktop tables and mobile lists expose the same important information and actions. Rows have stable accessible names. Financial columns use tabular numerals and explicit headers.
 
+## Date Display
+
+User-visible calendar dates use `MM-DD-YYYY`. For example, the API date
+`2026-08-06` is displayed as `08-06-2026`. Date inputs, tables, lists, account
+details, and transaction details use this presentation consistently.
+
+This is a display transformation only. Public contracts and persisted
+date-only values continue to use `YYYY-MM-DD`, and formatting never converts a
+date through a timestamp or timezone.
+
 ## Search, Filters, and Pagination
 
 - Search has a visible label or accessible name.
