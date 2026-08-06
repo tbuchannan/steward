@@ -13,6 +13,8 @@ Open Accounts
 ```
 
 An explicit `Show archived` action reveals archived accounts without mixing them into default active summaries.
+Archived accounts are read-only historical records in the MVP. Restoring an
+archived account is deferred.
 
 ## Create
 
