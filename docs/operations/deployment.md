@@ -30,8 +30,10 @@ pnpm --filter @steward/api start
 ```
 
 The Vercel project builds `@steward/web` from the workspace root and publishes
-`apps/web/dist`. The production Railway URL is recorded in the Vercel rewrite
-only after Railway assigns and verifies that URL.
+`apps/web/dist`. Its build command compiles `@steward/contracts` before the web
+application so a clean deployment has the package's JavaScript and declaration
+outputs. The production Railway URL is recorded in the Vercel rewrite only after
+Railway assigns and verifies that URL.
 
 ## Release Order
 
