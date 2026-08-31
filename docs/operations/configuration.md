@@ -1,7 +1,7 @@
 # Configuration
 
-**Status:** Draft; initial runtime and package configuration implemented
-**Last verified:** 2026-08-03
+**Status:** Draft; deployed walking-skeleton configuration implemented
+**Last verified:** 2026-08-20
 
 ## Version Pins
 
@@ -24,32 +24,25 @@ generated code, runtime requirements, or deployment receive explicit review.
 
 ## Frontend
 
-Likely public configuration:
-
-```text
-VITE_APP_ENV
-```
-
-Production browser API calls use relative `/api` paths. A local API URL or Vite development proxy may be configured without exposing secrets.
+The walking skeleton does not require browser-exposed environment variables.
+Production requests use relative `/api` paths. Local Vite development proxies
+those requests to `http://localhost:3000` by default; `STEWARD_API_ORIGIN` may
+override that development-only target.
 
 ## API
 
-Likely server configuration:
+Implemented server configuration:
 
 ```text
-NODE_ENV
-HOST
-PORT
 DATABASE_URL
-BETTER_AUTH_SECRET
-BETTER_AUTH_URL
-TRUSTED_ORIGINS
-LOG_LEVEL
-DEMO_RETENTION_HOURS
-DEMO_CLEANUP_SCHEDULE
+HOST (default: 0.0.0.0)
+PORT (default: 3000; assigned by Railway in production)
 ```
 
-Configuration is parsed with Zod during startup. Missing or invalid required values fail startup with a safe diagnostic.
+Configuration is parsed with Zod during startup. A missing or invalid value
+fails startup with a diagnostic that names invalid variables but never includes
+their values. Authentication, logging, and demo variables are added with the
+vertical slices that consume them.
 
 ## Environments
 

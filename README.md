@@ -3,7 +3,8 @@
 Steward is a responsive personal-finance record-keeping application for manually managing accounts, transactions, monthly budgets, and financial summaries. It never initiates payments, transfers funds, or communicates with financial institutions.
 
 > **Status:** Early implementation. The web, API, and public-contract packages
-> are scaffolded with a health endpoint and placeholder frontend.
+> include a deployable walking skeleton whose frontend verifies the API and
+> PostgreSQL readiness path.
 > Authentication, persistence, and MVP financial workflows are not yet
 > implemented.
 
@@ -32,7 +33,9 @@ Steward will use:
 - Vitest, React Testing Library, Testcontainers, and Playwright
 - Vercel for the frontend and Railway for the API and database
 
-The production frontend will proxy `/api/*` requests to Railway so browser authentication remains same-origin.
+The production frontend proxies `/api/*` requests to Railway so browser
+authentication remains same-origin. The API health response is successful only
+after PostgreSQL answers a readiness query.
 
 ## Documentation
 

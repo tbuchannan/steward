@@ -1,7 +1,7 @@
 # Deployment
 
-**Status:** Accepted architecture; runbook pending implementation
-**Last verified:** 2026-07-30
+**Status:** Walking-skeleton configuration implemented; production verification pending
+**Last verified:** 2026-08-20
 
 ## Production Topology
 
@@ -21,7 +21,17 @@ The rewrite is required by [ADR 005](../architecture/decisions/005-vercel-api-pr
 - Railway builds and runs `apps/api`.
 - Both install from the repository root using the pinned pnpm version and shared lockfile.
 
-Exact build and start commands are added after scaffolding.
+The committed Railway configuration runs:
+
+```text
+pnpm --filter @steward/contracts build
+pnpm --filter @steward/api build
+pnpm --filter @steward/api start
+```
+
+The Vercel project builds `@steward/web` from the workspace root and publishes
+`apps/web/dist`. The production Railway URL is recorded in the Vercel rewrite
+only after Railway assigns and verifies that URL.
 
 ## Release Order
 
@@ -51,6 +61,34 @@ For a frontend-compatible API-only change, order may vary. A schema change is de
 - Health checks do not expose sensitive configuration.
 - Graceful shutdown stops new work and closes database connections.
 - Migrations do not run concurrently in every application replica.
+
+For the walking skeleton:
+
+1. Create a Railway project from this repository.
+2. Add a PostgreSQL service.
+3. Add an API service with the repository root as its root directory.
+4. Reference the PostgreSQL service's `DATABASE_URL` from the API service.
+5. Generate an API public domain.
+6. Confirm Railway activates the deployment using `/api/health` from
+   `railway.json`.
+
+The committed build and start commands install from the workspace root. The API
+uses Railway's assigned `PORT`, maintains one shared five-connection `pg.Pool`,
+queries PostgreSQL before returning health success, and closes the pool during
+Fastify shutdown.
+
+## Walking-Skeleton Verification
+
+Before this slice is complete:
+
+1. `GET https://<railway-api>/api/health` returns `{ "status": "ok" }`.
+2. Vercel rewrites `/api/:path*` to the verified Railway API domain without
+   enabling rewrite caching.
+3. The Vercel application loads at `/` and at one nested SPA path.
+4. The rendered deployment status changes from `checking` to `connected`.
+5. The repository CI workflow succeeds for the deployed commit.
+
+The exact production URLs are added here after account-backed deployment.
 
 ## Preview Environments
 
