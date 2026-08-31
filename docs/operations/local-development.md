@@ -1,17 +1,17 @@
 # Local Development
 
-**Status:** Current for the initial scaffold; database setup pending persistence implementation
-**Last verified:** 2026-08-03
+**Status:** Current for the deployed walking skeleton
+**Last verified:** 2026-08-20
 
-This document describes the runnable initial scaffold. Database, integration,
-and browser-test setup will be added as those parts of the accepted architecture
-are implemented.
+This document describes the runnable deployed walking skeleton. Schema,
+migration, seed, integration-test, and browser-test setup will be added by the
+vertical slices that first require persistent application data.
 
 ## Prerequisites
 
 - Repository-pinned Node.js version
 - Repository-pinned pnpm version
-- Locally installed PostgreSQL, once persistence is implemented
+- Locally installed PostgreSQL
 - A container runtime, once Testcontainers integration tests are implemented
 
 Docker Compose is not required for normal application development.
@@ -20,13 +20,17 @@ Docker Compose is not required for normal application development.
 
 ```text
 pnpm install
+Copy-Item .env.example .env
 pnpm dev
 ```
 
-The root `predev` script builds `@steward/contracts` before starting workspace
-development processes. The current API exposes `GET /api/health`; the frontend
-is a placeholder application. Neither currently requires a database or seeded
-identity.
+Set the variables from `.env` in the shell that starts Steward; the application
+does not automatically load environment files. The root `predev` script builds
+`@steward/contracts` before starting workspace development processes. Vite
+proxies relative `/api` requests to the local API. `GET /api/health` runs a
+minimal PostgreSQL readiness query, and the frontend displays the result.
+
+No application schema or seed data is required for this readiness check.
 
 ## Current Checks
 

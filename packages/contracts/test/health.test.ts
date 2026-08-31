@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { healthResponseSchema } from "../src/index.js";
+import {
+  healthResponseSchema,
+  internalErrorResponse,
+  internalErrorResponseSchema,
+} from "../src/index.js";
 
 describe("healthResponseSchema", () => {
   it("accepts an okay health response", () => {
@@ -30,5 +34,26 @@ describe("healthResponseSchema", () => {
     expect(result).toEqual({
       status: "ok",
     });
+  });
+});
+
+describe("internalErrorResponseSchema", () => {
+  it("accepts the safe internal error response", () => {
+    expect(internalErrorResponseSchema.parse(internalErrorResponse)).toEqual(
+      internalErrorResponse,
+    );
+  });
+
+  it("strips internal diagnostic details", () => {
+    const result = internalErrorResponseSchema.parse({
+      ...internalErrorResponse,
+      databaseUrl: "do not expose",
+      error: {
+        ...internalErrorResponse.error,
+        stack: "do not expose",
+      },
+    });
+
+    expect(result).toEqual(internalErrorResponse);
   });
 });
