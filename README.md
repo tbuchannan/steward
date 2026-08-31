@@ -8,6 +8,8 @@ Steward is a responsive personal-finance record-keeping application for manually
 > Authentication, persistence, and MVP financial workflows are not yet
 > implemented.
 
+**Live deployment:** [steward.tjbuchannan.com](https://steward.tjbuchannan.com)
+
 ## MVP
 
 The first release will let an individual:

@@ -1,7 +1,7 @@
 # Deployment
 
-**Status:** Walking-skeleton configuration implemented; production verification pending
-**Last verified:** 2026-08-20
+**Status:** Walking-skeleton production deployment verified
+**Last verified:** 2026-08-31
 
 ## Production Topology
 
@@ -30,8 +30,10 @@ pnpm --filter @steward/api start
 ```
 
 The Vercel project builds `@steward/web` from the workspace root and publishes
-`apps/web/dist`. The production Railway URL is recorded in the Vercel rewrite
-only after Railway assigns and verifies that URL.
+`apps/web/dist`. Its build command compiles `@steward/contracts` before the web
+application so a clean deployment has the package's JavaScript and declaration
+outputs. The production Railway URL is recorded in the Vercel rewrite only after
+Railway assigns and verifies that URL.
 
 ## Release Order
 
@@ -88,7 +90,15 @@ Before this slice is complete:
 4. The rendered deployment status changes from `checking` to `connected`.
 5. The repository CI workflow succeeds for the deployed commit.
 
-The exact production URLs are added here after account-backed deployment.
+Production URLs:
+
+- Frontend: <https://steward-omega-puce.vercel.app>
+- API: <https://api-production-ff989.up.railway.app>
+
+The Vercel project is connected to the GitHub repository for automatic
+deployments. On 2026-08-31, the production root, a nested SPA path, and the
+same-origin `/api/health` rewrite all returned HTTP 200. The health response was
+`{ "status": "ok" }` and was not served from the Vercel edge cache.
 
 ## Preview Environments
 
