@@ -1,6 +1,11 @@
 import { buildApp } from "./app.js";
+import { createAuth } from "./auth.js";
 import { loadRuntimeConfig } from "./config.js";
-import { checkDatabase, createDatabasePool } from "./database.js";
+import {
+  checkDatabase,
+  createDatabase,
+  createDatabasePool,
+} from "./database.js";
 
 let app: ReturnType<typeof buildApp> | undefined;
 
@@ -8,8 +13,15 @@ const start = async () => {
   try {
     const config = loadRuntimeConfig(process.env);
     const pool = createDatabasePool(config.databaseUrl);
+    const database = createDatabase(pool);
+    const auth = createAuth(database, {
+      baseUrl: config.authUrl,
+      secret: config.authSecret,
+      trustedOrigins: config.trustedOrigins,
+    });
 
     app = buildApp(undefined, {
+      auth,
       checkReadiness: () => checkDatabase(pool),
       close: () => pool.end(),
     });

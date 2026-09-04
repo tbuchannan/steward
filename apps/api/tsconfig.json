@@ -10,6 +10,7 @@
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
+    "skipLibCheck": true,
 
     "sourceMap": true,
     "noEmitOnError": true,
