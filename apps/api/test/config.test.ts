@@ -44,11 +44,11 @@ describe("loadRuntimeConfig", () => {
         DATABASE_URL: "top-secret-value",
         BETTER_AUTH_SECRET: "short",
         BETTER_AUTH_URL: "not-a-url",
-        TRUSTED_ORIGINS: "http://localhost:9786",
+        TRUSTED_ORIGINS: "not-an-origin",
         PORT: "not-a-port",
       }),
     ).toThrowError(
-      "Invalid runtime configuration: BETTER_AUTH_SECRET, BETTER_AUTH_URL, DATABASE_URL, PORT.",
+      "Invalid runtime configuration: BETTER_AUTH_SECRET, BETTER_AUTH_URL, DATABASE_URL, PORT, TRUSTED_ORIGINS.",
     );
   });
 });

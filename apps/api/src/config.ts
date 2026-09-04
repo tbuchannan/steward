@@ -12,11 +12,16 @@ const databaseUrlSchema = z
     }
   });
 
+const trustedOriginsSchema = z
+  .string()
+  .transform((value) => value.split(",").map((origin) => origin.trim()))
+  .pipe(z.array(z.url()).min(1));
+
 const runtimeEnvironmentSchema = z.object({
   DATABASE_URL: databaseUrlSchema,
   BETTER_AUTH_SECRET: z.string().min(32),
   BETTER_AUTH_URL: z.url(),
-  TRUSTED_ORIGINS: z.string().min(1),
+  TRUSTED_ORIGINS: trustedOriginsSchema,
   HOST: z.string().min(1).default("0.0.0.0"),
   PORT: z.coerce.number().int().min(1).max(65_535).default(3000),
 });
@@ -53,9 +58,7 @@ export const loadRuntimeConfig = (
     databaseUrl: result.data.DATABASE_URL,
     authSecret: result.data.BETTER_AUTH_SECRET,
     authUrl: result.data.BETTER_AUTH_URL,
-    trustedOrigins: result.data.TRUSTED_ORIGINS.split(",").map((origin) =>
-      origin.trim(),
-    ),
+    trustedOrigins: result.data.TRUSTED_ORIGINS,
     host: result.data.HOST,
     port: result.data.PORT,
   };

@@ -44,7 +44,7 @@ const RegisterPage = () => {
       return;
     }
 
-    await navigate({ to: "/registered" });
+    await navigate({ to: "/accounts", replace: true });
   });
 
   return (

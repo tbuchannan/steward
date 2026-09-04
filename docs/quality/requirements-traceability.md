@@ -1,7 +1,7 @@
 # Requirements Traceability
 
 **Status:** Draft until implementation
-**Last verified:** 2026-08-03
+**Last verified:** 2026-09-04
 
 The [MVP requirements](../product/mvp-requirements.md) are authoritative. This table identifies the intended UX and minimum verification. Implementation and test links are added individually when code for the corresponding requirement exists.
 
@@ -43,3 +43,12 @@ When code exists, add:
 - Tracking issue where incomplete
 
 Do not copy requirement wording into this table.
+
+## Implemented Coverage
+
+| Requirements        | Primary implementation                                                                             | Primary tests                                                                                                           | Status                                                                         |
+| ------------------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `AUTH-01`           | [`auth.ts`](../../apps/api/src/auth.ts), [`RegisterPage.tsx`](../../apps/web/src/RegisterPage.tsx) | [`auth.test.ts`](../../apps/api/test/auth.test.ts), [`RegisterPage.test.tsx`](../../apps/web/src/RegisterPage.test.tsx) | Implemented; database and deployed browser verification remain in #172         |
+| `AUTH-02`–`AUTH-03` | [`auth.ts`](../../apps/api/src/auth.ts), [`SignInPage.tsx`](../../apps/web/src/SignInPage.tsx)     | [`SignInPage.test.tsx`](../../apps/web/src/SignInPage.test.tsx)                                                         | Implemented; database and deployed browser verification remain in #172         |
+| `AUTH-04`           | [`AccountsPage.tsx`](../../apps/web/src/AccountsPage.tsx)                                          | [`AccountsPage.test.tsx`](../../apps/web/src/AccountsPage.test.tsx)                                                     | Frontend session boundary implemented; protected financial API follows in #159 |
+| `AUTH-05`           | [`AccountsPage.tsx`](../../apps/web/src/AccountsPage.tsx)                                          | [`AccountsPage.test.tsx`](../../apps/web/src/AccountsPage.test.tsx)                                                     | Implemented; database and deployed browser verification remain in #172         |

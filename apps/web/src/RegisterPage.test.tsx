@@ -25,14 +25,14 @@ const renderRegistration = async () => {
     path: "/register",
     component: RegisterPage,
   });
-  const registeredRoute = createRoute({
+  const accountsRoute = createRoute({
     getParentRoute: () => rootRoute,
-    path: "/registered",
-    component: () => <p>Registered</p>,
+    path: "/accounts",
+    component: () => <p>Accounts</p>,
   });
   const router = createRouter({
     history: createMemoryHistory({ initialEntries: ["/register"] }),
-    routeTree: rootRoute.addChildren([registerRoute, registeredRoute]),
+    routeTree: rootRoute.addChildren([registerRoute, accountsRoute]),
   });
   await router.load();
   render(<RouterProvider router={router} />);
@@ -65,7 +65,7 @@ describe("registration", () => {
       email: "taylor@example.com",
       password: "password123",
     });
-    expect(await screen.findByText("Registered")).toBeInTheDocument();
+    expect(await screen.findByText("Accounts")).toBeInTheDocument();
   });
 
   it("does not submit passwords that do not match", async () => {

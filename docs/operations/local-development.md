@@ -1,11 +1,11 @@
 # Local Development
 
-**Status:** Current for the deployed walking skeleton
+**Status:** Current through the authentication vertical slice
 **Last verified:** 2026-09-11
 
-This document describes the runnable deployed walking skeleton. Schema,
-migration, seed, integration-test, and browser-test setup will be added by the
-vertical slices that first require persistent application data.
+This document describes the walking skeleton plus email/password authentication.
+Seed, integration-test, and browser-test setup will be added by the vertical
+slices that first require them.
 
 ## Prerequisites
 
@@ -21,18 +21,20 @@ Docker Compose is not required for normal application development.
 ```text
 pnpm install
 Copy-Item .env.example .env
+pnpm db:migrate
 pnpm dev
 ```
 
-Set the variables from `.env` in the shell that starts Steward; the application
-does not automatically load environment files. The root `predev` script builds
+Replace the example authentication secret, then set the variables from `.env`
+in the shell that starts Steward; the application does not automatically load
+environment files. Run `pnpm db:migrate` once for a new database and whenever a
+branch adds migrations. The root `predev` script builds
 `@steward/contracts` before starting workspace development processes. Vite
 proxies relative `/api` requests to the local API. `GET /api/health` runs a
-minimal PostgreSQL readiness query. The account-access shell does not display
-the health response; verify the endpoint directly when checking local API and
-database readiness.
+minimal PostgreSQL readiness query, and the frontend displays the result.
 
-No application schema or seed data is required for this readiness check.
+The Better Auth schema is required for registration and session workflows. No
+seed data is required.
 
 ## Current Checks
 
@@ -44,7 +46,18 @@ pnpm test
 pnpm build
 ```
 
-## Planned Setup and Commands
+## Database Commands
+
+```text
+pnpm db:generate
+pnpm db:migrate
+```
+
+Generate a migration only after intentionally changing a Drizzle schema. Review
+the generated SQL before applying it. Migrations require `DATABASE_URL` in the
+calling shell.
+
+## Planned Commands
 
 When persistence and browser workflows are implemented, this guide will add
 safe environment-file setup, local PostgreSQL creation, migrations, seed data,
@@ -52,7 +65,6 @@ integration tests, and end-to-end tests. The corresponding planned command
 interface is:
 
 ```text
-pnpm db:migrate
 pnpm db:seed
 pnpm test:integration
 pnpm test:e2e

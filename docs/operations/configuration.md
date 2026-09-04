@@ -1,7 +1,7 @@
 # Configuration
 
-**Status:** Draft; deployed walking-skeleton configuration implemented
-**Last verified:** 2026-08-20
+**Status:** Current through the authentication vertical slice
+**Last verified:** 2026-09-04
 
 ## Version Pins
 
@@ -35,14 +35,19 @@ Implemented server configuration:
 
 ```text
 DATABASE_URL
+BETTER_AUTH_SECRET (at least 32 characters; secret)
+BETTER_AUTH_URL (public application origin used by Better Auth)
+TRUSTED_ORIGINS (comma-separated explicit browser origins)
 HOST (default: 0.0.0.0)
 PORT (default: 3000; assigned by Railway in production)
 ```
 
 Configuration is parsed with Zod during startup. A missing or invalid value
 fails startup with a diagnostic that names invalid variables but never includes
-their values. Authentication, logging, and demo variables are added with the
-vertical slices that consume them.
+their values. `BETTER_AUTH_SECRET` must be generated independently for each
+environment and must never use the example value. `BETTER_AUTH_URL` and every
+`TRUSTED_ORIGINS` entry must be absolute URLs. Logging and demo variables are
+added with the vertical slices that consume them.
 
 ## Environments
 

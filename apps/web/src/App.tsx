@@ -10,6 +10,8 @@ import { useEffect, useState } from "react";
 import { healthResponseSchema } from "@steward/contracts";
 
 import RegisterPage from "./RegisterPage.tsx";
+import SignInPage from "./SignInPage.tsx";
+import AccountsPage from "./AccountsPage.tsx";
 
 type DeploymentStatus = "checking" | "connected" | "unavailable";
 
@@ -69,26 +71,6 @@ const HomePage = () => {
   );
 };
 
-const PlaceholderPage = ({ registered = false }: { registered?: boolean }) => (
-  <main className="auth-layout">
-    <section className="auth-card">
-      <Link className="wordmark" to="/">
-        Steward
-      </Link>
-      <p className="eyebrow">
-        {registered ? "Account created" : "Coming next"}
-      </p>
-      <h1>{registered ? "Welcome to Steward." : "Sign in"}</h1>
-      <p className="auth-introduction">
-        {registered
-          ? "Your registration and session were created successfully."
-          : "Sign-in arrives in the next pairing checkpoint."}
-      </p>
-      {!registered && <Link to="/register">Create an account</Link>}
-    </section>
-  </main>
-);
-
 const rootRoute = createRootRoute({ component: () => <Outlet /> });
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -100,22 +82,22 @@ const registerRoute = createRoute({
   path: "/register",
   component: RegisterPage,
 });
-const registeredRoute = createRoute({
+const accountsRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/registered",
-  component: () => <PlaceholderPage registered />,
+  path: "/accounts",
+  component: AccountsPage,
 });
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/login",
-  component: PlaceholderPage,
+  component: SignInPage,
 });
 
 const router = createRouter({
   routeTree: rootRoute.addChildren([
     indexRoute,
     registerRoute,
-    registeredRoute,
+    accountsRoute,
     loginRoute,
   ]),
 });
