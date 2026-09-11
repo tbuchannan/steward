@@ -1,7 +1,7 @@
 # Local Development
 
 **Status:** Current for the deployed walking skeleton
-**Last verified:** 2026-08-20
+**Last verified:** 2026-09-11
 
 This document describes the runnable deployed walking skeleton. Schema,
 migration, seed, integration-test, and browser-test setup will be added by the
@@ -28,7 +28,9 @@ Set the variables from `.env` in the shell that starts Steward; the application
 does not automatically load environment files. The root `predev` script builds
 `@steward/contracts` before starting workspace development processes. Vite
 proxies relative `/api` requests to the local API. `GET /api/health` runs a
-minimal PostgreSQL readiness query, and the frontend displays the result.
+minimal PostgreSQL readiness query. The account-access shell does not display
+the health response; verify the endpoint directly when checking local API and
+database readiness.
 
 No application schema or seed data is required for this readiness check.
 

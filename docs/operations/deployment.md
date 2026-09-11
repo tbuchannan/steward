@@ -87,7 +87,7 @@ Before this slice is complete:
 2. Vercel rewrites `/api/:path*` to the verified Railway API domain without
    enabling rewrite caching.
 3. The Vercel application loads at `/` and at one nested SPA path.
-4. The rendered deployment status changes from `checking` to `connected`.
+4. The account-access shell renders at supported desktop and mobile widths.
 5. The repository CI workflow succeeds for the deployed commit.
 
 Production URLs:
