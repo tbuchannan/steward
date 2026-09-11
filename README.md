@@ -3,8 +3,8 @@
 Steward is a responsive personal-finance record-keeping application for manually managing accounts, transactions, monthly budgets, and financial summaries. It never initiates payments, transfers funds, or communicates with financial institutions.
 
 > **Status:** Early implementation. The web, API, and public-contract packages
-> include a deployable walking skeleton whose frontend verifies the API and
-> PostgreSQL readiness path.
+> include a deployable API health path and a styled frontend account-access
+> shell.
 > Authentication, persistence, and MVP financial workflows are not yet
 > implemented.
 
