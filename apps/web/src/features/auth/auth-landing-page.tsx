@@ -14,28 +14,26 @@ import { cn } from "@/lib/utils";
 
 type AuthMode = "login" | "signup";
 
-function Brand({ mobile = false }: { mobile?: boolean }) {
-  return (
-    <a
-      aria-label="Steward home"
-      className={cn(
-        "w-fit items-center gap-3 text-foreground no-underline",
-        mobile ? "mb-8 inline-flex min-[801px]:hidden" : "inline-flex",
-      )}
-      href="/"
+const Brand = ({ mobile = false }: { mobile?: boolean }) => (
+  <a
+    aria-label="Steward home"
+    className={cn(
+      "w-fit items-center gap-3 text-foreground no-underline",
+      mobile ? "mb-8 inline-flex min-[801px]:hidden" : "inline-flex",
+    )}
+    href="/"
+  >
+    <span
+      aria-hidden="true"
+      className="grid size-8 place-items-center rounded-full border border-foreground/20 bg-white/50"
     >
-      <span
-        aria-hidden="true"
-        className="grid size-8 place-items-center rounded-full border border-foreground/20 bg-white/50"
-      >
-        <CalendarDays className="size-[17px]" strokeWidth={1.7} />
-      </span>
-      <span className="font-display text-[1.75rem] leading-none">Steward</span>
-    </a>
-  );
-}
+      <CalendarDays className="size-[17px]" strokeWidth={1.7} />
+    </span>
+    <span className="font-display text-[1.75rem] leading-none">Steward</span>
+  </a>
+);
 
-function AuthLandingPage() {
+const AuthLandingPage = () => {
   const [mode, setMode] = useState<AuthMode>("login");
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [message, setMessage] = useState("");
@@ -45,6 +43,26 @@ function AuthLandingPage() {
     setMode(nextMode);
     setMessage("");
     setPasswordVisible(false);
+  };
+
+  const handleLoginClick = () => {
+    changeMode("login");
+  };
+
+  const handleSignupClick = () => {
+    changeMode("signup");
+  };
+
+  const handleForgotPasswordClick = () => {
+    setMessage("Password reset would open here.");
+  };
+
+  const handlePasswordVisibilityClick = () => {
+    setPasswordVisible(!passwordVisible);
+  };
+
+  const handleDemoClick = () => {
+    setMessage("Opening a read-only demo account…");
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -133,7 +151,7 @@ function AuthLandingPage() {
                 aria-selected={!isSignup}
                 className="min-h-11 rounded-[0.65rem] text-muted-foreground shadow-none aria-selected:bg-card aria-selected:text-foreground aria-selected:shadow-[0_2px_10px_rgb(24_52_41/0.08)]"
                 id="login-tab"
-                onClick={() => changeMode("login")}
+                onClick={handleLoginClick}
                 role="tab"
                 variant="ghost"
               >
@@ -144,7 +162,7 @@ function AuthLandingPage() {
                 aria-selected={isSignup}
                 className="min-h-11 rounded-[0.65rem] text-muted-foreground shadow-none aria-selected:bg-card aria-selected:text-foreground aria-selected:shadow-[0_2px_10px_rgb(24_52_41/0.08)]"
                 id="signup-tab"
-                onClick={() => changeMode("signup")}
+                onClick={handleSignupClick}
                 role="tab"
                 variant="ghost"
               >
@@ -197,9 +215,7 @@ function AuthLandingPage() {
                   {!isSignup && (
                     <Button
                       className="h-auto p-0 text-[0.84rem] font-semibold"
-                      onClick={() =>
-                        setMessage("Password reset would open here.")
-                      }
+                      onClick={handleForgotPasswordClick}
                       variant="link"
                     >
                       Forgot password?
@@ -226,7 +242,7 @@ function AuthLandingPage() {
                       passwordVisible ? "Hide password" : "Show password"
                     }
                     className="absolute top-1/2 right-2 h-auto -translate-y-1/2 px-2 py-1 text-xs font-bold text-muted-foreground hover:bg-transparent hover:text-foreground"
-                    onClick={() => setPasswordVisible((visible) => !visible)}
+                    onClick={handlePasswordVisibilityClick}
                     variant="ghost"
                   >
                     {passwordVisible ? "Hide" : "Show"}
@@ -264,31 +280,17 @@ function AuthLandingPage() {
 
               <Button
                 className="min-h-[3.2rem] rounded-[0.72rem] border-foreground/35 bg-white/60 font-bold hover:-translate-y-px hover:border-primary hover:bg-accent active:translate-y-0"
-                onClick={() => setMessage("Opening a read-only demo account…")}
+                onClick={handleDemoClick}
                 variant="outline"
               >
                 Try the demo account
               </Button>
             </form>
-
-            {isSignup && (
-              <p className="mx-auto mt-5 max-w-sm text-center text-xs leading-[1.55] text-muted-foreground">
-                By creating an account, you agree to Steward’s{" "}
-                <a className="underline underline-offset-2" href="#terms">
-                  Terms
-                </a>{" "}
-                and acknowledge the{" "}
-                <a className="underline underline-offset-2" href="#privacy">
-                  Privacy Policy
-                </a>
-                .
-              </p>
-            )}
           </CardContent>
         </Card>
       </section>
     </main>
   );
-}
+};
 
 export { AuthLandingPage };
