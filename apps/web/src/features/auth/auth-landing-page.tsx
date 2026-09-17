@@ -143,16 +143,24 @@ const AuthLandingPage = () => {
           <CardContent className="p-0">
             <div
               aria-label="Account action"
-              className="mb-7 grid grid-cols-2 gap-1 rounded-[0.85rem] border border-border bg-secondary/70 p-1"
+              className="relative mb-7 grid grid-cols-2 rounded-[0.85rem] border border-border bg-secondary/70 p-1"
               role="tablist"
             >
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-[0.65rem] bg-card shadow-[0_2px_10px_rgb(24_52_41/0.08)] transition-transform duration-300 ease-out motion-reduce:transition-none",
+                  isSignup && "translate-x-full",
+                )}
+              />
               <Button
                 aria-controls="auth-form"
                 aria-selected={!isSignup}
-                className="min-h-11 rounded-[0.65rem] text-muted-foreground shadow-none aria-selected:bg-card aria-selected:text-foreground aria-selected:shadow-[0_2px_10px_rgb(24_52_41/0.08)]"
+                className="relative z-10 min-h-11 rounded-[0.65rem] bg-transparent text-muted-foreground shadow-none transition-colors duration-300 hover:bg-transparent hover:text-foreground aria-selected:text-foreground"
                 id="login-tab"
                 onClick={handleLoginClick}
                 role="tab"
+                type="button"
                 variant="ghost"
               >
                 Log in
@@ -160,10 +168,11 @@ const AuthLandingPage = () => {
               <Button
                 aria-controls="auth-form"
                 aria-selected={isSignup}
-                className="min-h-11 rounded-[0.65rem] text-muted-foreground shadow-none aria-selected:bg-card aria-selected:text-foreground aria-selected:shadow-[0_2px_10px_rgb(24_52_41/0.08)]"
+                className="relative z-10 min-h-11 rounded-[0.65rem] bg-transparent text-muted-foreground shadow-none transition-colors duration-300 hover:bg-transparent hover:text-foreground aria-selected:text-foreground"
                 id="signup-tab"
                 onClick={handleSignupClick}
                 role="tab"
+                type="button"
                 variant="ghost"
               >
                 Create account
@@ -176,21 +185,32 @@ const AuthLandingPage = () => {
               noValidate
               onSubmit={handleSubmit}
             >
-              {isSignup && (
-                <div className="grid gap-2">
-                  <label className="text-sm font-semibold" htmlFor="name">
-                    Full name
-                  </label>
-                  <Input
-                    autoComplete="name"
-                    className="min-h-[3.15rem] rounded-[0.72rem] bg-white/80 px-4 text-base hover:border-foreground/30 focus-visible:bg-white"
-                    id="name"
-                    name="name"
-                    placeholder="Your name"
-                    required
-                  />
+              <div
+                aria-hidden={!isSignup}
+                className={cn(
+                  "grid transition-[grid-template-rows,opacity,margin] duration-300 ease-out motion-reduce:transition-none",
+                  isSignup
+                    ? "grid-rows-[1fr] opacity-100"
+                    : "-mb-4 grid-rows-[0fr] opacity-0",
+                )}
+              >
+                <div className="min-h-0 overflow-hidden">
+                  <div className="grid gap-2">
+                    <label className="text-sm font-semibold" htmlFor="name">
+                      Full name
+                    </label>
+                    <Input
+                      autoComplete="name"
+                      className="min-h-[3.15rem] rounded-[0.72rem] bg-white/80 px-4 text-base hover:border-foreground/30 focus-visible:bg-white"
+                      disabled={!isSignup}
+                      id="name"
+                      name="name"
+                      placeholder="Your name"
+                      required={isSignup}
+                    />
+                  </div>
                 </div>
-              )}
+              </div>
 
               <div className="grid gap-2">
                 <label className="text-sm font-semibold" htmlFor="email">
@@ -248,11 +268,19 @@ const AuthLandingPage = () => {
                     {passwordVisible ? "Hide" : "Show"}
                   </Button>
                 </div>
-                {isSignup && (
-                  <p className="text-xs leading-relaxed text-muted-foreground">
+                <div
+                  aria-hidden={!isSignup}
+                  className={cn(
+                    "grid transition-[grid-template-rows,opacity,margin] duration-300 ease-out motion-reduce:transition-none",
+                    isSignup
+                      ? "grid-rows-[1fr] opacity-100"
+                      : "-mt-2 grid-rows-[0fr] opacity-0",
+                  )}
+                >
+                  <p className="min-h-0 overflow-hidden text-xs leading-relaxed text-muted-foreground">
                     Use at least 8 characters.
                   </p>
-                )}
+                </div>
               </div>
 
               {message && (
