@@ -30,7 +30,7 @@ Steward will use:
 - React Hook Form and Zod
 - Tailwind CSS and shadcn/ui
 - Better Auth, Drizzle ORM, and PostgreSQL
-- Vitest, React Testing Library, Testcontainers, and Playwright
+- Vitest and React Testing Library for automated testing
 - Vercel for the Next.js application; Neon for PostgreSQL
 
 Next.js serves pages and `/api/*` on the same origin. The health endpoint
