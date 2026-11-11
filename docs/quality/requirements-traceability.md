@@ -1,7 +1,7 @@
 # Requirements Traceability
 
 **Status:** Draft until implementation
-**Last verified:** 2026-09-04
+**Last verified:** 2026-11-11
 
 The [MVP requirements](../product/mvp-requirements.md) are authoritative. This table identifies the intended UX and minimum verification. Implementation and test links are added individually when code for the corresponding requirement exists.
 
@@ -45,6 +45,15 @@ When code exists, add:
 Do not copy requirement wording into this table.
 
 ## Implemented Coverage
+
+Guest-login coverage now includes the following partial MVP slice; seeded
+financial isolation and reset are still pending.
+
+| Requirements                             | Primary implementation                                                                                        | Primary tests                                                                                                                          | Status                                                                                                                                                                       |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DEMO-01`, identity portion of `DEMO-02` | [`demo/service.ts`](../../src/server/demo/service.ts), [`api/demo/route.ts`](../../src/app/api/demo/route.ts) | [`demo-service.test.ts`](../../test/demo-service.test.ts), [`demo-http-integration.test.ts`](../../test/demo-http-integration.test.ts) | Isolated guest entry implemented; seed data and deployed browser checks pending                                                                                              |
+| `DEMO-05`                                | [`demo/service.ts`](../../src/server/demo/service.ts), [`demo/policy.ts`](../../src/server/demo/policy.ts)    | [`demo-service.test.ts`](../../test/demo-service.test.ts), [`demo-policy.test.ts`](../../test/demo-policy.test.ts)                     | Expiry, explicit extension and cleanup implemented; financial cleanup follows financial tables; independent PostgreSQL lock contention and deployed scheduler checks pending |
+| Demo indicator portion of `SET-04`       | [`demo-guard.tsx`](../../src/components/auth/demo-guard.tsx)                                                  | [`demo-guard.test.tsx`](../../src/components/auth/demo-guard.test.tsx)                                                                 | Indicator and expiry gate implemented; seed reset controls pending                                                                                                           |
 
 | Requirements        | Primary implementation                                                                                            | Primary tests                                                                             | Status                                                                            |
 | ------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |

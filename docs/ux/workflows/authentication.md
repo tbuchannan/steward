@@ -9,8 +9,8 @@ Login and registration share the landing page at `/`. Select **Create account**
 or **Log in** to switch forms without navigating away. `/?mode=signup` opens
 registration directly. The submit button calls Better Auth's
 `/api/auth/sign-up/email` or `/api/auth/sign-in/email` endpoint for the selected
-mode. The current implementation opens `/accounts` after success; dashboard,
-return-destination navigation, and demo entry remain planned.
+mode. The current implementation opens `/accounts` after success; dashboard
+and return-destination navigation remain planned.
 
 ```text
 Open Register
@@ -46,6 +46,15 @@ Open Login
 ```
 
 The control shows pending state and prevents duplicate submissions.
+
+The implemented guest slice opens `/accounts` without seed data and shows a
+Demo indicator. The seeded dashboard flow above remains the MVP target.
+Tabs share a session; returning visitors resume an unexpired guest. Sign-out
+makes the next demo entry create a fresh identity. Expiration blocks ordinary
+use and offers an eligible open tab an explicit extension button; otherwise
+`/?demo=expired` shows the login page with an expiration message and requires
+explicit fresh entry. The complete behavior is defined in
+[demo experience](../../product/demo-experience.md).
 
 ## Protected Access
 

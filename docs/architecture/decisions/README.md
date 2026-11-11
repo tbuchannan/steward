@@ -15,6 +15,7 @@ system, but they link to ADRs for rationale, alternatives, and consequences.
 - [ADR 007: Isolated demo data](007-demo-data-isolation.md)
 - [ADR 008: Next.js App Router](008-nextjs-app-router.md)
 - [ADR 009: Neon PostgreSQL hosting](009-neon-postgresql.md)
+- [ADR 010: Demo session lifecycle](010-demo-session-lifecycle.md)
 
 ## Template
 

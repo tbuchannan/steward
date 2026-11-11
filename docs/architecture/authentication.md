@@ -1,7 +1,7 @@
 # Authentication Architecture
 
 **Status:** Accepted
-**Last verified:** 2026-08-06
+**Last verified:** 2026-11-11 (guest login and lifecycle implemented)
 
 ## Purpose
 
@@ -33,6 +33,12 @@ endpoints that consume the resulting identity:
 | `POST /api/auth/sign-up/email` and `POST /api/auth/sign-in/email`                     | Public                  | Better Auth owns credential validation, responses, cookies, and rate limiting                                      |
 | `GET /api/auth/get-session` and `POST /api/auth/sign-out`                             | Cookie-session aware    | Better Auth owns session inspection and invalidation behavior, including its no-session responses                  |
 | `GET /api/demo`, `POST /api/demo/reset`, and every other Steward application endpoint | Protected               | The Route Handler validates the Better Auth session; Steward authorizes the operation against the session identity |
+
+Guest lifecycle routes additionally include `POST /api/demo/activity` and
+`POST /api/demo/extend`. Status and extension accept provider-valid sessions
+under the application lifecycle rules below; ordinary application data requires
+an unexpired demo. The internal cleanup endpoint uses scheduler bearer
+authentication instead of browser cookies, as recorded in the API surface.
 
 There is no public financial-data endpoint. Adding a Steward-owned endpoint is
 an explicit access-control decision: unless the accepted API surface identifies
@@ -90,6 +96,9 @@ from concealed resource authorization:
 
 - A protected request with no session, an invalid session, or an expired
   session returns `401 AUTHENTICATION_REQUIRED`.
+- A provider-valid session whose demo lifetime has expired receives
+  `401 DEMO_EXPIRED` for ordinary operations. Lifecycle status and eligible
+  explicit extension use their documented exceptions.
 - After authentication, an absent user-owned resource and a resource belonging
   to another identity both return the identical
   `404 RESOURCE_NOT_FOUND` response. The API does not perform an unscoped
@@ -136,13 +145,49 @@ reset to discover or target a demo user. The route never accepts an owner ID.
 
 Rate limiting and cleanup prevent unbounded identity creation. Reset preserves the active user and session while replacing only that user's financial dataset.
 
-The application-owned metadata records `createdAt` and `expiresAt`; Steward does
+The application-owned metadata records `createdAt` and `expiresAt`, plus the
+server-owned state needed for session-specific extension eligibility. Steward does
 not add demo flags or financial fields to Better Auth tables. Reset eligibility
 comes from the current session user's metadata row. Expired cleanup removes the
 Steward-owned dependency graph first and removes the user, authentication
 account, and sessions through Better Auth-supported server behavior. Better Auth
 remains authoritative for the authentication schema, relationships, and
 ordinary record lifecycle.
+
+The [demo lifecycle policy](../domain/data-lifecycle.md#demo-records) adds
+application expiry to normal Better Auth session verification. A valid provider
+session alone does not authorize ordinary access to an expired demo. Protected
+server boundaries enforce both checks; browser controls never authorize access.
+Status, explicit extension, and sign-out remain available to an eligible expired
+session during the limited extension window. Regular users receive the concealed
+resource-not-found response for demo extension commands.
+
+Application-owned demo services coordinate entry, activity renewal, explicit
+extension, and cleanup. Route Handlers validate public Zod contracts, derive
+identity from the session, enforce same-origin mutation protection, and serialize
+safe, non-cacheable responses. Creation must not leave a usable identity without
+lifecycle metadata; failed partial creation requires rollback or compensation.
+
+Creation rate limiting uses persistent, concurrency-safe state across runtime
+instances. Client-address handling must match the trusted deployment boundary;
+arbitrary forwarded headers cannot select a fresh limit bucket. Lifecycle
+commands accept no client-selected owner. Public responses omit identity keys,
+credentials, provider tokens, and internal cleanup bookkeeping. The dedicated
+extension ticket is an opaque capability that works only with its original
+verified cookie session; keep it in tab memory and out of URLs, storage, and
+logs. Better Auth retains its
+provider-owned contracts. The rationale is recorded in
+[ADR 010](decisions/010-demo-session-lifecycle.md).
+
+`getProtectedSession` in `src/server/session.ts` is the server helper for ordinary
+protected operations. The accounts page uses the raw provider session and demo
+status explicitly so expired visitors can receive a lifecycle-only shell. It
+does not render protected application content for an expired demo. Demo status
+and extension routes deliberately accept a provider-valid expired demo session.
+The client renews activity on page entry and trusted visible pointer, keyboard,
+wheel, and touch-scroll
+interaction, coalescing interaction renewals to at most once every 30 seconds.
+Its minute status polling never renews inactivity.
 
 ## Cookies and Origins
 

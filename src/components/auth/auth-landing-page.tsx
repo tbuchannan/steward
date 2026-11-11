@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useState } from "react";
 
 import { authClient } from "../../lib/auth-client";
+import { DemoRequestError, requestDemo } from "../../lib/demo-client";
 
 import { Button } from "../ui/button";
 import {
@@ -38,21 +39,26 @@ const Brand = ({ mobile = false }: { mobile?: boolean }) => (
 
 const AuthLandingPage = ({
   initialMode = "login",
+  demoExpired = false,
 }: {
   initialMode?: AuthMode;
+  demoExpired?: boolean;
 }) => {
   const router = useRouter();
   const session = authClient.useSession();
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [passwordVisible, setPasswordVisible] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(
+    demoExpired ? "Your demo expired. Start a new demo to continue." : "",
+  );
   const [submissionError, setSubmissionError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDemoPending, setIsDemoPending] = useState(false);
   const isSignup = mode === "signup";
 
   useEffect(() => {
-    if (session.data) router.replace("/accounts");
-  }, [router, session.data]);
+    if (session.data && !demoExpired) router.replace("/accounts");
+  }, [router, session.data, demoExpired]);
 
   const changeMode = (nextMode: AuthMode) => {
     setMode(nextMode);
@@ -77,8 +83,26 @@ const AuthLandingPage = ({
     setPasswordVisible(!passwordVisible);
   };
 
-  const handleDemoClick = () => {
-    setMessage("The demo account is not available yet.");
+  const handleDemoClick = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setIsDemoPending(true);
+    setSubmissionError("");
+    setMessage("");
+    try {
+      await requestDemo("create");
+      router.replace("/accounts");
+      router.refresh();
+    } catch (error) {
+      setSubmissionError(
+        error instanceof DemoRequestError && error.code === "RATE_LIMITED"
+          ? "Too many demo requests. Please try again later."
+          : "Unable to start the demo. Please try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+      setIsDemoPending(false);
+    }
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -405,9 +429,11 @@ const AuthLandingPage = ({
               <Button
                 className="min-h-[3.2rem] rounded-[0.72rem] border-foreground/35 bg-white/60 font-bold hover:-translate-y-px hover:border-primary hover:bg-accent active:translate-y-0"
                 onClick={handleDemoClick}
+                disabled={isSubmitting}
+                type="button"
                 variant="outline"
               >
-                Try the demo account
+                {isDemoPending ? "Starting demo…" : "Try the demo account"}
               </Button>
             </form>
           </CardContent>

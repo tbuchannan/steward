@@ -16,7 +16,26 @@ describe("loadRuntimeConfig", () => {
       authSecret: "a-development-secret-at-least-32-characters",
       authUrl: "http://localhost:3000",
       trustedOrigins: ["http://localhost:3000"],
+      demoCreationLimit: 10,
+      demoCreationGlobalLimit: 100,
+      demoClientIpSource: "shared",
     });
+  });
+
+  it("rejects unsafe demo limits and short scheduler secrets without revealing values", () => {
+    expect(() =>
+      loadRuntimeConfig({
+        DATABASE_URL: "postgresql://local:synthetic@localhost/test",
+        BETTER_AUTH_SECRET: "synthetic-secret-at-least-32-characters",
+        BETTER_AUTH_URL: "http://localhost:3000",
+        TRUSTED_ORIGINS: "http://localhost:3000",
+        DEMO_CREATION_LIMIT: "0",
+        DEMO_CREATION_GLOBAL_LIMIT: "-1",
+        CRON_SECRET: "private",
+      }),
+    ).toThrow(
+      "Invalid runtime configuration: CRON_SECRET, DEMO_CREATION_GLOBAL_LIMIT, DEMO_CREATION_LIMIT.",
+    );
   });
 
   it("accepts explicit production and preview origins", () => {

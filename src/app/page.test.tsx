@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import Page from "./page";
 
@@ -37,6 +37,7 @@ const fillCredentials = async (user: ReturnType<typeof userEvent.setup>) => {
 };
 
 describe("landing page authentication", () => {
+  afterEach(() => vi.unstubAllGlobals());
   beforeEach(() => {
     vi.resetAllMocks();
     mocks.session.data = null;
@@ -168,5 +169,53 @@ describe("landing page authentication", () => {
     await waitFor(() =>
       expect(mocks.replace).toHaveBeenCalledWith("/accounts"),
     );
+  });
+
+  it("enters the demo without requiring credentials", async () => {
+    const fetch = vi.fn().mockResolvedValue(Response.json({ isDemo: false }));
+    vi.stubGlobal("fetch", fetch);
+    const user = userEvent.setup();
+    await renderLanding();
+    await user.click(
+      screen.getByRole("button", { name: "Try the demo account" }),
+    );
+    await waitFor(() =>
+      expect(mocks.replace).toHaveBeenCalledWith("/accounts"),
+    );
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/demo",
+      expect.objectContaining({ method: "POST", body: "{}" }),
+    );
+    expect(mocks.signUpEmail).not.toHaveBeenCalled();
+  });
+
+  it("allows retry after demo creation is rate limited", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue(
+          Response.json({ error: { code: "RATE_LIMITED" } }, { status: 429 }),
+        ),
+    );
+    const user = userEvent.setup();
+    await renderLanding();
+    await user.click(
+      screen.getByRole("button", { name: "Try the demo account" }),
+    );
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Too many demo requests",
+    );
+    expect(
+      screen.getByRole("button", { name: "Try the demo account" }),
+    ).toBeEnabled();
+    expect(mocks.replace).not.toHaveBeenCalled();
+  });
+
+  it("shows the expiry message without bouncing the expired provider session back to accounts", async () => {
+    mocks.session.data = { user: { name: "Demo visitor" } };
+    render(await Page({ searchParams: Promise.resolve({ demo: "expired" }) }));
+    expect(screen.getByRole("status")).toHaveTextContent("Your demo expired");
+    expect(mocks.replace).not.toHaveBeenCalled();
   });
 });

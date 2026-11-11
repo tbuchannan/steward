@@ -14,7 +14,7 @@ Tests are selected by risk. Financial correctness, authorization, transactional 
 | Unit                 | Exact financial, parsing, formatting, and schema behavior | Vitest                                      |
 | Component            | User-visible component and form behavior                  | Vitest, React Testing Library, `user-event` |
 | API integration      | HTTP contracts, authentication, authorization, services   | Vitest, Web Request/Response, local HTTP    |
-| Database integration | Constraints, queries, migrations, transactions            | Vitest, Testcontainers, PostgreSQL          |
+| Database integration | Constraints, queries, migrations, transactions            | Vitest, PGlite, Testcontainers, PostgreSQL  |
 | End-to-end           | A small set of critical deployed-like workflows           | Playwright                                  |
 
 ## Risk Matrix
@@ -89,6 +89,20 @@ Keep the initial browser suite small:
 Transfers, investment holdings, password recovery, and copy-prior-budget tests are not part of the MVP.
 
 ## Determinism and Isolation
+
+Guest lifecycle tests use a disposable in-memory PGlite PostgreSQL engine and
+apply the committed SQL migrations. A test-only pool bridge exercises the same
+node-postgres/Drizzle queries and real Better Auth creation/deletion lifecycle.
+It serializes transaction leases because PGlite has one connection. These
+tests prove rollback and constraints, but do not establish row-lock behavior
+between independent PostgreSQL connections.
+
+The guest HTTP integration test serves the actual Route Handlers and provider
+handler through a local Node HTTP bridge and checks real cookies, isolation,
+expiry, extension, and sign-out. It does not exercise Next.js framework routing
+or browser behavior. Deployed Next.js routing, browser workflows, and
+multi-connection PostgreSQL lock contention remain release verification work;
+there is no dedicated integration or end-to-end package script yet.
 
 - Pin the PostgreSQL test image.
 - Apply migrations to disposable databases.

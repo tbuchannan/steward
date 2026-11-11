@@ -1,5 +1,5 @@
 import "server-only";
-import { Pool } from "pg";
+import { Pool, type PoolClient } from "pg";
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 
 import { authSchema } from "./schema";
@@ -17,7 +17,7 @@ export const createDatabasePool = (databaseUrl: string): Pool =>
 
 export type StewardDatabase = NodePgDatabase<typeof authSchema>;
 
-export const createDatabase = (pool: Pool): StewardDatabase =>
+export const createDatabase = (pool: Pool | PoolClient): StewardDatabase =>
   drizzle(pool, { schema: authSchema });
 
 export const checkDatabase = async (pool: DatabasePool): Promise<void> => {
