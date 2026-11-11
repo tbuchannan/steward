@@ -2,10 +2,10 @@ import {
   healthResponseSchema,
   internalErrorResponse,
   internalErrorResponseSchema,
-} from "@/lib/contracts";
+} from "../../../lib/contracts/index";
 
-import { checkDatabase } from "@/server/database";
-import { getRuntime } from "@/server/runtime";
+import { checkDatabase } from "../../../server/database";
+import { getRuntime } from "../../../server/runtime";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

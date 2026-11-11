@@ -45,10 +45,10 @@ Start with the [documentation index](docs/README.md). It identifies the source o
 Create a local PostgreSQL database, then run from the repository root:
 
 ```text
-pnpm install
+npm ci
 Copy-Item .env.example .env.local
-pnpm db:migrate
-pnpm dev
+npm run db:migrate
+npm run dev
 ```
 
 Set a unique authentication secret and your local database URL in

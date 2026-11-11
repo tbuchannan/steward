@@ -14,7 +14,7 @@ origin. Neon hosts PostgreSQL, as recorded in
 1. Use the repository root and the Next.js framework preset. Clear any
    `apps/web` Root Directory override before deploying this layout.
 2. Remove any dashboard Output Directory override for the old static build.
-   Use the commands in the root `vercel.json` and the Node.js/pnpm pins.
+   Use the commands in the root `vercel.json` and the Node.js/npm pins.
 3. Set `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and
    `TRUSTED_ORIGINS` as described in [configuration](configuration.md).
    Use the public HTTPS origin for Better Auth. Preserve the existing auth
@@ -47,7 +47,7 @@ trusted preview origin or keep authenticated previews disabled until configured.
    outside the repository and out of development/test fixtures.
 3. For a fresh database with no data to retain, apply the committed migrations
    to Neon. For a restored database, apply only pending migrations. Run
-   `pnpm db:migrate` with the direct destination URL in `DATABASE_URL`.
+   `npm run db:migrate` with the direct destination URL in `DATABASE_URL`.
 4. Set Vercel's application `DATABASE_URL` to the destination pooled URL and
    redeploy. Preserve the production auth secret and public origin when
    retaining existing sessions. Perform the smoke checks below.
@@ -60,10 +60,11 @@ trusted preview origin or keep authenticated previews disabled until configured.
 
 ## Smoke Checks
 
-- Open `/`, `/register`, and `/login` directly. An unknown path returns 404.
+- Open `/` and switch between login and registration. `/?mode=signup` opens
+  registration directly. Removed `/login` and `/register` paths return 404.
 - Verify same-origin `GET /api/health` returns `200 {"status":"ok"}` with
   `Cache-Control: no-store`.
-- In a clean browser, verify `/accounts` redirects to `/login`.
+- In a clean browser, verify `/accounts` redirects to `/`.
 - With an approved synthetic test account, verify registration or sign-in,
   an authenticated reload of `/accounts`, and sign-out. Check production
   cookies use Secure and HttpOnly and personalized responses are private.

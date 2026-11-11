@@ -24,37 +24,37 @@ docs/            product, architecture, and operations
 - Keep Drizzle schemas, database types, and secrets out of public contracts.
 - The planned browser suite will live in `tests/e2e`.
 
-Use one root manifest and one pnpm lockfile.
+Use one root manifest and one npm lockfile.
 
 ## Root Commands
 
 The root currently provides:
 
 ```text
-pnpm dev
-pnpm build
-pnpm start
-pnpm db:generate
-pnpm db:migrate
-pnpm lint
-pnpm format:check
-pnpm typecheck
-pnpm test
+npm run dev
+npm run build
+npm run start
+npm run db:generate
+npm run db:migrate
+npm run lint
+npm run format:check
+npm run typecheck
+npm run test
 ```
 
 The completed MVP is expected to add:
 
 ```text
-pnpm test:integration
-pnpm test:e2e
-pnpm db:seed
+npm run test:integration
+npm run test:e2e
+npm run db:seed
 ```
 
 Add commands as the corresponding features are implemented.
 
 ## Versions
 
-Pin the Node.js and pnpm versions in repository-managed configuration. Dependency ranges and the lockfile must support reproducible CI and deployment builds.
+Pin the Node.js and npm versions in repository-managed configuration. Dependency ranges and the lockfile must support reproducible CI and deployment builds.
 
 ## Environment Files
 

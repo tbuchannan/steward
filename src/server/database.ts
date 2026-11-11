@@ -2,7 +2,7 @@ import "server-only";
 import { Pool } from "pg";
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 
-import { authSchema } from "@/server/schema";
+import { authSchema } from "./schema";
 
 export type DatabasePool = Pick<Pool, "end" | "query">;
 

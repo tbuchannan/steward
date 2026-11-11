@@ -1,24 +1,26 @@
 # Configuration
 
 **Status:** Current through the authentication vertical slice
-**Last verified:** 2026-09-04
+**Last verified:** 2026-11-10
 
 ## Version Pins
 
 Record compatible versions as each part of the architecture is implemented:
 
 - Node.js
-- pnpm
+- npm
 - Next.js and React
 - Better Auth and its Drizzle adapter
 - Drizzle ORM, Drizzle Kit, PostgreSQL driver, and PostgreSQL
 - Tailwind CSS and shadcn/ui CLI
 - Vitest, Testcontainers, and Playwright
 
-The root manifest constrains Node.js and pins pnpm. Package manifests declare
+The root manifest constrains Node.js and pins npm. Package manifests declare
 compatible dependency ranges, and the committed lockfile records exact resolved
 versions for reproducible installs. Dependency upgrades that affect schemas,
 generated code, runtime requirements, or deployment receive explicit review.
+
+The manifest's `allowScripts` field approves esbuild's dependency install scripts.
 
 Better Auth 1.7.3 is the minimum compatible 1.7 patch for the existing
 Steward account schema. [Better Auth's account schema note](https://better-auth.com/blog/1-7-account-schema)
@@ -52,7 +54,7 @@ Connect dialog into the application's `DATABASE_URL`. Its hostname contains
 never disable certificate verification to work around a connection failure.
 The existing `pg` driver supports Neon without a dependency change.
 
-Run `pnpm db:migrate` with `DATABASE_URL` set to the **direct**, non-pooled
+Run `npm run db:migrate` with `DATABASE_URL` set to the **direct**, non-pooled
 connection string for the same Neon branch, database, and role. Supply this
 through the migration job's secret environment or a dedicated local shell;
 shell environment variables take precedence over `.env.local`. Close that shell

@@ -1,18 +1,21 @@
 "use client";
 
 import { CalendarDays, LockKeyhole } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
+import { type FormEvent, useEffect, useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { authClient } from "../../lib/auth-client";
+
+import { Button } from "../ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+} from "../ui/card";
+import { Input } from "../ui/input";
+import { cn } from "../../lib/utils";
 
 type AuthMode = "login" | "signup";
 
@@ -35,15 +38,28 @@ const Brand = ({ mobile = false }: { mobile?: boolean }) => (
   </a>
 );
 
-const AuthLandingPage = () => {
-  const [mode, setMode] = useState<AuthMode>("login");
+const AuthLandingPage = ({
+  initialMode = "login",
+}: {
+  initialMode?: AuthMode;
+}) => {
+  const router = useRouter();
+  const session = authClient.useSession();
+  const [mode, setMode] = useState<AuthMode>(initialMode);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [message, setMessage] = useState("");
+  const [submissionError, setSubmissionError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const isSignup = mode === "signup";
+
+  useEffect(() => {
+    if (session.data) router.replace("/accounts");
+  }, [router, session.data]);
 
   const changeMode = (nextMode: AuthMode) => {
     setMode(nextMode);
     setMessage("");
+    setSubmissionError("");
     setPasswordVisible(false);
   };
 
@@ -56,7 +72,7 @@ const AuthLandingPage = () => {
   };
 
   const handleForgotPasswordClick = () => {
-    setMessage("Password reset would open here.");
+    setMessage("Password reset is not available yet.");
   };
 
   const handlePasswordVisibilityClick = () => {
@@ -64,22 +80,62 @@ const AuthLandingPage = () => {
   };
 
   const handleDemoClick = () => {
-    setMessage("Opening a read-only demo account…");
+    setMessage("The demo account is not available yet.");
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSubmitting) return;
+    setSubmissionError("");
+    setMessage("");
 
     if (!event.currentTarget.checkValidity()) {
       event.currentTarget.reportValidity();
       return;
     }
 
-    setMessage(
-      isSignup
-        ? "Account form is ready to connect to your API."
-        : "Login form is ready to connect to your API.",
-    );
+    const fields = new FormData(event.currentTarget);
+    const name = String(fields.get("name") ?? "").trim();
+    const email = String(fields.get("email") ?? "").trim();
+    const password = String(fields.get("password") ?? "");
+
+    if (isSignup) {
+      if (!name) {
+        setSubmissionError("Enter your name.");
+        return;
+      }
+      if (password.length < 8) {
+        setSubmissionError("Use at least 8 characters.");
+        return;
+      }
+      if (password !== fields.get("passwordConfirmation")) {
+        setSubmissionError("Passwords must match.");
+        return;
+      }
+    }
+
+    setIsSubmitting(true);
+    try {
+      const result = isSignup
+        ? await authClient.signUp.email({ name, email, password })
+        : await authClient.signIn.email({ email, password });
+
+      if (result.error) {
+        setSubmissionError(
+          isSignup
+            ? (result.error.message ?? "Registration failed. Please try again.")
+            : "The email address or password is incorrect.",
+        );
+        return;
+      }
+
+      router.replace("/accounts");
+      router.refresh();
+    } catch {
+      setSubmissionError("Unable to connect. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -122,7 +178,7 @@ const AuthLandingPage = () => {
         aria-label="Account access"
         className="grid min-h-svh place-items-center bg-card/60 p-5 min-[801px]:p-[clamp(1.5rem,5vw,5rem)]"
       >
-        <Card className="w-full max-w-124 gap-0 rounded-[1.4rem] border-foreground/10 bg-card/75 p-6 shadow-[0_28px_80px_rgb(29_56_44/0.12)] backdrop-blur-[18px] min-[801px]:p-[clamp(1.7rem,4vw,3rem)]">
+        <Card className="w-full max-w-124 gap-0 rounded-[1.4rem] border-foreground/10 bg-card/75 p-6 shadow-[0_28px_80px_rgb(29_56_44/0.12)] backdrop-blur-[18px] select-none min-[801px]:p-[clamp(1.7rem,4vw,3rem)] [&_input]:select-text">
           <Brand mobile />
 
           <CardHeader className="gap-0 p-0">
@@ -160,6 +216,7 @@ const AuthLandingPage = () => {
                 aria-selected={!isSignup}
                 className="relative z-10 min-h-11 rounded-[0.65rem] bg-transparent text-muted-foreground shadow-none transition-colors duration-300 hover:bg-transparent hover:text-foreground aria-selected:text-foreground"
                 id="login-tab"
+                disabled={isSubmitting}
                 onClick={handleLoginClick}
                 role="tab"
                 type="button"
@@ -172,6 +229,7 @@ const AuthLandingPage = () => {
                 aria-selected={isSignup}
                 className="relative z-10 min-h-11 rounded-[0.65rem] bg-transparent text-muted-foreground shadow-none transition-colors duration-300 hover:bg-transparent hover:text-foreground aria-selected:text-foreground"
                 id="signup-tab"
+                disabled={isSubmitting}
                 onClick={handleSignupClick}
                 role="tab"
                 type="button"
@@ -182,6 +240,8 @@ const AuthLandingPage = () => {
             </div>
 
             <form
+              aria-labelledby={isSignup ? "signup-tab" : "login-tab"}
+              aria-busy={isSubmitting}
               className="grid gap-4"
               id="auth-form"
               noValidate
@@ -204,9 +264,10 @@ const AuthLandingPage = () => {
                     <Input
                       autoComplete="name"
                       className="min-h-[3.15rem] rounded-[0.72rem] bg-white/80 px-4 text-base hover:border-foreground/30 focus-visible:bg-white"
-                      disabled={!isSignup}
+                      disabled={!isSignup || isSubmitting}
                       id="name"
                       name="name"
+                      maxLength={100}
                       placeholder="Your name"
                       required={isSignup}
                     />
@@ -223,6 +284,7 @@ const AuthLandingPage = () => {
                   className="min-h-[3.15rem] rounded-[0.72rem] bg-white/80 px-4 text-base hover:border-foreground/30 focus-visible:bg-white"
                   id="email"
                   name="email"
+                  disabled={isSubmitting}
                   placeholder="you@example.com"
                   required
                   type="email"
@@ -251,8 +313,9 @@ const AuthLandingPage = () => {
                     }
                     className="min-h-[3.15rem] rounded-[0.72rem] bg-white/80 px-4 pr-18 text-base hover:border-foreground/30 focus-visible:bg-white"
                     id="password"
-                    minLength={8}
+                    minLength={isSignup ? 8 : undefined}
                     name="password"
+                    disabled={isSubmitting}
                     placeholder={
                       isSignup ? "Create a password" : "Enter your password"
                     }
@@ -285,6 +348,32 @@ const AuthLandingPage = () => {
                 </div>
               </div>
 
+              {isSignup && (
+                <div className="grid gap-2">
+                  <label
+                    className="text-sm font-semibold"
+                    htmlFor="passwordConfirmation"
+                  >
+                    Confirm password
+                  </label>
+                  <Input
+                    autoComplete="new-password"
+                    className="min-h-[3.15rem] rounded-[0.72rem] bg-white/80 px-4 text-base hover:border-foreground/30 focus-visible:bg-white"
+                    disabled={isSubmitting}
+                    id="passwordConfirmation"
+                    name="passwordConfirmation"
+                    required
+                    type={passwordVisible ? "text" : "password"}
+                  />
+                </div>
+              )}
+
+              {submissionError && (
+                <p className="m-0 text-sm text-destructive" role="alert">
+                  {submissionError}
+                </p>
+              )}
+
               {message && (
                 <p
                   className="m-0 rounded-[0.65rem] bg-accent px-3 py-3 text-sm text-primary"
@@ -297,8 +386,15 @@ const AuthLandingPage = () => {
               <Button
                 className="mt-1 min-h-[3.2rem] rounded-[0.72rem] font-bold shadow-[0_8px_18px_rgb(31_111_74/0.18)] hover:-translate-y-px hover:shadow-[0_11px_22px_rgb(31_111_74/0.22)] active:translate-y-0"
                 type="submit"
+                disabled={isSubmitting}
               >
-                {isSignup ? "Create account" : "Log in"}
+                {isSubmitting
+                  ? isSignup
+                    ? "Creating account…"
+                    : "Signing in…"
+                  : isSignup
+                    ? "Create account"
+                    : "Log in"}
               </Button>
 
               <div

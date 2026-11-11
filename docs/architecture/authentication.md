@@ -157,8 +157,13 @@ Keep Better Auth's origin and CSRF checks enabled.
 
 ## Frontend Session Boundary
 
+The landing page at `/` renders the shared login/registration form. Its selected
+mode determines whether submission calls Better Auth's sign-in or sign-up email
+endpoint. Successful authentication opens `/accounts`. `/?mode=signup` opens
+registration directly. There are no separate login or registration routes.
+
 The accounts page checks the Better Auth session on the server before
-rendering and redirects unauthenticated visitors to `/login`. The interactive
+rendering and redirects unauthenticated visitors to `/`. The interactive
 client observes session changes and invalidates the server session on sign-out
 before returning to the public page. Every protected operation authenticates
 the caller independently and enforces owner-scoped access.

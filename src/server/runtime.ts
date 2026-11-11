@@ -1,8 +1,8 @@
 import "server-only";
 
-import { createAuth } from "@/server/auth";
-import { loadRuntimeConfig } from "@/server/config";
-import { createDatabase, createDatabasePool } from "@/server/database";
+import { createAuth } from "./auth";
+import { loadRuntimeConfig } from "./config";
+import { createDatabase, createDatabasePool } from "./database";
 
 // Share connections across requests and development reloads within this process.
 const runtimeGlobal = globalThis as typeof globalThis & {

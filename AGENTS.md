@@ -18,9 +18,9 @@ or communicates with financial institutions.
 Use the versions declared in the root `package.json`:
 
 - Node.js 24.18.x
-- pnpm 11.18.0
+- npm 11.16.0
 
-Use pnpm for dependency management. Do not introduce npm or Yarn lockfiles.
+Use npm for dependency management. Do not introduce pnpm or Yarn lockfiles.
 
 The repository is still being scaffolded. Check the implemented package scripts
 before using commands described as "intended" in the documentation.
@@ -57,8 +57,9 @@ requirement coverage.
 - Validate runtime boundaries with Zod; TypeScript types alone are insufficient.
 - Keep secrets and database credentials out of browser code.
 
-Use `.js` extensions for relative imports in TypeScript ESM source files.
-In the Next.js app, use the `@/` alias for imports from `src`.
+Use extensionless relative imports in `src` for Next.js bundler resolution.
+Use `.js` extensions for relative imports in other TypeScript ESM source files.
+Use relative imports instead of path aliases throughout the application and tests.
 
 ## Financial and security invariants
 
@@ -101,11 +102,11 @@ Run the checks relevant to the changed package while developing. Before
 completing a broad change, mirror the current CI sequence:
 
 ```text
-pnpm format:check
-pnpm typecheck
-pnpm lint
-pnpm test
-pnpm build
+npm run format:check
+npm run typecheck
+npm run lint
+npm run test
+npm run build
 ```
 
 Do not claim that integration, database, or end-to-end commands passed unless
@@ -115,7 +116,7 @@ Report any checks that could not be run and explain why.
 
 ## Repository hygiene
 
-- Keep `pnpm-lock.yaml` synchronized with dependency changes.
+- Keep `package-lock.json` synchronized with dependency changes.
 - Do not commit `node_modules`, `dist`, coverage output, local environment files,
   editor settings, credentials, or generated secrets.
 - Commit only safe `.env.example` files.

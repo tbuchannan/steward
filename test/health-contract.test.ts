@@ -4,7 +4,7 @@ import {
   healthResponseSchema,
   internalErrorResponse,
   internalErrorResponseSchema,
-} from "@/lib/contracts";
+} from "../src/lib/contracts/index.js";
 
 describe("healthResponseSchema", () => {
   it("accepts an okay health response", () => {

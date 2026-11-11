@@ -38,7 +38,7 @@ with tempfile.TemporaryDirectory(prefix="steward-root-smoke-") as temp:
     subprocess.run(control + ["-l", str(Path(temp) / "postgres.log"),
                               "-o", f"-h 127.0.0.1 -p {db_port}", "-w", "start"], check=True)
     try:
-        subprocess.run(["cmd.exe", "/d", "/c", "pnpm.cmd db:migrate"], cwd=root, env=env, check=True)
+        subprocess.run(["cmd.exe", "/d", "/c", "npm.cmd run db:migrate"], cwd=root, env=env, check=True)
         app = subprocess.Popen(["node", str(root / "node_modules/next/dist/bin/next"), "start",
                                 "--hostname", "127.0.0.1", "--port", str(web_port)], cwd=root, env=env)
         client = urllib.request.build_opener(NoRedirect(),
@@ -62,12 +62,14 @@ with tempfile.TemporaryDirectory(prefix="steward-root-smoke-") as temp:
                     time.sleep(.25)
             else:
                 raise RuntimeError("Next.js failed to start")
+            assert request("/?mode=signup")[0] == 200
             for path in ["/login", "/register"]:
-                assert request(path)[0] == 200, path
+                assert request(path)[0] == 404, path
             code, headers, response = request("/api/health")
             assert code == 200 and json.loads(response) == {"status": "ok"}
             assert headers["Cache-Control"] == "no-store"
-            assert request("/accounts")[0] == 307
+            code, headers, _ = request("/accounts")
+            assert code == 307 and headers["Location"] == "/"
             email = "steward-layout-smoke@example.test"
             code, _, response = request("/api/auth/sign-up/email", {
                 "name": "Layout Smoke", "email": email, "password": "synthetic-password-123",
@@ -75,7 +77,8 @@ with tempfile.TemporaryDirectory(prefix="steward-root-smoke-") as temp:
             assert code == 200 and json.loads(response)["user"]["email"] == email, code
             assert request("/accounts")[0] == 200
             assert request("/api/auth/sign-out", {})[0] == 200
-            assert request("/accounts")[0] == 307
+            code, headers, _ = request("/accounts")
+            assert code == 307 and headers["Location"] == "/"
             print("PASS: root migration, health, public routes, real registration and sign-out")
         finally:
             app.terminate()

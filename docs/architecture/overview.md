@@ -42,7 +42,7 @@ Vercel Next.js application
 | Browser tests          | Playwright                               |
 | CI                     | GitHub Actions                           |
 | Hosting                | Vercel app and Neon PostgreSQL           |
-| Repository             | One pnpm project                         |
+| Repository             | One npm project                          |
 
 Versions are selected and recorded as each part of the architecture is
 implemented. Runtime and package-manager constraints live in the root manifest;

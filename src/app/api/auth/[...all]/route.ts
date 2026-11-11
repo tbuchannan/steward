@@ -1,6 +1,6 @@
 import { toNextJsHandler } from "better-auth/next-js";
 
-import { getRuntime } from "@/server/runtime";
+import { getRuntime } from "../../../../server/runtime";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

@@ -4,13 +4,13 @@
 
 **Design:** Move application code, configuration, tests, and migration history
 to the root. Move shared Zod contracts to `src/lib/contracts` and compile them
-with the application. Keep pnpm, the lockfile, and the existing dependency
-build policy.
+with the application. Use npm 11.16.0 and `package-lock.json`, with esbuild
+approved in the manifest's `allowScripts` policy.
 
 - [ ] Move source, tests, and migrations; update contract imports and include
       schema tests in the root test run.
 - [ ] Consolidate scripts and dependencies in the root manifest. Regenerate
-      the lockfile and verify a frozen install.
+      the lockfile and verify an `npm ci` install.
 - [ ] Align GitHub Actions, Vercel configuration, environment setup, and
       repository guidance with the root layout.
 - [ ] Verify formatting, type checking, linting, 21 tests, the production

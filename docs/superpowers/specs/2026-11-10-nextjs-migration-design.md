@@ -1,5 +1,10 @@
 # Next.js consolidation
 
+Historical design: the subsequent root-project consolidation and npm migration
+supersede the workspace layout and pnpm references below. See
+[`docs/architecture/repository.md`](../../architecture/repository.md) for the
+current layout and commands.
+
 ## Intent and scope
 
 The user authorized replacing every applicable framework responsibility with

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "../../lib/auth-client";
 
 const AccountsScreen = () => {
   const router = useRouter();
@@ -13,7 +13,7 @@ const AccountsScreen = () => {
 
   useEffect(() => {
     if (!session.isPending && !session.data) {
-      router.replace("/login");
+      router.replace("/");
     }
   }, [router, session.data, session.isPending]);
 
@@ -40,7 +40,7 @@ const AccountsScreen = () => {
       setSignOutError(true);
       return;
     }
-    router.replace("/login");
+    router.replace("/");
     router.refresh();
   };
 

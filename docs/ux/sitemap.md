@@ -1,14 +1,12 @@
 # Sitemap and Navigation
 
 **Status:** Accepted
-**Last verified:** 2026-08-06
+**Last verified:** 2026-11-10
 
 ## Route Map
 
 ```text
 /
-├── /login
-├── /register
 └── authenticated
     ├── /dashboard
     ├── /accounts
@@ -24,7 +22,9 @@ Account and transaction creation and editing use dialogs on desktop and sheets o
 ## Layout Hierarchy
 
 The root layout owns document-level concerns and the global not-found boundary.
-Its public authentication layout contains `/login` and `/register`. Its protected
+The public landing page at `/` contains both login and registration modes.
+Switching modes keeps the visitor on the landing page. `/?mode=signup` opens
+registration directly; there are no separate login or registration routes. Its protected
 application layout contains every authenticated route and owns the persistent
 primary navigation, user menu, responsive shell, and session boundary.
 
@@ -70,7 +70,7 @@ dirty editor or leave its page follows the shared unsaved-change protection.
 
 ## Root Route
 
-- An unauthenticated visitor is redirected to `/login`.
+- An unauthenticated visitor is redirected to `/`.
 - An authenticated user is redirected to `/dashboard`.
 - A safe validated `returnTo` value restores the originally requested protected route after sign-in.
 
@@ -96,34 +96,36 @@ Settings and Sign out are available from the user menu. On small screens, the pr
 
 ## Authentication and Protected Routes
 
-`/login` and `/register` are public routes. Dashboard, account, transaction,
+`/` is the public authentication page. Successful authentication currently opens `/accounts`; the
+dashboard and return-destination behavior below describe the remaining MVP work.
+Dashboard, account, transaction,
 budget, and settings routes are protected by their shared application layout.
 The protected layout resolves the authentication session before rendering a
 protected child route. While the session is unresolved, it shows a neutral
 loading state rather than protected content.
 
 When an unauthenticated visitor requests a protected route, Steward redirects
-to `/login` and stores the requested application-relative pathname and search
+to `/` and stores the requested application-relative pathname and search
 parameters in `returnTo`. The redirect replaces the current browser-history
 entry. After successful authentication, Steward replaces the login entry with
 the validated `returnTo` destination or `/dashboard` when no valid destination
 exists.
 
 A valid `returnTo` value must resolve to the current Steward origin, match a
-known protected frontend route, and must not resolve to `/login` or `/register`.
+known protected frontend route, and must not resolve to the public landing page.
 External, protocol-relative, malformed, unknown, and public destinations are
 discarded. Frontend route protection improves navigation behavior but does not
 replace API authentication or server-side record authorization.
 
-An authenticated user who opens `/login` or `/register` is redirected to
+An authenticated user who opens `/` is redirected to
 `/dashboard`. Signing out clears private client state and replaces the current
-history entry with `/login`; using Back cannot render protected content without
+history entry with `/`; using Back cannot render protected content without
 a newly valid session.
 
 ## Unknown and Invalid Routes
 
 An unrecognized top-level URL shows the global not-found page. Its safe primary
-action leads to `/dashboard` for an authenticated user and `/login` for an
+action leads to `/dashboard` for an authenticated user and `/` for an
 unauthenticated visitor. An unrecognized or invalid URL beneath a protected
 route family resolves the session first and then shows a not-found state within
 the protected application layout.

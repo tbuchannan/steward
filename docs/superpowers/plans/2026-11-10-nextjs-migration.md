@@ -1,5 +1,9 @@
 # Next.js Migration Implementation Plan
 
+Historical plan: the subsequent root-project consolidation and npm migration
+supersede the workspace layout and pnpm commands below. Use the current
+[repository architecture](../../architecture/repository.md) for setup and commands.
+
 > **For agentic workers:** Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox syntax for tracking.
 
 **Goal:** Consolidate the existing Steward application into Next.js.

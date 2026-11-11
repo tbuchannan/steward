@@ -35,7 +35,7 @@ the resulting session and enforce their own authorization rules.
 Each schema is the source of its TypeScript type. Do not maintain a handwritten
 interface with the same shape, infer a public type from a database model, or use
 a type assertion in place of parsing an untrusted value. Contract modules export
-named schemas and their inferred types through `@/lib/contracts`.
+named schemas and their inferred types through `src/lib/contracts/index.ts` using relative imports.
 
 Shared primitive schemas may be composed into route-specific schemas, but
 business rules that require authentication, database state, ownership, or more

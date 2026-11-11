@@ -2,7 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import AccountsScreen from "./accounts-screen.js";
+import AccountsScreen from "./accounts-screen";
 
 const mocks = vi.hoisted(() => ({
   replace: vi.fn(),
@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => ({
   signOut: vi.fn(),
 }));
 
-vi.mock("@/lib/auth-client", () => ({
+vi.mock("../../lib/auth-client", () => ({
   authClient: {
     signOut: mocks.signOut,
     useSession: () => mocks.session,
@@ -39,9 +39,9 @@ describe("protected accounts route", () => {
     mocks.signOut.mockResolvedValue({ data: {}, error: null });
   });
 
-  it("redirects an unauthenticated visitor to login", async () => {
+  it("redirects an unauthenticated visitor to the landing page", async () => {
     await renderAccounts();
-    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith("/login"));
+    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith("/"));
   });
 
   it("renders the session identity and signs out", async () => {
@@ -55,6 +55,6 @@ describe("protected accounts route", () => {
     await user.click(screen.getByRole("button", { name: "Sign out" }));
 
     expect(mocks.signOut).toHaveBeenCalledOnce();
-    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith("/login"));
+    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith("/"));
   });
 });

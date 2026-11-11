@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+# Legacy local dependency cache
 .pnpm-store/
 
 # Builds and test output
@@ -18,7 +19,6 @@ coverage/
 # Logs
 logs/
 *.log
-pnpm-debug.log*
 
 # Editors and operating systems
 .vscode/

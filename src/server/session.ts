@@ -1,7 +1,7 @@
 import "server-only";
 import { headers } from "next/headers";
 
-import { getRuntime } from "@/server/runtime";
+import { getRuntime } from "./runtime";
 
 export const getSession = async () =>
   getRuntime().auth.api.getSession({

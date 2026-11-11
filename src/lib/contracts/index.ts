@@ -4,4 +4,4 @@ export {
   internalErrorResponseSchema,
   type HealthResponse,
   type InternalErrorResponse,
-} from "@/lib/contracts/health";
+} from "./health";

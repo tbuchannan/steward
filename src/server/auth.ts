@@ -2,8 +2,8 @@ import "server-only";
 import { betterAuth, type BetterAuthOptions } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
-import type { StewardDatabase } from "@/server/database";
-import { authSchema } from "@/server/schema";
+import type { StewardDatabase } from "./database";
+import { authSchema } from "./schema";
 
 type AuthConfig = {
   baseUrl: string;
