@@ -20,13 +20,11 @@ import { cn } from "../../lib/utils";
 type AuthMode = "login" | "signup";
 
 const Brand = ({ mobile = false }: { mobile?: boolean }) => (
-  <a
-    aria-label="Steward home"
+  <div
     className={cn(
       "w-fit items-center gap-3 text-foreground no-underline",
       mobile ? "mb-8 inline-flex min-[801px]:hidden" : "inline-flex",
     )}
-    href="/"
   >
     <span
       aria-hidden="true"
@@ -35,7 +33,7 @@ const Brand = ({ mobile = false }: { mobile?: boolean }) => (
       <CalendarDays className="size-[17px]" strokeWidth={1.7} />
     </span>
     <span className="font-display text-[1.75rem] leading-none">Steward</span>
-  </a>
+  </div>
 );
 
 const AuthLandingPage = ({
@@ -142,7 +140,7 @@ const AuthLandingPage = ({
     <main className="steward-canvas min-h-screen min-[801px]:grid min-[801px]:grid-cols-[minmax(17rem,1fr)_minmax(30rem,1.16fr)]">
       <section
         aria-labelledby="brand-heading"
-        className="hidden h-screen flex-col justify-between self-start border-r border-foreground/10 p-[clamp(2rem,5vw,5rem)] min-[801px]:sticky min-[801px]:top-0 min-[801px]:flex"
+        className="hidden h-screen flex-col justify-between self-start border-r border-foreground/10 p-[clamp(2rem,5vw,5rem)] select-none min-[801px]:sticky min-[801px]:top-0 min-[801px]:flex"
       >
         <Brand />
 
