@@ -1,45 +1,30 @@
 # Repository Architecture
 
 **Status:** Accepted
-**Last verified:** 2026-08-03
+**Last verified:** 2026-11-10
 
-## Current State
-
-The current scaffold contains `apps/web`, `apps/api`, and
-`packages/contracts`. The database, shared test-utility, and end-to-end
-workspaces shown below are accepted target boundaries but have not yet been
-created.
-
-## Target MVP Layout
+## Current Layout
 
 ```text
-steward/
-├── apps/
-│   ├── web/
-│   └── api/
-├── packages/
-│   ├── contracts/
-│   ├── database/
-│   └── test-utils/
-├── tests/
-│   └── e2e/
-├── docs/
-├── package.json
-├── pnpm-lock.yaml
-└── pnpm-workspace.yaml
+src/
+  app/           Next.js routes, route-specific screens and tests, global CSS
+  server/        server-only auth, runtime configuration, and database access
+  components/    shared React components
+  lib/           shared helpers
+    contracts/   public Zod schemas and types
+drizzle/         version-controlled SQL migrations and metadata
+test/            Node.js contract, route and server tests; component test setup
+docs/            product, architecture, and operations
 ```
 
-Use pnpm workspaces without Turborepo initially.
+## Module Boundaries
 
-## Package Boundaries
+- Client Components may import public contracts but cannot access database code.
+- Server Components and Route Handlers call server-only services.
+- Keep Drizzle schemas, database types, and secrets out of public contracts.
+- The planned browser suite will live in `tests/e2e`.
 
-- `apps/web` imports public contracts, never database code.
-- `apps/api` imports contracts and database packages.
-- `packages/contracts` contains public Zod schemas and inferred types.
-- `packages/database` contains Drizzle schema, migrations, client creation, and database-only types.
-- `packages/test-utils` contains shared factories and fixtures without production runtime dependencies.
-
-Packages do not reach into another package's internal source path.
+Use one root manifest and one pnpm lockfile.
 
 ## Root Commands
 
@@ -48,6 +33,9 @@ The root currently provides:
 ```text
 pnpm dev
 pnpm build
+pnpm start
+pnpm db:generate
+pnpm db:migrate
 pnpm lint
 pnpm format:check
 pnpm typecheck
@@ -59,13 +47,10 @@ The completed MVP is expected to add:
 ```text
 pnpm test:integration
 pnpm test:e2e
-pnpm db:generate
-pnpm db:migrate
 pnpm db:seed
 ```
 
-The missing commands are added with the packages that implement them. One
-lockfile covers all workspaces.
+Add commands as the corresponding features are implemented.
 
 ## Versions
 

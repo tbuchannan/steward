@@ -13,7 +13,7 @@ Tests are selected by risk. Financial correctness, authorization, transactional 
 | -------------------- | --------------------------------------------------------- | ------------------------------------------- |
 | Unit                 | Exact financial, parsing, formatting, and schema behavior | Vitest                                      |
 | Component            | User-visible component and form behavior                  | Vitest, React Testing Library, `user-event` |
-| API integration      | HTTP contracts, authentication, authorization, services   | Vitest, Fastify `inject()`                  |
+| API integration      | HTTP contracts, authentication, authorization, services   | Vitest, Web Request/Response, local HTTP    |
 | Database integration | Constraints, queries, migrations, transactions            | Vitest, Testcontainers, PostgreSQL          |
 | End-to-end           | A small set of critical deployed-like workflows           | Playwright                                  |
 
@@ -62,7 +62,7 @@ Tests are selected by risk. Financial correctness, authorization, transactional 
 - Demo reset is restricted to the current demo identity
 - Demo seed and reset roll back on forced failure
 
-Contract tests and Fastify route tests follow the accepted matrix in
+Contract tests and Route Handler tests follow the accepted matrix in
 [public API contracts](../architecture/api-contracts.md#verification-requirements),
 including strict request objects and allowlisted response serialization.
 Collection-query coverage additionally follows

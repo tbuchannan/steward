@@ -136,7 +136,7 @@ prevents exposure of:
 
 - PostgreSQL messages, SQL, table or column names, constraint names, connection
   details, and Drizzle query state;
-- Zod issues, Fastify validation metadata, schema internals, and raw input;
+- Zod issues, framework validation metadata, schema internals, and raw input;
 - exception names, stack traces, source paths, dependency versions, and nested
   causes;
 - cookies, authorization headers, session or verification tokens, passwords,
@@ -175,11 +175,11 @@ must not grant access to logs or resources.
 
 The shared contract schemas have focused tests for every code, required
 property, optional validation detail, rejected unknown property, and omission
-of internal fields. API tests use Fastify `inject()` to prove:
+of internal fields. Route Handler and HTTP integration tests to prove:
 
 - each failure class maps to the documented status, code, and safe message;
 - malformed and schema-invalid requests use normalized field details where
-  appropriate without raw Zod or Fastify output;
+  appropriate without raw Zod or framework output;
 - missing sessions return `401`, while absent and other-user resources return
   indistinguishable `404` responses;
 - recognized conflicts and rate limits map to `409` and `429`, including

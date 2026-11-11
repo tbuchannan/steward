@@ -3,6 +3,9 @@
 **Status:** Accepted
 **Date:** 2026-07-30
 
+**Amended:** Production hosting is superseded by [ADR 009](009-neon-postgresql.md).
+The PostgreSQL, Drizzle, and `pg.Pool` decisions remain accepted.
+
 ## Context
 
 Financial ownership, budgets, categories, authentication records, and transactional resets require relational constraints and multi-record transactions.

@@ -7,18 +7,22 @@
 
 Before public launch, document and verify:
 
-- Railway backup mechanism
-- Backup frequency and retention
+- Neon restore history and the retention available on the selected project/plan
+- Independent backup frequency, storage, and retention
 - Restore procedure into a non-production environment
 - Responsible person
 - Expected recovery time and acceptable data-loss window
 
 A backup is not considered reliable until a restore has been tested.
+Use direct Neon connections for PostgreSQL backup/restore tooling. Rehearse
+restores in a restricted recovery environment, not a development or test fixture
+containing real financial data. Keep the former database backup until the
+[provider cutover](deployment.md#railway-to-neon-database-cutover) is accepted.
 
 ## Application Rollback
 
-- Vercel and Railway releases must be identifiable by commit.
-- Keep the prior known-good frontend and API release available.
+- Vercel application releases must be identifiable by commit.
+- Keep the prior known-good Next.js application release available.
 - Roll back application code only after checking database compatibility.
 - Do not automatically reverse a destructive database migration.
 - Prefer expand-and-contract migrations that allow old and new code to coexist temporarily.

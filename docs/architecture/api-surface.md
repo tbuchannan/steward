@@ -6,9 +6,9 @@
 ## Purpose
 
 This document defines Steward's initial resource-oriented HTTP surface. It is
-the contract blueprint for public Zod schemas and Fastify routes, not a mirror
+the contract blueprint for public Zod schemas and Next.js Route Handlers, not a mirror
 of PostgreSQL tables or framework internals. Field-level schemas remain in
-`packages/contracts` as they are implemented.
+`src/lib/contracts` as they are implemented.
 
 The surface covers the accepted MVP requirements. Better Auth continues to own
 its authentication request and response details, while Steward owns financial

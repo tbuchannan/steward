@@ -5,7 +5,7 @@
 
 ## Responsibilities
 
-Fastify hosts the JSON API and Better Auth endpoints. It validates input and output, derives authenticated identity, enforces ownership, coordinates financial workflows, maps database records to public contracts, and logs unexpected failures safely.
+Next.js Route Handlers host the JSON API and Better Auth endpoints. It validates input and output, derives authenticated identity, enforces ownership, coordinates financial workflows, maps database records to public contracts, and logs unexpected failures safely.
 
 The [authentication architecture](authentication.md) defines which endpoints
 are public or protected, the Better Auth versus Steward ownership boundary,
@@ -14,43 +14,18 @@ demo identities.
 
 ## Module Structure
 
-```text
-apps/api/src/
-├── app.ts                  application factory
-├── server.ts               environment loading and network listening
-├── plugins/
-│   ├── auth.ts
-│   ├── database.ts
-│   ├── errors.ts
-│   └── validation.ts
-├── modules/
-│   ├── accounts/
-│   ├── budgets/
-│   ├── dashboard/
-│   ├── demo/
-│   └── transactions/
-└── shared/
-```
-
-`app.ts` creates a testable Fastify instance without listening. `server.ts` validates configuration, starts the listener, and handles graceful shutdown.
+`src/app/api` contains the public Next.js Route Handlers.
+`src/server` owns the runtime, database, Better Auth, and session
+lookup. Add feature services there as financial workflows are implemented.
 
 ## Request Layers
 
-```text
-Route schema
-→ authentication hook
-→ thin route handler
-→ application service
-→ ownership-scoped query
-→ PostgreSQL
-```
-
-- Route schemas validate parameters, query strings, bodies, and documented responses.
-- Request and response schemas follow the strictness, omission, serialization,
-  and primitive rules in [public API contracts](api-contracts.md).
-- Handlers translate HTTP details and call one service operation.
-- Services enforce business rules and transaction boundaries.
-- Query functions express database access and always include ownership where required.
+- Validate public parameters, query strings, bodies, and responses with Zod.
+- Resolve the current session at each protected boundary.
+- Keep handlers thin and enforce business rules in server-only services.
+- Scope protected queries to the authenticated user and use database
+  transactions when partial writes would violate financial consistency.
+- Use the same services for Server Components and UI-only Server Actions.
 
 ## API Conventions
 
@@ -108,7 +83,8 @@ Account-to-account transfers are deferred.
 
 ## Runtime
 
-- One shared `pg.Pool` is created at startup and closed during shutdown.
+- One lazy `pg.Pool` is reused per Node.js process, with at most five connections.
+  Deployment limits must account for pools across runtime instances.
 - Health checks prove process readiness without exposing sensitive details.
 - Structured logs include request and correlation context but exclude credentials, cookies, money descriptions where unnecessary, and database secrets.
 - Better Auth supplies authentication rate limiting; application mutation and public-entry rate limits are finalized before public launch.

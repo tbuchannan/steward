@@ -10,7 +10,7 @@ conventions for Steward-owned HTTP endpoints. The
 [initial API surface](api-surface.md) owns which routes exist and their
 high-level behavior; [API collection queries](api-collections.md) owns
 pagination, filtering, search, and sorting; exported Zod schemas in
-`packages/contracts` are the field-level specification as each route is
+`src/lib/contracts` are the field-level specification as each route is
 implemented.
 
 Better Auth owns the contracts under `/api/auth/*`. Steward does not copy or
@@ -19,24 +19,23 @@ the resulting session and enforce their own authorization rules.
 
 ## Contract Ownership
 
-- `packages/contracts` owns public Zod schemas and types derived from those
+- `src/lib/contracts` owns public Zod schemas and types derived from those
   schemas with `z.infer`. It may also own pure, environment-independent
   refinements needed by more than one consumer.
-- `apps/api` imports those schemas for Fastify route validation and response
-  serialization. It maps service and database values into public response
+- Route Handlers import those schemas for request validation and response
+  serialization. They map service and database values into public response
   objects before returning them.
-- `apps/web` imports the same schemas and inferred types for request
+- The UI imports the same schemas and inferred types for request
   construction, response parsing, URL search validation, and forms. Browser
   validation improves feedback but never replaces server validation.
 - Database tables, Drizzle models, authentication records, and service input
   types are not public contracts and are never exported from
-  `packages/contracts`.
+  `src/lib/contracts`.
 
 Each schema is the source of its TypeScript type. Do not maintain a handwritten
 interface with the same shape, infer a public type from a database model, or use
 a type assertion in place of parsing an untrusted value. Contract modules export
-named schemas and their inferred types from the package's public `index.ts`;
-consumers do not import internal source paths.
+named schemas and their inferred types through `@/lib/contracts`.
 
 Shared primitive schemas may be composed into route-specific schemas, but
 business rules that require authentication, database state, ownership, or more
@@ -63,7 +62,7 @@ whitespace-only, and repeated ambiguous values.
 
 Mutation bodies use `Content-Type: application/json`. Malformed JSON, an
 unsupported content type, a missing required body, and any schema failure are
-normalized to the public validation error rather than exposing Fastify or Zod
+normalized to the public validation error rather than exposing framework or Zod
 details. Authentication hooks run after structural route validation and before
 the service operation; the server still derives identity exclusively from the
 validated session.
@@ -194,7 +193,7 @@ authentication row.
 ## Verification Requirements
 
 Every new or changed contract has focused Vitest coverage in
-`packages/contracts` for:
+`src/lib/contracts` for:
 
 - one representative accepted value and each important boundary;
 - missing required fields and invalid primitive formats;
@@ -204,7 +203,7 @@ Every new or changed contract has focused Vitest coverage in
   months, malformed identifiers, and non-UTC timestamps where applicable; and
 - response parsing or serialization omitting undeclared internal fields.
 
-API route tests use Fastify `inject()` to prove each request location is wired
+Route Handler and HTTP integration tests use Web requests to prove each request location is wired
 to its public schema, invalid requests use the public error envelope, successful
 responses match the documented schema, and intentionally returned internal
 properties cannot cross serialization. Protected-resource tests separately
@@ -213,6 +212,6 @@ prove session-derived ownership and the `401`/concealed-`404` policy.
 Error schema and route coverage follows the matrix in
 [public API errors](api-errors.md#verification-requirements).
 
-For each documented success or expected error status, the Fastify route declares
-the corresponding response schema. A route is not complete if only its
+For each documented success or expected error status, the Route Handler parses its
+output with the corresponding response schema. A route is not complete if only its
 TypeScript return type describes the response.

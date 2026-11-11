@@ -18,23 +18,24 @@ Docker Compose is not required for normal application development.
 
 ## Current Setup
 
+Create a PostgreSQL database and role, then from the repository root:
+
 ```text
 pnpm install
-Copy-Item .env.example .env
+Copy-Item .env.example .env.local
+```
+
+Set `DATABASE_URL` to the local database and generate a unique
+`BETTER_AUTH_SECRET`. Next.js and Drizzle Kit load the root `.env.local`.
+
+```text
 pnpm db:migrate
 pnpm dev
 ```
 
-Replace the example authentication secret, then set the variables from `.env`
-in the shell that starts Steward; the application does not automatically load
-environment files. Run `pnpm db:migrate` once for a new database and whenever a
-branch adds migrations. The root `predev` script builds
-`@steward/contracts` before starting workspace development processes. Vite
-proxies relative `/api` requests to the local API. `GET /api/health` runs a
-minimal PostgreSQL readiness query, and the frontend displays the result.
-
-The Better Auth schema is required for registration and session workflows. No
-seed data is required.
+Open `http://localhost:3000`. `GET /api/health` checks PostgreSQL readiness.
+Apply migrations once for a new database and whenever a branch adds migrations.
+The current authentication flows need no seed data.
 
 ## Current Checks
 
@@ -55,13 +56,14 @@ pnpm db:migrate
 
 Generate a migration only after intentionally changing a Drizzle schema. Review
 the generated SQL before applying it. Migrations require `DATABASE_URL` in the
-calling shell.
+app environment or calling shell.
+For a dedicated Neon development database, follow the pooled application and
+direct migration connection guidance in [configuration](configuration.md#neon-connections).
 
 ## Planned Commands
 
-When persistence and browser workflows are implemented, this guide will add
-safe environment-file setup, local PostgreSQL creation, migrations, seed data,
-integration tests, and end-to-end tests. The corresponding planned command
+Later slices will add seed data, database integration tests, and
+browser tests. The corresponding planned command
 interface is:
 
 ```text

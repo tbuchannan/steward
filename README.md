@@ -2,11 +2,9 @@
 
 Steward is a responsive personal-finance record-keeping application for manually managing accounts, transactions, monthly budgets, and financial summaries. It never initiates payments, transfers funds, or communicates with financial institutions.
 
-> **Status:** Early implementation. The web, API, and public-contract packages
-> include a deployable API health path and a styled frontend account-access
-> shell.
-> Authentication, persistence, and MVP financial workflows are not yet
-> implemented.
+> **Status:** Early implementation. The Next.js app includes PostgreSQL
+> readiness, email/password authentication, and a protected accounts shell.
+> MVP financial workflows are not yet implemented.
 
 **Live deployment:** [steward.tjbuchannan.com](https://steward.tjbuchannan.com)
 
@@ -28,16 +26,15 @@ Account-to-account transfer records, investment holdings, multi-currency behavio
 
 Steward will use:
 
-- React, TypeScript, Vite, and TanStack Router
-- TanStack Query, React Hook Form, and Zod
+- Next.js App Router, React, and TypeScript
+- React Hook Form and Zod
 - Tailwind CSS and shadcn/ui
-- Fastify, Better Auth, Drizzle ORM, and PostgreSQL
+- Better Auth, Drizzle ORM, and PostgreSQL
 - Vitest, React Testing Library, Testcontainers, and Playwright
-- Vercel for the frontend and Railway for the API and database
+- Vercel for the Next.js application; Neon for PostgreSQL
 
-The production frontend proxies `/api/*` requests to Railway so browser
-authentication remains same-origin. The API health response is successful only
-after PostgreSQL answers a readiness query.
+Next.js serves pages and `/api/*` on the same origin. The health endpoint
+reports success only after PostgreSQL answers a readiness query.
 
 ## Documentation
 
@@ -45,17 +42,18 @@ Start with the [documentation index](docs/README.md). It identifies the source o
 
 ## Getting Started
 
-Install dependencies and start the current scaffold from the repository root:
+Create a local PostgreSQL database, then run from the repository root:
 
 ```text
 pnpm install
+Copy-Item .env.example .env.local
+pnpm db:migrate
 pnpm dev
 ```
 
-The current scaffold does not yet require PostgreSQL. Database setup
-instructions will be added when persistence is implemented. See
-[local development](docs/operations/local-development.md) for current checks and
-planned setup steps.
+Set a unique authentication secret and your local database URL in
+`.env.local` before starting. Open `http://localhost:3000`.
+See [local development](docs/operations/local-development.md) for details.
 
 ## License
 

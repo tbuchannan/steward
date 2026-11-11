@@ -32,9 +32,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build shared contracts
-        run: pnpm --filter @steward/contracts build
-
       - name: Check formatting
         run: pnpm format:check
 

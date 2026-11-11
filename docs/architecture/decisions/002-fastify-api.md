@@ -1,6 +1,6 @@
 # ADR 002: Fastify API
 
-**Status:** Accepted
+**Status:** Superseded by [ADR 008](008-nextjs-app-router.md)
 **Date:** 2026-07-30
 
 ## Context
