@@ -2,7 +2,7 @@
 
 import { CalendarDays, LockKeyhole } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useEffect, useState } from "react";
+import { type SubmitEvent, useEffect, useState } from "react";
 
 import { authClient } from "../../lib/auth-client";
 import { DemoRequestError, requestDemo } from "../../lib/demo-client";
@@ -105,7 +105,7 @@ const AuthLandingPage = ({
     }
   };
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isSubmitting) return;
     setSubmissionError("");

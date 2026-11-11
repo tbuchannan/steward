@@ -5,13 +5,15 @@
   "packageManager": "npm@11.16.0",
   "engines": {
     "node": ">=24.18.0 <25",
-    "npm": "11.16.0"
+    "npm": ">=11.16.0 <12"
   },
   "allowScripts": {
     "esbuild": true
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "concurrently --color-mode ansi -k -n next,drizzle -c cyan,magenta \"npm run dev:web\" \"npm run db:studio\"",
+    "dev:web": "next dev",
+    "db:studio": "drizzle-kit studio --config drizzle.config.ts",
     "build": "next build",
     "lint": "oxlint",
     "test": "vitest run",
@@ -33,12 +35,13 @@
     "@types/pg": "8.15.5",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
-    "drizzle-kit": "0.31.10",
+    "concurrently": "^10.0.7",
+    "drizzle-kit": "^0.31.10",
     "jsdom": "26.1.0",
     "oxlint": "^1.71.0",
+    "prettier": "3.9.6",
     "typescript": "~6.0.2",
-    "vitest": "4.1.10",
-    "prettier": "3.9.6"
+    "vitest": "4.1.10"
   },
   "type": "module",
   "dependencies": {
