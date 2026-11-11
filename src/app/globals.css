@@ -1,0 +1,276 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: "DM Sans", system-ui, sans-serif;
+  --font-display: "Newsreader", Georgia, serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-positive: var(--positive);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  color-scheme: light;
+  --background: #edf3ed;
+  --foreground: #183429;
+  --card: #ffffff;
+  --card-foreground: #183429;
+  --popover: #ffffff;
+  --popover-foreground: #183429;
+  --primary: #1f6f4a;
+  --primary-foreground: #ffffff;
+  --secondary: #e6ede7;
+  --secondary-foreground: #183429;
+  --muted: #e6ede7;
+  --muted-foreground: #607069;
+  --accent: #dfece4;
+  --accent-foreground: #183429;
+  --destructive: #a43f3f;
+  --destructive-foreground: #ffffff;
+  --border: #ccd8d0;
+  --input: #ccd8d0;
+  --ring: #1f6f4a;
+  --positive: #2b8056;
+  --warning: #b88322;
+  --info: #3c6e91;
+  --radius: 0.72rem;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #10231b;
+  --foreground: #eef6f0;
+  --card: #183429;
+  --card-foreground: #eef6f0;
+  --popover: #183429;
+  --popover-foreground: #eef6f0;
+  --primary: #71c99b;
+  --primary-foreground: #10231b;
+  --secondary: #243f34;
+  --secondary-foreground: #eef6f0;
+  --muted: #243f34;
+  --muted-foreground: #aebfb7;
+  --accent: #294a3c;
+  --accent-foreground: #eef6f0;
+  --destructive: #e07a7a;
+  --destructive-foreground: #201010;
+  --border: #3b574b;
+  --input: #3b574b;
+  --ring: #71c99b;
+  --positive: #71c99b;
+  --warning: #dfb865;
+  --info: #7db4d8;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    min-width: 320px;
+    min-height: 100%;
+    background: var(--background);
+    scrollbar-gutter: stable;
+  }
+
+  body {
+    min-width: 320px;
+    min-height: 100vh;
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+@layer utilities {
+  .steward-canvas {
+    background:
+      radial-gradient(
+        circle at 12% 16%,
+        rgb(255 255 255 / 80%),
+        transparent 24rem
+      ),
+      radial-gradient(
+        circle at 90% 88%,
+        rgb(197 222 205 / 42%),
+        transparent 28rem
+      ),
+      var(--background);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}
+
+@layer components {
+  .app-shell .wordmark {
+    display: inline-block;
+    color: var(--foreground);
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    text-decoration: none;
+  }
+
+  .app-shell .eyebrow {
+    margin: 0 0 1.25rem;
+    color: #52705f;
+    font-size: 0.75rem;
+    font-weight: 750;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .app-shell .form-error {
+    margin: 0;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    color: #a23f32;
+    background: #fff1ef;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .app-shell .secondary-button:disabled {
+    cursor: wait;
+    opacity: 0.7;
+  }
+
+  .app-shell .secondary-button:focus-visible,
+  .app-shell a:focus-visible {
+    outline: 3px solid rgb(45 113 74 / 30%);
+    outline-offset: 2px;
+  }
+  .session-status {
+    display: grid;
+    min-height: 100vh;
+    place-items: center;
+    color: #526159;
+  }
+
+  .app-shell {
+    min-height: 100vh;
+  }
+
+  .app-header {
+    display: flex;
+    min-height: 4.5rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem clamp(1.25rem, 5vw, 4rem);
+    border-bottom: 1px solid #d6ded8;
+    background: rgb(255 255 255 / 82%);
+  }
+
+  .app-wordmark {
+    margin: 0;
+  }
+
+  .user-menu {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: #425149;
+    font-size: 0.9rem;
+    font-weight: 650;
+  }
+
+  .app-shell .secondary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid;
+    border-radius: 0.6rem;
+    padding: 0.7rem 1rem;
+    font: inherit;
+    font-weight: 750;
+    width: auto;
+    min-height: 2.5rem;
+    border-color: #b9c8be;
+    background: #fff;
+    color: #285f42;
+  }
+
+  .accounts-page {
+    width: min(68rem, calc(100% - 2.5rem));
+    margin: 0 auto;
+    padding: clamp(3rem, 8vw, 6rem) 0;
+  }
+
+  .accounts-page h1 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 500;
+    letter-spacing: -0.055em;
+    line-height: 0.98;
+    font-size: clamp(3rem, 8vw, 5.5rem);
+  }
+
+  .empty-state {
+    max-width: 38rem;
+    margin-top: 3rem;
+    padding: 2rem;
+    border: 1px solid #d6ded8;
+    border-radius: 1rem;
+    background: #fff;
+  }
+
+  .empty-state h2 {
+    margin: 0 0 0.75rem;
+    font-family: Georgia, serif;
+    font-size: 1.75rem;
+  }
+
+  .empty-state p {
+    margin: 0;
+    color: #526159;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 32rem) {
+    .user-menu > span {
+      display: none;
+    }
+  }
+}

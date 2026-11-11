@@ -2,8 +2,9 @@
 
 ## Status
 
-Steward is in early implementation. The web, API, and public-contract packages
-are scaffolded, while most MVP behavior remains unimplemented. Documents marked
+Steward is in early implementation. A Next.js app serves the web UI and HTTP
+API, with public Zod contracts in `src/lib/contracts`. Most MVP financial behavior
+remains unimplemented. Documents marked
 **Accepted** define current decisions. Documents marked **Draft** require
 implementation validation.
 

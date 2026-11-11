@@ -1,9 +1,12 @@
 # Dependencies
 node_modules/
+# Legacy local dependency cache
 .pnpm-store/
 
 # Builds and test output
 dist/
+.next/
+next-env.d.ts
 coverage/
 *.tsbuildinfo
 
@@ -16,7 +19,6 @@ coverage/
 # Logs
 logs/
 *.log
-pnpm-debug.log*
 
 # Editors and operating systems
 .vscode/

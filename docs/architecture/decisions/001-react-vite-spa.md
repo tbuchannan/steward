@@ -1,6 +1,6 @@
 # ADR 001: React and Vite SPA
 
-**Status:** Accepted
+**Status:** Superseded by [ADR 008](008-nextjs-app-router.md)
 **Date:** 2026-07-30
 
 ## Context

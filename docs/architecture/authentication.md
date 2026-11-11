@@ -26,13 +26,13 @@ The generated Better Auth schema is incorporated into Steward's Drizzle migratio
 Steward separates provider-owned authentication endpoints from application
 endpoints that consume the resulting identity:
 
-| Endpoint group                                                                        | Access                  | Contract and authorization owner                                                                         |
-| ------------------------------------------------------------------------------------- | ----------------------- | -------------------------------------------------------------------------------------------------------- |
-| `GET /api/health`                                                                     | Public                  | Steward; returns readiness without user or configuration data                                            |
-| `POST /api/demo`                                                                      | Public and rate-limited | Steward; creates one isolated temporary identity and session                                             |
-| `POST /api/auth/sign-up/email` and `POST /api/auth/sign-in/email`                     | Public                  | Better Auth owns credential validation, responses, cookies, and rate limiting                            |
-| `GET /api/auth/get-session` and `POST /api/auth/sign-out`                             | Cookie-session aware    | Better Auth owns session inspection and invalidation behavior, including its no-session responses        |
-| `GET /api/demo`, `POST /api/demo/reset`, and every other Steward application endpoint | Protected               | Fastify validates the Better Auth session; Steward authorizes the operation against the session identity |
+| Endpoint group                                                                        | Access                  | Contract and authorization owner                                                                                   |
+| ------------------------------------------------------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `GET /api/health`                                                                     | Public                  | Steward; returns readiness without user or configuration data                                                      |
+| `POST /api/demo`                                                                      | Public and rate-limited | Steward; creates one isolated temporary identity and session                                                       |
+| `POST /api/auth/sign-up/email` and `POST /api/auth/sign-in/email`                     | Public                  | Better Auth owns credential validation, responses, cookies, and rate limiting                                      |
+| `GET /api/auth/get-session` and `POST /api/auth/sign-out`                             | Cookie-session aware    | Better Auth owns session inspection and invalidation behavior, including its no-session responses                  |
+| `GET /api/demo`, `POST /api/demo/reset`, and every other Steward application endpoint | Protected               | The Route Handler validates the Better Auth session; Steward authorizes the operation against the session identity |
 
 There is no public financial-data endpoint. Adding a Steward-owned endpoint is
 an explicit access-control decision: unless the accepted API surface identifies
@@ -42,26 +42,19 @@ authoritative for it.
 
 Better Auth proves who the caller is. It does not authorize access to financial
 accounts, transactions, categories, budgets, preferences, demo metadata, or
-other Steward-owned records. Fastify and Steward application services own that
+other Steward-owned records. Steward server modules own that
 authorization after session validation.
 
 ## Production Request Path
 
-```text
-Browser /api/auth/*
-→ Vercel same-origin rewrite
-→ Railway Fastify
-→ Better Auth
-→ Drizzle
-→ PostgreSQL
-```
-
-This avoids relying on third-party cookies across unrelated Vercel and Railway domains. The proxy and trusted-host configuration must preserve the original HTTPS host safely.
+Browser requests to `/api/auth/*` go directly to the same-origin Next.js Route
+Handler, which uses Better Auth's Next.js adapter. Better Auth uses Drizzle
+and PostgreSQL to validate sessions. No separate application API is involved.
 
 ## Identity and Authorization
 
 The Better Auth user ID from a validated current session is the canonical
-request identity. Fastify resolves the session once at the protected request
+request identity. The server resolves the session once at the protected request
 boundary and makes only the validated server-side identity available to the
 handler and application service.
 
@@ -127,7 +120,7 @@ Password recovery, email verification, social authentication, MFA, passkeys, and
 
 Demo entry creates a normal Better Auth user, authentication account, and session. The identity is marked as temporary in application-owned metadata; no public request can choose another user's demo identity.
 
-A demo identity crosses the same protected Fastify session boundary and uses
+A demo identity crosses the same protected server session boundary and uses
 the same owner-scoped services and queries as a regular identity. It is not a
 shared account, privileged role, bypass header, hard-coded user ID, or
 frontend-only mode. The presence of demo metadata for the current session user
@@ -153,43 +146,27 @@ ordinary record lifecycle.
 
 ## Cookies and Origins
 
-Production is a same-origin browser deployment. The browser uses relative
-`/api/*` URLs on the Vercel application origin; Vercel rewrites them to the
-Railway Fastify service. The browser does not call the unrelated Railway origin
-directly and Steward does not use bearer tokens as a fallback for normal web
-sessions. Cookie credentials therefore accompany the first-party request under
-normal browser rules.
+The browser sends cookies to relative `/api/*` URLs on the Next.js origin.
+Better Auth session cookies are Secure and HttpOnly in production, with narrow
+SameSite, path, and domain scope. Authentication and personalized responses
+must never be publicly cached.
 
-- Better Auth session cookies are Secure and HttpOnly in production, with
-  `SameSite` and path/domain scope set as narrowly as the supported flow allows.
-- Personalized application and authentication responses passing through the
-  proxy are never publicly cached.
-- The proxy preserves the approved original HTTPS host and protocol so Better
-  Auth constructs and validates origins correctly.
-- Better Auth trusted origins are explicit and environment-specific. Local
-  development uses approved localhost origins.
-- Preview authentication requires an explicit host policy; arbitrary preview
-  origins are not trusted.
-- CSRF or origin validation is never disabled to make deployment easier.
-
-Same-origin delivery improves cookie reliability; it is not an authorization
-control. Railway, Fastify, and every protected route remain secure if a caller
-reaches the API without using the frontend.
+Set the application's public HTTPS origin explicitly. Trusted origins are
+environment-specific and explicitly allowed, including any preview hosts.
+Keep Better Auth's origin and CSRF checks enabled.
 
 ## Frontend Session Boundary
 
-The protected React layout resolves `GET /api/auth/get-session` before rendering
-a protected child route. While resolution is pending it renders a neutral
-loading state. With no valid session it clears private client caches and
-redirects to `/login`; signing out invalidates the server session before the UI
-returns to the public layout.
+The landing page at `/` renders the shared login/registration form. Its selected
+mode determines whether submission calls Better Auth's sign-in or sign-up email
+endpoint. Successful authentication opens `/accounts`. `/?mode=signup` opens
+registration directly. There are no separate login or registration routes.
 
-These route guards prevent accidental protected rendering and provide useful
-navigation, but they are explicitly non-authoritative. A hidden control,
-client-side redirect, cached session object, demo indicator, or matched route
-never grants API or record access. Fastify independently authenticates every
-protected request, and owner-scoped application data access independently
-authorizes it.
+The accounts page checks the Better Auth session on the server before
+rendering and redirects unauthenticated visitors to `/`. The interactive
+client observes session changes and invalidates the server session on sign-out
+before returning to the public page. Every protected operation authenticates
+the caller independently and enforces owner-scoped access.
 
 ## Schema Updates
 

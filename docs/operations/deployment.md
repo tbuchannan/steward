@@ -1,136 +1,76 @@
 # Deployment
 
-**Status:** Walking-skeleton production deployment verified
-**Last verified:** 2026-08-31
+**Status:** Next.js deployment configuration prepared; production cutover pending
 
-## Production Topology
+## Topology
 
-```text
-Browser
-→ Vercel React/Vite application
-→ Vercel /api/* rewrite
-→ Railway Fastify service
-→ Railway PostgreSQL
-```
+Vercel runs the Next.js application, including pages, Better Auth, and the
+Steward HTTP API. The browser calls relative `/api/*` URLs on the application
+origin. Neon hosts PostgreSQL, as recorded in
+[ADR 009](../architecture/decisions/009-neon-postgresql.md).
 
-The rewrite is required by [ADR 005](../architecture/decisions/005-vercel-api-proxy.md). Personalized and authentication API responses must not be cached by the proxy.
+## Vercel Project
 
-## Build Roots
+1. Use the repository root and the Next.js framework preset. Clear any
+   `apps/web` Root Directory override before deploying this layout.
+2. Remove any dashboard Output Directory override for the old static build.
+   Use the commands in the root `vercel.json` and the Node.js/npm pins.
+3. Set `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and
+   `TRUSTED_ORIGINS` as described in [configuration](configuration.md).
+   Use the public HTTPS origin for Better Auth. Preserve the existing auth
+   secret on the production origin if existing sessions should remain valid.
+4. Set the app's `DATABASE_URL` to the Neon pooled endpoint, preserving its TLS
+   parameters. Account for up to five client connections per Node.js process
+   when sizing the Neon project. Use the direct URL for migration jobs, as
+   described in [configuration](configuration.md#neon-connections).
 
-- Vercel builds `apps/web`.
-- Railway builds and runs `apps/api`.
-- Both install from the repository root using the pinned pnpm version and shared lockfile.
+Preview deployments use a separate database and auth secret. Use an explicitly
+trusted preview origin or keep authenticated previews disabled until configured.
 
-The committed Railway configuration runs:
+## Release and Cutover
 
-```text
-pnpm --filter @steward/contracts build
-pnpm --filter @steward/api build
-pnpm --filter @steward/api start
-```
+1. Pass the repository quality checks and test the release against a disposable
+   database. When schema changes exist, apply backward-compatible migrations
+   once before deploying the app. The Next.js refactor moves existing
+   migrations without changing their SQL or journal.
+2. Deploy the Next.js application and verify the same-origin routes below.
+3. Complete the database cutover below before retiring Railway services.
 
-The Vercel project builds `@steward/web` from the workspace root and publishes
-`apps/web/dist`. Its build command compiles `@steward/contracts` before the web
-application so a clean deployment has the package's JavaScript and declaration
-outputs. The production Railway URL is recorded in the Vercel rewrite only after
-Railway assigns and verifies that URL.
+## Railway to Neon Database Cutover
 
-## Release Order
-
-```text
-Required CI checks pass
-→ Apply backward-compatible database migration once
-→ Deploy Railway API
-→ Verify API health and compatibility
-→ Deploy Vercel frontend
-→ Run production smoke checks
-```
-
-For a frontend-compatible API-only change, order may vary. A schema change is deployed before code that requires it.
-
-## Vercel
-
-- Unknown application routes rewrite to the SPA entry point.
-- `/api/:path*` rewrites to the Railway API.
-- API rewrites preserve required request and response headers.
-- Authenticated API responses are not edge cached.
-- Production and preview configuration are separate.
-
-## Railway
-
-- Fastify listens on the assigned host and port.
-- One shared `pg.Pool` observes database connection limits.
-- Health checks do not expose sensitive configuration.
-- Graceful shutdown stops new work and closes database connections.
-- Migrations do not run concurrently in every application replica.
-
-For the walking skeleton:
-
-1. Create a Railway project from this repository.
-2. Add a PostgreSQL service.
-3. Add an API service with the repository root as its root directory.
-4. Reference the PostgreSQL service's `DATABASE_URL` from the API service.
-5. Generate an API public domain.
-6. Confirm Railway activates the deployment using `/api/health` from
-   `railway.json`.
-
-The committed build and start commands install from the workspace root. The API
-uses Railway's assigned `PORT`, maintains one shared five-connection `pg.Pool`,
-queries PostgreSQL before returning health success, and closes the pool during
-Fastify shutdown.
-
-## Walking-Skeleton Verification
-
-Before this slice is complete:
-
-1. `GET https://<railway-api>/api/health` returns `{ "status": "ok" }`.
-2. Vercel rewrites `/api/:path*` to the verified Railway API domain without
-   enabling rewrite caching.
-3. The Vercel application loads at `/` and at one nested SPA path.
-4. The account-access shell renders at supported desktop and mobile widths.
-5. The repository CI workflow succeeds for the deployed commit.
-
-Production URLs:
-
-- Frontend: <https://steward-omega-puce.vercel.app>
-- API: <https://api-production-ff989.up.railway.app>
-
-The Vercel project is connected to the GitHub repository for automatic
-deployments. On 2026-08-31, the production root, a nested SPA path, and the
-same-origin `/api/health` rewrite all returned HTTP 200. The health response was
-`{ "status": "ok" }` and was not served from the Vercel edge cache.
-
-## Preview Environments
-
-Preview frontends use a dedicated non-production API and database or have authenticated behavior disabled until a safe preview strategy exists. Preview hosts are explicitly allowed; an arbitrary `*.vercel.app` trust policy is not used without security review.
-
-## Deployment Gates
-
-- Formatting, linting, and type checking
-- Unit, component, API, and database integration tests
-- Production frontend and backend builds
-- Critical Playwright tests
-- Clean migration test
+1. Create the Neon destination and configure separate production and preview
+   credentials. Preview/test databases must contain only synthetic data.
+2. If existing records must be preserved, stop writes to the source, take a
+   final backup, and restore it into Neon using direct connections. Preserve
+   authentication tables and the Drizzle migration history. Validate schema,
+   row counts, ownership, and sign-in before allowing writes. Keep backups
+   outside the repository and out of development/test fixtures.
+3. For a fresh database with no data to retain, apply the committed migrations
+   to Neon. For a restored database, apply only pending migrations. Run
+   `npm run db:migrate` with the direct destination URL in `DATABASE_URL`.
+4. Set Vercel's application `DATABASE_URL` to the destination pooled URL and
+   redeploy. Preserve the production auth secret and public origin when
+   retaining existing sessions. Perform the smoke checks below.
+5. Keep the source database and its backup available until verification and
+   a Neon restore rehearsal succeed. Once Neon accepts writes, reverting the
+   URL alone would lose those writes; reconcile them before any rollback.
+6. After accepting the cutover, remove the old Railway services and obsolete
+   deployment credentials. Repository changes do not perform these dashboard
+   operations or transfer database contents automatically.
 
 ## Smoke Checks
 
-After production deployment:
+- Open `/` and switch between login and registration. `/?mode=signup` opens
+  registration directly. Removed `/login` and `/register` paths return 404.
+- Verify same-origin `GET /api/health` returns `200 {"status":"ok"}` with
+  `Cache-Control: no-store`.
+- In a clean browser, verify `/accounts` redirects to `/`.
+- With an approved synthetic test account, verify registration or sign-in,
+  an authenticated reload of `/accounts`, and sign-out. Check production
+  cookies use Secure and HttpOnly and personalized responses are private.
+- Verify a stale or revoked session no longer opens the protected page.
 
-1. Open the application directly at a nested route.
-2. Enter a demo and reload the protected page.
-3. Read dashboard data.
-4. Create and delete a demo transaction.
-5. Reset demo data.
-6. Sign out and verify protected-route rejection.
-
-## Observability Before Public Launch
-
-Finalize:
-
-- Error-monitoring provider
-- Structured log destination and retention
-- Availability checks
-- Demo-entry and mutation rate limits
-- Alert ownership
-
-These may remain vendor-open during scaffolding but cannot remain behavior-open at public launch.
+As MVP features ship, add demo entry, demo reset, and a representative
+financial workflow to release smoke checks. Before public launch, finalize
+error monitoring, log retention, availability checks, rate limits, and alert
+ownership.

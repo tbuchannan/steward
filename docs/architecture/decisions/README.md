@@ -6,13 +6,15 @@ system, but they link to ADRs for rationale, alternatives, and consequences.
 
 ## Index
 
-- [ADR 001: React and Vite SPA](001-react-vite-spa.md)
-- [ADR 002: Fastify API](002-fastify-api.md)
+- [ADR 001: React and Vite SPA](001-react-vite-spa.md) (superseded)
+- [ADR 002: Fastify API](002-fastify-api.md) (superseded)
 - [ADR 003: PostgreSQL and Drizzle](003-postgresql-drizzle.md)
 - [ADR 004: Better Auth](004-better-auth.md)
-- [ADR 005: Same-origin API proxy](005-vercel-api-proxy.md)
+- [ADR 005: Same-origin API proxy](005-vercel-api-proxy.md) (superseded)
 - [ADR 006: Monetary representation](006-money-representation.md)
 - [ADR 007: Isolated demo data](007-demo-data-isolation.md)
+- [ADR 008: Next.js App Router](008-nextjs-app-router.md)
+- [ADR 009: Neon PostgreSQL hosting](009-neon-postgresql.md)
 
 ## Template
 

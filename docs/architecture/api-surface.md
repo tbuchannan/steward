@@ -6,9 +6,9 @@
 ## Purpose
 
 This document defines Steward's initial resource-oriented HTTP surface. It is
-the contract blueprint for public Zod schemas and Fastify routes, not a mirror
+the contract blueprint for public Zod schemas and Next.js Route Handlers, not a mirror
 of PostgreSQL tables or framework internals. Field-level schemas remain in
-`packages/contracts` as they are implemented.
+`src/lib/contracts` as they are implemented.
 
 The surface covers the accepted MVP requirements. Better Auth continues to own
 its authentication request and response details, while Steward owns financial
@@ -74,8 +74,8 @@ aggregate rather than top-level routes.
 
 | Frontend route or state      | User workflow                                      | HTTP operations                                                                                                                                 |
 | ---------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/login`                     | Sign in or enter an isolated demo                  | Better Auth `POST /api/auth/sign-in/email`; Steward `POST /api/demo`                                                                            |
-| `/register`                  | Register and persist the detected initial timezone | Better Auth `POST /api/auth/sign-up/email`, then `PATCH /api/preferences` using the established session                                         |
+| `/` (login mode)             | Sign in or enter an isolated demo                  | Better Auth `POST /api/auth/sign-in/email`; Steward `POST /api/demo`                                                                            |
+| `/` (registration mode)      | Register and persist the detected initial timezone | Better Auth `POST /api/auth/sign-up/email`, then `PATCH /api/preferences` using the established session                                         |
 | Protected application layout | Resolve the session and protect all child routes   | Better Auth `GET /api/auth/get-session`; every Steward data request independently validates the session                                         |
 | `/dashboard`                 | Review current summaries and attention items       | `GET /api/dashboard`                                                                                                                            |
 | `/accounts`                  | Browse active or archived accounts; create account | `GET /api/accounts`; dialog or sheet submission uses `POST /api/accounts`                                                                       |

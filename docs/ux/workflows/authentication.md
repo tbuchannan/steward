@@ -5,6 +5,13 @@
 
 ## Registration
 
+Login and registration share the landing page at `/`. Select **Create account**
+or **Log in** to switch forms without navigating away. `/?mode=signup` opens
+registration directly. The submit button calls Better Auth's
+`/api/auth/sign-up/email` or `/api/auth/sign-in/email` endpoint for the selected
+mode. The current implementation opens `/accounts` after success; dashboard,
+return-destination navigation, and demo entry remain planned.
+
 ```text
 Open Register
 → Enter name, email, password, and confirmation

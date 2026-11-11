@@ -1,0 +1,420 @@
+"use client";
+
+import { CalendarDays, LockKeyhole } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { type FormEvent, useEffect, useState } from "react";
+
+import { authClient } from "../../lib/auth-client";
+
+import { Button } from "../ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../ui/card";
+import { Input } from "../ui/input";
+import { cn } from "../../lib/utils";
+
+type AuthMode = "login" | "signup";
+
+const Brand = ({ mobile = false }: { mobile?: boolean }) => (
+  <div
+    className={cn(
+      "w-fit items-center gap-3 text-foreground no-underline",
+      mobile ? "mb-8 inline-flex min-[801px]:hidden" : "inline-flex",
+    )}
+  >
+    <span
+      aria-hidden="true"
+      className="grid size-8 place-items-center rounded-full border border-foreground/20 bg-white/50"
+    >
+      <CalendarDays className="size-[17px]" strokeWidth={1.7} />
+    </span>
+    <span className="font-display text-[1.75rem] leading-none">Steward</span>
+  </div>
+);
+
+const AuthLandingPage = ({
+  initialMode = "login",
+}: {
+  initialMode?: AuthMode;
+}) => {
+  const router = useRouter();
+  const session = authClient.useSession();
+  const [mode, setMode] = useState<AuthMode>(initialMode);
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [message, setMessage] = useState("");
+  const [submissionError, setSubmissionError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSignup = mode === "signup";
+
+  useEffect(() => {
+    if (session.data) router.replace("/accounts");
+  }, [router, session.data]);
+
+  const changeMode = (nextMode: AuthMode) => {
+    setMode(nextMode);
+    setMessage("");
+    setSubmissionError("");
+    setPasswordVisible(false);
+  };
+
+  const handleLoginClick = () => {
+    changeMode("login");
+  };
+
+  const handleSignupClick = () => {
+    changeMode("signup");
+  };
+
+  const handleForgotPasswordClick = () => {
+    setMessage("Password reset is not available yet.");
+  };
+
+  const handlePasswordVisibilityClick = () => {
+    setPasswordVisible(!passwordVisible);
+  };
+
+  const handleDemoClick = () => {
+    setMessage("The demo account is not available yet.");
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (isSubmitting) return;
+    setSubmissionError("");
+    setMessage("");
+
+    if (!event.currentTarget.checkValidity()) {
+      event.currentTarget.reportValidity();
+      return;
+    }
+
+    const fields = new FormData(event.currentTarget);
+    const name = String(fields.get("name") ?? "").trim();
+    const email = String(fields.get("email") ?? "").trim();
+    const password = String(fields.get("password") ?? "");
+
+    if (isSignup) {
+      if (!name) {
+        setSubmissionError("Enter your name.");
+        return;
+      }
+      if (password.length < 8) {
+        setSubmissionError("Use at least 8 characters.");
+        return;
+      }
+      if (password !== fields.get("passwordConfirmation")) {
+        setSubmissionError("Passwords must match.");
+        return;
+      }
+    }
+
+    setIsSubmitting(true);
+    try {
+      const result = isSignup
+        ? await authClient.signUp.email({ name, email, password })
+        : await authClient.signIn.email({ email, password });
+
+      if (result.error) {
+        setSubmissionError(
+          isSignup
+            ? (result.error.message ?? "Registration failed. Please try again.")
+            : "The email address or password is incorrect.",
+        );
+        return;
+      }
+
+      router.replace("/accounts");
+      router.refresh();
+    } catch {
+      setSubmissionError("Unable to connect. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <main className="steward-canvas min-h-screen min-[801px]:grid min-[801px]:grid-cols-[minmax(17rem,1fr)_minmax(30rem,1.16fr)]">
+      <section
+        aria-labelledby="brand-heading"
+        className="hidden h-screen flex-col justify-between self-start border-r border-foreground/10 p-[clamp(2rem,5vw,5rem)] select-none min-[801px]:sticky min-[801px]:top-0 min-[801px]:flex"
+      >
+        <Brand />
+
+        <div className="max-w-136 py-20">
+          <p className="mb-[1.2rem] text-xs font-bold tracking-[0.16em] text-primary uppercase">
+            Personal finance, clearly understood
+          </p>
+          <h1
+            className="font-display m-0 text-[clamp(3.4rem,6vw,6.5rem)] leading-[0.94] font-medium tracking-tighter"
+            id="brand-heading"
+          >
+            Your money,
+            <br />
+            made clear.
+          </h1>
+          <p className="mt-7 max-w-md text-[1.06rem] leading-[1.7] text-muted-foreground">
+            Bring your accounts, spending, and budgets into one calm place—then
+            make decisions with confidence.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2.5 text-[0.82rem] text-muted-foreground">
+          <LockKeyhole
+            aria-hidden="true"
+            className="size-[17px] shrink-0"
+            strokeWidth={1.7}
+          />
+          <span>Your financial information stays private and secure.</span>
+        </div>
+      </section>
+
+      <section
+        aria-label="Account access"
+        className="grid min-h-svh place-items-center bg-card/60 p-5 min-[801px]:p-[clamp(1.5rem,5vw,5rem)]"
+      >
+        <Card className="w-full max-w-124 gap-0 rounded-[1.4rem] border-foreground/10 bg-card/75 p-6 shadow-[0_28px_80px_rgb(29_56_44/0.12)] backdrop-blur-[18px] select-none min-[801px]:p-[clamp(1.7rem,4vw,3rem)] [&_input]:select-text">
+          <Brand mobile />
+
+          <CardHeader className="gap-0 p-0">
+            <CardTitle
+              className="font-display text-[2.35rem] leading-tight font-medium tracking-tight"
+              id="form-title"
+            >
+              {isSignup ? "Create your account" : "Welcome back"}
+            </CardTitle>
+            <CardDescription
+              className="mt-2 mb-7 text-base leading-[1.55]"
+              id="form-intro"
+            >
+              {isSignup
+                ? "Start building a clearer view of your money."
+                : "Sign in to continue to your financial overview."}
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="p-0">
+            <div
+              aria-label="Account action"
+              className="relative mb-7 grid grid-cols-2 rounded-[0.85rem] border border-border bg-secondary/70 p-1"
+              role="tablist"
+            >
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-[0.65rem] bg-card shadow-[0_2px_10px_rgb(24_52_41/0.08)] transition-transform duration-300 ease-out motion-reduce:transition-none",
+                  isSignup && "translate-x-full",
+                )}
+              />
+              <Button
+                aria-controls="auth-form"
+                aria-selected={!isSignup}
+                className="relative z-10 min-h-11 rounded-[0.65rem] bg-transparent text-muted-foreground shadow-none transition-colors duration-300 hover:bg-transparent hover:text-foreground aria-selected:text-foreground"
+                id="login-tab"
+                disabled={isSubmitting}
+                onClick={handleLoginClick}
+                role="tab"
+                type="button"
+                variant="ghost"
+              >
+                Log in
+              </Button>
+              <Button
+                aria-controls="auth-form"
+                aria-selected={isSignup}
+                className="relative z-10 min-h-11 rounded-[0.65rem] bg-transparent text-muted-foreground shadow-none transition-colors duration-300 hover:bg-transparent hover:text-foreground aria-selected:text-foreground"
+                id="signup-tab"
+                disabled={isSubmitting}
+                onClick={handleSignupClick}
+                role="tab"
+                type="button"
+                variant="ghost"
+              >
+                Create account
+              </Button>
+            </div>
+
+            <form
+              aria-labelledby={isSignup ? "signup-tab" : "login-tab"}
+              aria-busy={isSubmitting}
+              className="grid gap-4"
+              id="auth-form"
+              noValidate
+              onSubmit={handleSubmit}
+            >
+              <div
+                aria-hidden={!isSignup}
+                className={cn(
+                  "grid transition-[grid-template-rows,opacity,margin] duration-300 ease-out motion-reduce:transition-none",
+                  isSignup
+                    ? "grid-rows-[1fr] opacity-100"
+                    : "-mb-4 grid-rows-[0fr] opacity-0",
+                )}
+              >
+                <div className="min-h-0 overflow-hidden">
+                  <div className="grid gap-2">
+                    <label className="text-sm font-semibold" htmlFor="name">
+                      Full name
+                    </label>
+                    <Input
+                      autoComplete="name"
+                      className="min-h-[3.15rem] rounded-[0.72rem] bg-white/80 px-4 text-base hover:border-foreground/30 focus-visible:bg-white"
+                      disabled={!isSignup || isSubmitting}
+                      id="name"
+                      name="name"
+                      maxLength={100}
+                      placeholder="Your name"
+                      required={isSignup}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                <label className="text-sm font-semibold" htmlFor="email">
+                  Email address
+                </label>
+                <Input
+                  autoComplete="email"
+                  className="min-h-[3.15rem] rounded-[0.72rem] bg-white/80 px-4 text-base hover:border-foreground/30 focus-visible:bg-white"
+                  id="email"
+                  name="email"
+                  disabled={isSubmitting}
+                  placeholder="you@example.com"
+                  required
+                  type="email"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <div className="flex items-baseline justify-between gap-4">
+                  <label className="text-sm font-semibold" htmlFor="password">
+                    Password
+                  </label>
+                  {!isSignup && (
+                    <Button
+                      className="h-auto p-0 text-[0.84rem] font-semibold"
+                      onClick={handleForgotPasswordClick}
+                      variant="link"
+                    >
+                      Forgot password?
+                    </Button>
+                  )}
+                </div>
+                <div className="relative">
+                  <Input
+                    autoComplete={
+                      isSignup ? "new-password" : "current-password"
+                    }
+                    className="min-h-[3.15rem] rounded-[0.72rem] bg-white/80 px-4 pr-18 text-base hover:border-foreground/30 focus-visible:bg-white"
+                    id="password"
+                    minLength={isSignup ? 8 : undefined}
+                    name="password"
+                    disabled={isSubmitting}
+                    placeholder={
+                      isSignup ? "Create a password" : "Enter your password"
+                    }
+                    required
+                    type={passwordVisible ? "text" : "password"}
+                  />
+                  <Button
+                    aria-label={
+                      passwordVisible ? "Hide password" : "Show password"
+                    }
+                    className="absolute top-1/2 right-2 h-auto -translate-y-1/2 px-2 py-1 text-xs font-bold text-muted-foreground hover:bg-transparent hover:text-foreground"
+                    onClick={handlePasswordVisibilityClick}
+                    variant="ghost"
+                  >
+                    {passwordVisible ? "Hide" : "Show"}
+                  </Button>
+                </div>
+                <div
+                  aria-hidden={!isSignup}
+                  className={cn(
+                    "grid transition-[grid-template-rows,opacity,margin] duration-300 ease-out motion-reduce:transition-none",
+                    isSignup
+                      ? "grid-rows-[1fr] opacity-100"
+                      : "-mt-2 grid-rows-[0fr] opacity-0",
+                  )}
+                >
+                  <p className="min-h-0 overflow-hidden text-xs leading-relaxed text-muted-foreground">
+                    Use at least 8 characters.
+                  </p>
+                </div>
+              </div>
+
+              {isSignup && (
+                <div className="grid gap-2">
+                  <label
+                    className="text-sm font-semibold"
+                    htmlFor="passwordConfirmation"
+                  >
+                    Confirm password
+                  </label>
+                  <Input
+                    autoComplete="new-password"
+                    className="min-h-[3.15rem] rounded-[0.72rem] bg-white/80 px-4 text-base hover:border-foreground/30 focus-visible:bg-white"
+                    disabled={isSubmitting}
+                    id="passwordConfirmation"
+                    name="passwordConfirmation"
+                    required
+                    type={passwordVisible ? "text" : "password"}
+                  />
+                </div>
+              )}
+
+              {submissionError && (
+                <p className="m-0 text-sm text-destructive" role="alert">
+                  {submissionError}
+                </p>
+              )}
+
+              {message && (
+                <p
+                  className="m-0 rounded-[0.65rem] bg-accent px-3 py-3 text-sm text-primary"
+                  role="status"
+                >
+                  {message}
+                </p>
+              )}
+
+              <Button
+                className="mt-1 min-h-[3.2rem] rounded-[0.72rem] font-bold shadow-[0_8px_18px_rgb(31_111_74/0.18)] hover:-translate-y-px hover:shadow-[0_11px_22px_rgb(31_111_74/0.22)] active:translate-y-0"
+                type="submit"
+                disabled={isSubmitting}
+              >
+                {isSubmitting
+                  ? isSignup
+                    ? "Creating account…"
+                    : "Signing in…"
+                  : isSignup
+                    ? "Create account"
+                    : "Log in"}
+              </Button>
+
+              <div
+                aria-hidden="true"
+                className="flex items-center gap-3 text-center text-xs text-muted-foreground before:h-px before:flex-1 before:bg-border before:content-[''] after:h-px after:flex-1 after:bg-border after:content-['']"
+              >
+                or
+              </div>
+
+              <Button
+                className="min-h-[3.2rem] rounded-[0.72rem] border-foreground/35 bg-white/60 font-bold hover:-translate-y-px hover:border-primary hover:bg-accent active:translate-y-0"
+                onClick={handleDemoClick}
+                variant="outline"
+              >
+                Try the demo account
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </section>
+    </main>
+  );
+};
+
+export { AuthLandingPage };
