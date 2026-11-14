@@ -128,18 +128,48 @@ server-side authentication and ownership checks.
 
 ## Demo
 
-| Method and path        | Access               | Success | High-level response                                                                                      |
-| ---------------------- | -------------------- | ------- | -------------------------------------------------------------------------------------------------------- |
-| `POST /api/demo`       | Public, rate-limited | `201`   | Demo session summary after isolated identity creation and transactional seeding; sets the session cookie |
-| `GET /api/demo`        | Protected            | `200`   | `{ isDemo, expiresAt? }`; never includes another identity or an internal owner ID                        |
-| `POST /api/demo/reset` | Protected demo only  | `200`   | Reset completion plus the canonical dataset version needed for client cache invalidation                 |
+| Method and path           | Access                            | Success        | High-level response                                                                                                 |
+| ------------------------- | --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/demo`          | Public, rate-limited              | `201` or `200` | Isolated guest creation sets the session cookie; an existing regular or active demo session is preserved with `200` |
+| `GET /api/demo`           | Provider session                  | `200`          | Current demo lifecycle status; does not renew inactivity                                                            |
+| `POST /api/demo/activity` | Unexpired demo or regular session | `200`          | Renew deliberate demo activity within the hard lifetime; regular users receive `{ isDemo: false }`                  |
+| `POST /api/demo/extend`   | Eligible expired demo session     | `200`          | Explicit renewal within the grace window and hard lifetime                                                          |
+| `POST /api/demo/reset`    | Protected demo only               | `200`          | Reset completion plus the canonical dataset version needed for client cache invalidation                            |
 
 Reset always targets the session identity and never accepts a user ID. Expired
 demo cleanup is an idempotent scheduled service operation, not a public HTTP
-route. These boundaries cover `DEMO-01` through `DEMO-05` without exposing
+route. `GET /api/internal/demo-cleanup` is an internal scheduler endpoint using
+a server-only bearer secret; browser cookies do not authorize it. These
+boundaries cover `DEMO-01` through `DEMO-05` without exposing
 internal lifecycle controls.
 
-Demo creation accepts the browser-detected IANA timezone needed to create the
+### Current Guest Slice
+
+Creation, activity, and extension accept the strict JSON object `{}` with
+`Content-Type: application/json` and the same-origin browser `Origin` header.
+They reject owner selectors and unsupported fields. Fresh entry is allowed
+when the current demo has expired; active identities are resumed. There is no
+seed data or reset route yet. MVP seeding will happen in the creation
+transaction, and reset remains required for MVP.
+
+Status is either `{ isDemo: false }` or a strict object with `isDemo: true`,
+`state` (`active` or `expired`), `expiresAt`, `hardExpiresAt`, `extendUntil`,
+`serverTime` (UTC instants), and `canExtend`. While active, browser status
+requests also receive an opaque `extensionTicket`. The tab keeps it only in
+memory and supplies it as `X-Demo-Extension` on subsequent status and explicit
+extension requests. It proves that this cookie session observed an active
+demo, cannot authenticate independently, and is never an owner selector.
+Expired returning tabs without that ticket cannot extend. No provider token
+or ownership key appears in the demo representation.
+
+Ordinary protected operations reject application-expired demo access with
+`401 DEMO_EXPIRED`. Status remains available while the provider session is
+valid; extension also requires eligibility under the
+[lifecycle policy](../domain/data-lifecycle.md#demo-records). A regular user
+receives `404 RESOURCE_NOT_FOUND` for the extension command. Demo responses
+are private/no-store and include a server-generated `X-Request-Id`.
+
+In the seeded MVP, demo creation accepts the browser-detected IANA timezone needed to create the
 initial preference, or applies the canonical fallback when detection is
 unavailable. This is application input; it does not become an authentication
 field or expose demo metadata.

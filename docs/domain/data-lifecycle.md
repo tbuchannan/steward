@@ -1,7 +1,7 @@
 # Data Lifecycle
 
 **Status:** Accepted
-**Last verified:** 2026-08-03
+**Last verified:** 2026-11-11 (guest lifecycle implemented; financial cleanup pending financial tables)
 
 ## Ownership
 
@@ -21,7 +21,7 @@ The following ownership paths are authoritative:
 | Budget allocation           | allocation -> budget -> Better Auth user                                   | Authorize through the budget; constrain the referenced category to the budget owner.                                    |
 | Investment balance snapshot | snapshot -> financial account -> Better Auth user                          | Authorize through the parent account.                                                                                   |
 | User preference             | `user_preference.userId -> Better Auth user`                               | Query by the session-derived user ID.                                                                                   |
-| Demo identity metadata      | `demo_identity_metadata.userId -> Better Auth user`                        | Internal demo entry, reset, and cleanup services only.                                                                  |
+| Demo identity metadata      | `demo_identity_metadata.userId -> Better Auth user`                        | Server-owned demo entry, status, activity, extension, reset, and cleanup services only.                                 |
 
 Clients never submit an authoritative user ID. A copied ownership key on a child
 or relationship row exists only to support a database constraint and must equal
@@ -96,10 +96,28 @@ protected request for another user's resource behaves as not found.
 - `demo_identity_metadata` is an application-owned optional singleton keyed by
   Better Auth user ID. Its presence marks a demo identity; regular users have no
   metadata row.
-- Metadata records the immutable `createdAt` instant and the required
-  `expiresAt` instant used to select cleanup candidates. Reset eligibility comes
-  from a valid current session plus the presence of that session user's metadata
-  row. The public API never accepts a demo user ID.
+- Metadata records immutable `createdAt` and the current inactivity deadline
+  `expiresAt`. Creation starts a 24-hour inactivity window. Deliberate activity
+  before expiry renews it for 24 hours, capped at seven days after creation.
+  Background polling and session checks never renew it. The database clock is
+  authoritative; these instants do not change transaction date semantics.
+- Expired demos cannot use ordinary protected operations. An eligible open
+  session has one hour after inactivity expiry to explicitly extend the demo
+  for up to 24 hours from the click, bounded by the original seven-day cap.
+  Only status, extension, and sign-out remain available during that grace
+  period. Preserve enough server-owned session eligibility state to distinguish
+  the open-session flow from an expired returning session; do not trust a
+  client assertion. Better Auth session verification must remain possible
+  during the eligible extension window.
+- `demo_session_grant` records a session's observation of an active demo. An
+  HMAC ticket bound to that verified user and session is issued only while the
+  demo is active and retained only in the open tab's memory. Extension requires
+  both the ticket and a valid matching cookie session. Reopening an expired
+  demo without the ticket cannot claim the open-session grace flow. Grants
+  cascade when the session or its demo metadata is deleted.
+- Reset eligibility comes from a valid, unexpired current session plus the
+  presence of that session user's metadata row. The public API never accepts a
+  demo user ID.
 - Reset affects only the current demo identity. In one transaction it deletes
   and recreates that user's financial accounts, transactions, categories,
   budgets, allocations, and investment balance snapshots from the canonical
@@ -107,9 +125,10 @@ protected request for another user's resource behaves as not found.
 - Reset preserves the Better Auth user, authentication account, sessions, demo
   metadata, expiration, and user preferences. It is idempotent with respect to
   the canonical seed state and rolls back completely on failure.
-- Cleanup selects only metadata rows whose `expiresAt` is at or before the
-  database clock. In one transaction per identity, it rechecks and locks that
-  metadata row, removes all Steward-owned data for that user, then removes the
+- Cleanup selects demos after inactivity expiry and any applicable one-hour
+  extension grace period, or at the absolute seven-day deadline. In one
+  transaction per identity, it rechecks eligibility against the database clock
+  and locks that metadata row, removes all Steward-owned data for that user, then removes the
   Better Auth identity through Better Auth-supported server behavior in a safe
   dependency order.
 - Cleanup removes financial records, user preferences, demo metadata, sessions,
@@ -121,6 +140,17 @@ protected request for another user's resource behaves as not found.
   authentication accounts, and user according to its generated schema.
 - Cleanup is idempotent: an already-removed identity is a successful no-op, and
   a failure cannot commit a partially removed identity.
+- Activity renewal, explicit extension, and cleanup serialize on the same
+  lifecycle record. A concurrent stale request cannot shorten a deadline,
+  revive a deleted identity, or extend past the seven-day cap. Cleanup runs
+  daily in bounded batches; access denial never waits for that job.
+
+The initial guest-login slice has no financial or preference tables. Its
+transaction deletes demo metadata and grants, then calls the pinned Better Auth
+internal adapter's `deleteUser` lifecycle on the same transaction connection.
+As financial aggregates ship, their cleanup must be added before metadata
+deletion in `src/server/demo/service.ts`; the complete MVP dependency order
+above remains binding.
 
 ## Authentication Records
 

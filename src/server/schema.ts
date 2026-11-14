@@ -1,4 +1,11 @@
-import { boolean, index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 
 const auditTimestamp = (name: string) =>
   timestamp(name, { withTimezone: true }).notNull().defaultNow();
@@ -75,3 +82,39 @@ export const authSchema = {
   account: authAccounts,
   verification: authVerifications,
 };
+
+export const demoIdentities = pgTable(
+  "demo_identity_metadata",
+  {
+    userId: text("user_id")
+      .primaryKey()
+      .references(() => authUsers.id, { onDelete: "restrict" }),
+    createdAt: auditTimestamp("created_at"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [index("demo_expiration_idx").on(table.expiresAt)],
+);
+
+// A tab must retain its session-bound ticket in memory to extend after expiry.
+export const demoSessionGrants = pgTable(
+  "demo_session_grant",
+  {
+    sessionId: text("session_id")
+      .primaryKey()
+      .references(() => authSessions.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => demoIdentities.userId, { onDelete: "cascade" }),
+  },
+  (table) => [index("demo_grant_user_idx").on(table.userId)],
+);
+
+export const demoCreationLimits = pgTable(
+  "demo_creation_limit",
+  {
+    key: text("key").primaryKey(),
+    attempts: integer("attempts").notNull(),
+    resetAt: timestamp("reset_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [index("demo_limit_reset_idx").on(table.resetAt)],
+);

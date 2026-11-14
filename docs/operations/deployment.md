@@ -15,8 +15,8 @@ origin. Neon hosts PostgreSQL, as recorded in
    `apps/web` Root Directory override before deploying this layout.
 2. Remove any dashboard Output Directory override for the old static build.
    Use the commands in the root `vercel.json` and the Node.js/npm pins.
-3. Set `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and
-   `TRUSTED_ORIGINS` as described in [configuration](configuration.md).
+3. Set `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`,
+   `TRUSTED_ORIGINS`, and `CRON_SECRET` as described in [configuration](configuration.md).
    Use the public HTTPS origin for Better Auth. Preserve the existing auth
    secret on the production origin if existing sessions should remain valid.
 4. Set the app's `DATABASE_URL` to the Neon pooled endpoint, preserving its TLS
@@ -74,3 +74,34 @@ As MVP features ship, add demo entry, demo reset, and a representative
 financial workflow to release smoke checks. Before public launch, finalize
 error monitoring, log retention, availability checks, rate limits, and alert
 ownership.
+
+## Guest Demo Release
+
+Apply `0001_demo_lifecycle` using `npm run db:migrate` against the intended
+database before deploying guest-login code. This is additive and leaves Better
+Auth's tables unchanged. The repository includes generated migration files;
+local implementation tests apply them only to disposable embedded PostgreSQL.
+
+Set a unique `CRON_SECRET` of at least 32 characters on the deployment. Vercel's
+daily 05:00 UTC schedule calls `GET /api/internal/demo-cleanup` with its bearer
+secret. Enable Fluid compute to support the route's 300-second duration budget
+([duration limits](https://vercel.com/docs/functions/configuring-functions/duration)).
+Other hosts must configure an authenticated daily scheduler explicitly. Monitor
+job failures, duration, and expired-identity backlog; retry failed invocations
+and drain larger backlogs with additional authenticated calls. Confirm deletion
+throughput before raising the global creation limit. Completed per-identity
+transactions survive an interrupted invocation; retries are safe.
+
+Using synthetic data in a preview environment, verify:
+
+- Demo entry opens `/accounts`, shows the Demo indicator, and preserves the
+  normal secure cookie behavior. A second browser gets another identity.
+- Reload resumes the current guest; sign-out ends access and the next guest
+  entry creates a fresh identity. Registration creates a separate account.
+- Application expiry blocks access, an eligible open tab can explicitly extend
+  during its grace period, and the hard seven-day deadline cannot be extended.
+- The scheduler rejects requests without its secret and removes eligible
+  expired demos without affecting active guests or regular accounts.
+
+Seed data and reset remain future MVP work. Repository implementation does not
+apply migrations to a live database, provision secrets, or deploy the schedule.

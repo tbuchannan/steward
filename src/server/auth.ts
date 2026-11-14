@@ -5,13 +5,17 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import type { StewardDatabase } from "./database";
 import { authSchema } from "./schema";
 
-type AuthConfig = {
+export type AuthConfig = {
   baseUrl: string;
   secret: string;
   trustedOrigins: string[];
 };
 
-export const createAuth = (database: StewardDatabase, config: AuthConfig) => {
+export const createAuth = (
+  database: StewardDatabase,
+  config: AuthConfig,
+  inTransaction = false,
+) => {
   const options = {
     baseURL: config.baseUrl,
     secret: config.secret,
@@ -19,6 +23,7 @@ export const createAuth = (database: StewardDatabase, config: AuthConfig) => {
     database: drizzleAdapter(database, {
       provider: "pg",
       schema: authSchema,
+      transaction: !inTransaction,
     }),
     emailAndPassword: { enabled: true },
   } satisfies BetterAuthOptions;

@@ -23,6 +23,15 @@ const runtimeEnvironmentSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(32),
   BETTER_AUTH_URL: z.url(),
   TRUSTED_ORIGINS: trustedOriginsSchema,
+  DEMO_CREATION_LIMIT: z.coerce.number().int().min(1).max(10_000).default(10),
+  DEMO_CREATION_GLOBAL_LIMIT: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(100_000)
+    .default(100),
+  CRON_SECRET: z.string().min(32).optional(),
+  VERCEL: z.string().optional(),
 });
 
 export type RuntimeConfig = {
@@ -30,6 +39,10 @@ export type RuntimeConfig = {
   authSecret: string;
   authUrl: string;
   trustedOrigins: string[];
+  demoCreationLimit: number;
+  demoCreationGlobalLimit: number;
+  demoClientIpSource: "vercel" | "shared";
+  cronSecret?: string;
 };
 
 export const loadRuntimeConfig = (
@@ -56,5 +69,9 @@ export const loadRuntimeConfig = (
     authSecret: result.data.BETTER_AUTH_SECRET,
     authUrl: result.data.BETTER_AUTH_URL,
     trustedOrigins: result.data.TRUSTED_ORIGINS,
+    demoCreationLimit: result.data.DEMO_CREATION_LIMIT,
+    demoCreationGlobalLimit: result.data.DEMO_CREATION_GLOBAL_LIMIT,
+    demoClientIpSource: result.data.VERCEL === "1" ? "vercel" : "shared",
+    ...(result.data.CRON_SECRET ? { cronSecret: result.data.CRON_SECRET } : {}),
   };
 };

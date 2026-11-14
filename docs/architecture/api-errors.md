@@ -1,7 +1,7 @@
 # Public API Errors
 
 **Status:** Accepted  
-**Last verified:** 2026-08-06
+**Last verified:** 2026-11-11 (demo lifecycle error added)
 
 ## Purpose
 
@@ -50,12 +50,13 @@ Every non-success response from a Steward-owned endpoint has this JSON shape:
 | ----------- | ------------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
 | `400`       | `VALIDATION_ERROR`        | The request cannot be parsed or does not satisfy its structural, field, cross-field, or domain rules | `The submitted data is invalid.`                         |
 | `401`       | `AUTHENTICATION_REQUIRED` | A protected application route has no valid current session                                           | `Sign in to continue.`                                   |
+| `401`       | `DEMO_EXPIRED`            | A provider-valid demo has expired or cannot use the requested extension                              | `Your demo expired. Start a new demo to continue.`       |
 | `404`       | `RESOURCE_NOT_FOUND`      | The route or resource does not exist, including a concealed inaccessible user-owned resource         | `The requested resource was not found.`                  |
 | `409`       | `CONFLICT`                | A valid request conflicts with current state or a recognized uniqueness or concurrency condition     | `The request conflicts with the current resource state.` |
 | `429`       | `RATE_LIMITED`            | A Steward-owned endpoint rate limit rejects the request                                              | `Too many requests. Try again later.`                    |
 | `500`       | `INTERNAL_ERROR`          | An unexpected failure, including an unrecognized dependency or response-contract failure             | `An unexpected error occurred. Try again later.`         |
 
-These codes are the complete initial code set. Adding, renaming, splitting, or
+These codes are the current code set. Adding, renaming, splitting, or
 changing the HTTP status of a code is a public contract change. More specific
 internal failure names do not become public codes merely to simplify handler
 implementation.
@@ -78,6 +79,13 @@ For `429`, the API sets the standard `Retry-After` response header to a whole
 number of seconds when the limiter can determine the retry interval. Clients
 must still tolerate the header being absent. Retry information is not copied
 into `details`.
+
+`DEMO_EXPIRED` distinguishes application expiry from loss of the provider
+session. It lets an eligible open demo show its explicit extension action while
+ordinary access remains blocked. Status and extension eligibility are defined
+in [data lifecycle](../domain/data-lifecycle.md#demo-records); the code does not
+grant extension permission by itself. Demo lifecycle errors never include
+extension tickets or internal identity state in error details.
 
 ## Validation Details
 
